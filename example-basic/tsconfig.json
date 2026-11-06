@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["vite/client", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "shared-lib-web": ["../src/index.ts"],
+      "shared-lib-web/markdown": ["../src/markdown.ts"],
+      "shared-lib-web/layout": ["../src/layout.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

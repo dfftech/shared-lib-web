@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "build-test",
+    "noEmit": false,
+    "rewriteRelativeImportExtensions": true,
+    "sourceMap": true,
+    "types": ["node"]
+  },
+  "include": ["src", "tests"]
+}

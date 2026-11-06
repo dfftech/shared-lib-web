@@ -1,0 +1,680 @@
+---
+name: react-web
+description: >
+  Pure React (Vite/CRA, no Next.js) + daisyUI frontend conventions: route
+  page ScreenAccess/Suspense, module page/list/form/view, hooks
+  (data/types/service/validation), AppHttp, Type* props via useMemo spread,
+  AgGrid lists, and modal edit flow. No file-based routing — same signals,
+  types, and daisyUI conventions as next-daisy.
+---
+
+# React (Web) + daisyUI System Prompt
+
+Stack: React (Vite/CRA, plain React — no Next.js) · daisyUI/Tailwind · signals · AppHttp · `dff-util` · `types/*` · AgGrid
+
+This skill is identical to the Next.js + daisyUI conventions for signals, `types/*`, and daisyUI usage. The only difference is the app shell: **no Next.js, no App Router, no file-based routing.** The route/page component is a plain React component mounted wherever the app wires up screens (a router of the project's choice, a switch/if, or direct render) — it is not a Next.js `page.tsx` and does not rely on file-based routing conventions.
+
+---
+
+## Folder structure
+
+`.ts` = TypeScript only (no JSX). `.tsx` = view / HTML. Same basename as the matching `.tsx` (import `./{module}.list.ts`).
+
+```
+app-{module}.tsx                      ← Suspense + ScreenAccess only (plain component, no file-based routing)
+modules/{path}/
+├── {module}.page.tsx                 ← list + modal (no auth) — HTML
+├── components/                       ← list + form + view + grid
+│   ├── {module}.list.ts              ← list TypeScript
+│   ├── {module}.list.tsx             ← list HTML
+│   ├── {module}.form.ts              ← form TypeScript (useMemo, handlers)
+│   ├── {module}.form.tsx             ← form HTML
+│   ├── {module}.view.ts              ← view TypeScript
+│   ├── {module}.view.tsx             ← view HTML
+│   └── {module}.grid.ts              ← AgGrid columnDefs / datasource
+├── hooks/                            ← TypeScript
+│   ├── data.ts                       ← init / default values
+│   ├── types.ts                      ← all types
+│   ├── validation.ts                 ← form rules
+│   ├── service.ts                    ← popup/edit-mode/screen-action signals (not HTTP)
+│   ├── service-http.ts               ← all HTTP calls + their loading signals
+│   └── service-load.ts               ← all option/load calls + option/loading signals
+layouts/   → ArticleLayout, ContentLayout, FloatLayout, GridLayout
+skeleton/  → skeleton-article, skeleton-table, skeleton-float
+types/     → TypeButton, TypeInput, TypeSelect, TypeSwitch, … (ALWAYS use)
+```
+
+**This structure is mandatory, not illustrative.** Before implementation, inspect the target module and the closest analogous module. Preserve existing paths, filenames, and separation of concerns; do not move, rename, flatten, delete, consolidate, or duplicate files unless explicitly requested. Types belong in `hooks/types.ts`, defaults in `hooks/data.ts`, validation in `hooks/validation.ts`, HTTP in `hooks/service-http.ts`, option loading in `hooks/service-load.ts`, UI state in `hooks/service.ts`, non-JSX component logic in matching `.ts` files, and JSX in matching `.tsx` files. Do not create alternate `services/`, `models/`, `utils/`, or component locations for these concerns.
+
+`app-{module}.tsx` is a plain mounted component, not a framework route file — do not add Next.js-only conventions (no `"use client"`, no file-based routing, no framework default-export routing requirement). Whatever router the project uses (react-router-dom, a manual switch, or none) renders this component directly; the component itself never contains routing logic.
+
+---
+
+## Route page (permission + skeleton)
+
+Auth/permission **only** here — never in module pages. This is a plain React component; mount it however the project wires up screens (route element, conditional render, etc.) — no file-based routing required.
+
+```tsx
+import { Suspense } from "react";
+import { ArticleLayout } from "@/layouts/article-layout";
+import { ContentLayout } from "@/layouts/content-layout";
+import { FloatLayout } from "@/layouts/float-layout";
+import { SkeletonArticle } from "@/skeleton/skeleton-article";
+import { SkeletonTable } from "@/skeleton/skeleton-table";
+import { SkeletonFloat } from "@/skeleton/skeleton-float";
+import { ScreenAccess } from "@/utils/services/app.event";
+import { PermissionDenied } from "@/components/permission-denied";
+import { UserPage } from "@/modules/profiles/users/user.page";
+
+export function User() {
+  return (
+    <Suspense fallback={<SkeletonPage />}>
+      {ScreenAccess.value.read ? <UserPage /> : <PermissionDenied />}
+    </Suspense>
+  );
+}
+
+function SkeletonPage() {
+  return (
+    <>
+      <ArticleLayout><SkeletonArticle /></ArticleLayout>
+      <ContentLayout><SkeletonTable /></ContentLayout>
+      <FloatLayout><SkeletonFloat /></FloatLayout>
+    </>
+  );
+}
+```
+
+---
+
+## Module page (list + side modal)
+
+ScreenAction **only here** — never in list / form / view. Read `AppStorage.Get(SCREEN_ACTION)`.
+
+| Action | Result |
+|--------|--------|
+| `{module}:list` | popup closed |
+| `{module}:view:{id}` | open view |
+| `{module}:form:{id}` | open form (edit) |
+| `{module}:form` (no `:{id}`) | open form (new / add) |
+
+```tsx
+// user.page.tsx
+import { useEffect } from "react";
+import { useSignals } from "@preact/signals-react/runtime";
+import { applyScreenAction, editModeUpdate, userIsEditMode, userIsPopupOpen } from "./hooks/service";
+import { UserForm } from "./components/user.form";
+import { UserList } from "./components/user.list";
+import { UserView } from "./components/user.view";
+
+export function UserPage() {
+  useSignals();
+  useEffect(() => { applyScreenAction(); }, []);
+  return (
+    <>
+      <UserList />
+      {userIsPopupOpen.value && (
+        <div className="modal modal-open">
+          <div className="modal-backdrop" role="button" tabIndex={0}
+            onClick={() => editModeUpdate(undefined)}
+            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && editModeUpdate(undefined)} />
+          <div className="modal-box fixed right-0 top-0 h-screen w-full max-w-4xl rounded-none p-0">
+            <div className="h-full overflow-y-auto p-6">
+              {userIsEditMode.value ? <UserForm /> : <UserView />}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+```
+
+---
+
+## hooks/ — required files
+
+### `hooks/types.ts` — types only
+### `hooks/data.ts` — init values only
+
+```ts
+export const userInitValues: UserType = { id: "", name: "", email: "", /* … */ };
+export const getDefaultUser = (): UserType => ({ ...userInitValues });
+```
+
+### `dff-util` types / constants / keys / patterns
+
+Use shared `dff-util` exports instead of local duplicates:
+
+```ts
+import {
+  AppAddDays,
+  AppCode,
+  AppCodeByType,
+  AppDaysBack,
+  AppRandomString,
+  AppUUID4,
+  ConstKeys,
+  ConstValue,
+  CurrencyConvert,
+  DateAndTime,
+  DateTime12HrFormat,
+  DateTime24HrFormat,
+  DecodeBase64,
+  DecodeURL,
+  EncodeBase64,
+  EncodeURL,
+  LangCountryCode,
+  LangText,
+  QueryCond,
+  RegExp,
+  SafeDecode,
+  SafeEncode,
+  TimeAgo,
+  TruncateText,
+  countries,
+  languages,
+  toCamelCase,
+  toEntityMapper,
+  toLowerCase,
+  toPascalCase,
+  toSchemaMapper,
+  toSnakeCase,
+  toUpperCase,
+  toViewMapper,
+} from "dff-util";
+import type {
+  CountryType,
+  FileType,
+  KeyValueType,
+  LangCountryType,
+  LangDirType,
+  LanguageType,
+  OptionType,
+  OrderType,
+  RequestBodyType,
+  RequestByIdType,
+  RequestQueryType,
+  ResponseType,
+  SearchType,
+  ThemeType,
+} from "dff-util";
+```
+
+- Request/response types: `ResponseType`, `SearchType`, `KeyValueType`, `RequestBodyType`, `RequestQueryType`, `RequestByIdType`
+- File/options/domain types: `FileType`, `OptionType`, `CountryType`, `LanguageType`, `LangCountryType`, `LangDirType`, `OrderType`, `ThemeType`
+- Constants: `ConstValue.ASC`, `ConstValue.DESC`, `ConstValue.LTR`, `ConstValue.RTL`, `ConstValue.LIGHT`, `ConstValue.DARK`, `ConstValue.EMPTY`
+- Message keys: use `ConstKeys.*`; common validation keys are `REQUIRED`, `MIN_LENGTH_REQUIRED`, `MAX_LENGTH_EXCEED`, `INVALID_EMAIL`, `INVALID_PHONE`, `FIELD_MUST_BE_NUMERIC`, `FIELD_MUST_BE_ALPHABETIC`, `FIELD_MUST_BE_ALPHANUMERIC`, `PASSWORD_TOO_WEAK`, `INVALID_URL`, `FILE_TOO_LARGE`, `WENT_WRONG`
+- Patterns: use `RegExp.EMAIL`, `RegExp.DIGITS_ONLY`, `RegExp.ALPHABETS_ONLY`, `RegExp.ALPHA_NUMERIC`, `RegExp.URL`, `RegExp.PHONE_US`, `RegExp.STRONG_PASSWORD`, `RegExp.DATE_YYYY_MM_DD`, `RegExp.TIME_HH_MM`, `RegExp.ISO_DATETIME`, `RegExp.UUID_V4`, `RegExp.AMOUNT_DECIMAL`, `RegExp.PERCENTAGE`
+- Lists and locale helpers: use `countries`, `languages`, `LangCountryCode`, `LangText`, and `CurrencyConvert` for country/language/currency flows instead of hardcoded arrays or ad hoc locale maps
+- Utility functions: use `AppUUID4`, `AppRandomString`, `AppCode`, `AppCodeByType`, `AppDaysBack`, `AppAddDays`, `TruncateText`, `DateTime24HrFormat`, `DateTime12HrFormat`, `DateAndTime`, `TimeAgo`, `EncodeBase64`, `DecodeBase64`, `EncodeURL`, `DecodeURL`, `SafeEncode`, `SafeDecode`, `QueryCond`
+- Case and mapper helpers: use `toCamelCase`, `toSnakeCase`, `toPascalCase`, `toUpperCase`, `toLowerCase`, `toViewMapper`, `toEntityMapper`, `toSchemaMapper` when converting API/entity/view shapes
+
+This stack requires the npm package **`dff-util`**. Before adding any type, method, conversion, mapper, constant, message key, pattern, static dataset, formatter, parser, or helper, inspect the installed package exports and the version declared by the target project. If an equivalent export exists, it **MUST** be imported directly. Local duplicates, copied implementations, pass-through wrappers, and hardcoded equivalents are prohibited. Create a local implementation only when no package equivalent exists and the behavior is module-specific.
+
+This check is mandatory for all four of the following before writing anything new:
+- **Constants** — check `ConstValue` (and similar) in `dff-util` before declaring a local constant.
+- **Patterns** — check `RegExp.*` in `dff-util` before writing a local regex literal.
+- **Functions** — check `dff-util` methods/mappers (e.g. `toViewMapper`, `toEntityMapper`, date/encoding helpers) before writing a local helper function.
+- **Keys and messages** — check `ConstKeys.*` in `dff-util` before adding a local message key or hardcoded string.
+
+Only create a local constant, pattern, function, key, or message when `dff-util` has no equivalent; keep the local addition module-specific and minimal.
+
+Do not create module-local copies of common messages, max length keys, regex patterns, country/language lists, request types, response envelope types, date/text helpers, encoding helpers, query parsers, or case/entity mappers. Keep using the project `AppHttp` wrapper for HTTP when it exists; use `dff-util` `Http` only in projects that do not provide an `AppHttp` wrapper or explicitly wrap it.
+
+### `hooks/validation.ts` — form rules only
+
+Messages **always** `ConstKeys.*`; patterns **always** `RegExp.*` when one exists — never raw strings or inline common regexes.
+
+```ts
+export const userValidation = {
+  name: { required: { value: true, message: ConstKeys.REQUIRED } },
+  email: {
+    required: { value: true, message: ConstKeys.REQUIRED },
+    pattern: { value: RegExp.EMAIL, message: ConstKeys.INVALID_EMAIL },
+  },
+  phone: {
+    required: { value: true, message: ConstKeys.REQUIRED },
+    pattern: { value: RegExp.DIGITS_ONLY, message: ConstKeys.INVALID_PHONE },
+    minLength: { value: 10, message: ConstKeys.MIN_LENGTH_REQUIRED },
+    maxLength: { value: 15, message: ConstKeys.MAX_LENGTH_EXCEED },
+  },
+  telCode: { required: { value: true, message: ConstKeys.REQUIRED } },
+  country: { required: { value: true, message: ConstKeys.REQUIRED } },
+  role: { required: { value: true, message: ConstKeys.REQUIRED } },
+  languages: { required: { value: true, message: ConstKeys.REQUIRED } },
+  password: {
+    required: { value: true, message: ConstKeys.REQUIRED },
+    pattern: { value: RegExp.STRONG_PASSWORD, message: ConstKeys.PASSWORD_TOO_WEAK },
+    minLength: { value: 8, message: ConstKeys.MIN_LENGTH_REQUIRED },
+  },
+};
+```
+
+### `hooks/service-http.ts` — all HTTP calls
+
+`service-http.ts` contains **all HTTP calls and their loading signals** for the module: list, save, entity-by-id, status, delete, restore, export, upload, and any other API action. Do not put HTTP calls in `service.ts`, `service-load.ts`, components, list/form/view logic files, or page files.
+
+```ts
+// hooks/service-http.ts
+export const userListIsLoading = signal(false);
+
+export const userListCall = async (params: SearchType): Promise<ResponseType | undefined> => {
+  try {
+    userListIsLoading.value = true;
+    const resp = await AppHttp.Get(AppHttp.MsUrl.base + "/profile/search", params);
+    return { data: Array.isArray(resp?.data) ? resp.data : [], total: resp?.total || 0 };
+  } catch (error: any) {
+    const message = t(error?.error?.message || ConstKeys.WENT_WRONG);
+    ShowToast(message, "warning");
+  } finally {
+    userListIsLoading.value = false;
+  }
+};
+```
+
+```ts
+// hooks/service-http.ts
+export const userSaveIsLoading = signal(false);
+
+export const userSaveCall = async (params: RequestBodyType): Promise<ResponseType | undefined> => {
+  try {
+    userSaveIsLoading.value = true;
+    return await AppHttp.Post(AppHttp.MsUrl.base + "/profile/save", params);
+  } catch (error: any) {
+    const message = t(error?.error?.message || ConstKeys.WENT_WRONG);
+    ShowToast(message, "warning");
+  } finally {
+    userSaveIsLoading.value = false;
+  }
+};
+```
+
+```ts
+// hooks/service-load.ts — all option/load calls and option/loading signals
+export const languagesIsLoading = signal(false);
+export const languagesOptions = signal<OptionType[]>([]);
+
+export const languagesLoadCall = () => {
+  try {
+    languagesIsLoading.value = true;
+    languagesOptions.value = languages.map((lang) => ({
+      label: lang.name,
+      value: lang.lang,
+      key: lang.lang,
+      lang: { locale: lang.locale, dir: lang.dir },
+    }));
+  } catch (error: any) {
+    const message = t(error?.error?.message || ConstKeys.WENT_WRONG);
+    ShowToast(message, "warning");
+    languagesOptions.value = [];
+  } finally {
+    languagesIsLoading.value = false;
+  }
+};
+```
+
+```ts
+// hooks/service-load.ts — use dff-util countries for static country lists
+export const countryIsLoading = signal(false);
+export const countryOptions = signal<OptionType[]>([]);
+
+export const countryLoadCall = () => {
+  try {
+    countryIsLoading.value = true;
+    countryOptions.value = countries.map((country) => ({
+      label: country.name,
+      value: country.code,
+      key: country.code,
+      icon: country.flag,
+      lang: {
+        locale: country.locale,
+        currency: country.currency,
+        currencyCode: country.currencyCode,
+        telCode: String(country.telCode),
+      },
+    }));
+  } catch (error: any) {
+    const message = t(error?.error?.message || ConstKeys.WENT_WRONG);
+    ShowToast(message, "warning");
+    countryOptions.value = [];
+  } finally {
+    countryIsLoading.value = false;
+  }
+};
+```
+
+```ts
+// hooks/service-load.ts — AppHttp.Load for backend-controlled options
+export const roleIsLoading = signal(false);
+export const roleOptions = signal<OptionType[]>([]);
+
+export const roleLoadCall = async (id = "ROLES", params?: any) => {
+  try {
+    roleIsLoading.value = true;
+    const resp = await AppHttp.Load(id, params);
+    const rows = resp?.data && Array.isArray(resp.data) ? resp.data : Array.isArray(resp) ? resp : [];
+    roleOptions.value = rows.map((row: any) => ({
+      label: row.label, value: row.label, key: row.key, disabled: row.disabled || false,
+    }));
+  } catch (error: any) {
+    const message = t(error?.error?.message || ConstKeys.WENT_WRONG);
+    ShowToast(message, "warning");
+    roleOptions.value = [];
+  } finally {
+    roleIsLoading.value = false;
+  }
+};
+```
+
+```ts
+// hooks/service.ts — popup/edit-mode/screen-action state only; no HTTP
+import { getDefaultUser } from "./data";
+import { AppStorage, SCREEN_ACTION } from "@/utils/services/app.storage";
+
+export const userIsPopupOpen = signal(false);
+export const userIsEditMode = signal(false);
+export const userSelectedId = signal<string | undefined>(undefined);
+export const SelectedUser = signal<UserType | null>(null);
+
+export const applyScreenAction = () => {
+  const action = String(AppStorage.Get(SCREEN_ACTION) || "user:list");
+  const [, kind, id] = action.split(":");
+  if (!kind || kind === "list") {
+    editModeUpdate(undefined);
+    return;
+  }
+  if (kind === "view") {
+    editModeUpdate(id || undefined);
+    return;
+  }
+  if (kind === "form") {
+    if (!id) editModeUpdate(undefined, "add");
+    else editModeUpdate(id, "edit");
+  }
+};
+
+export const editModeUpdate = async (id?: string, mode?: "edit" | "add") => {
+  if (mode === "add") {
+    SelectedUser.value = getDefaultUser();
+    userSelectedId.value = undefined;
+    userIsEditMode.value = true;
+    userIsPopupOpen.value = true;
+    AppStorage.Set(SCREEN_ACTION, "user:form");
+  } else if (id) {
+    userSelectedId.value = id;
+    userIsEditMode.value = mode === "edit";
+    userIsPopupOpen.value = true;
+    AppStorage.Set(SCREEN_ACTION, mode === "edit" ? `user:form:${id}` : `user:view:${id}`);
+  } else {
+    userSelectedId.value = undefined;
+    userIsEditMode.value = false;
+    userIsPopupOpen.value = false;
+    AppStorage.Set(SCREEN_ACTION, "user:list");
+  }
+};
+```
+
+```ts
+// hooks/service-http.ts
+export const uploadFile = async (file: File): Promise<FileType> => {
+  const fileUploadUrl = await AppHttp.Post("/astropeace-util/s3/upload-url", {
+    fileName: file.name,
+  });
+  await AppHttp.CloudUpload(fileUploadUrl.data.upload, file);
+  return { url: fileUploadUrl.data.download, filename: file.name, mimetype: file.type };
+};
+```
+
+Never use raw `fetch` / axios — only `AppHttp`.
+
+---
+
+## Form / view — `useMemo` props + spread into Type*
+
+Logic in `components/{module}.form.ts` / `{module}.view.ts`. HTML in `components/{module}.form.tsx` / `{module}.view.tsx`. Same basename; `.tsx` imports `./{module}.form.ts`.
+
+```ts
+// components/user.form.ts — TypeScript only
+import { getDefaultUser, userInitValues } from "../hooks/data";
+import { userValidation } from "../hooks/validation";
+import { userSaveCall, userSaveIsLoading } from "../hooks/service-http";
+import { languagesOptions, countryOptions, roleOptions } from "../hooks/service-load";
+
+export function useUserForm() {
+  const { control, formState: { errors } } = useForm<UserType>({
+    defaultValues: getDefaultUser(), // userInitValues from hooks/data.ts
+  });
+
+  const nameProps = useMemo(
+    () => ({
+      control,
+      name: "name",
+      label: t("name"),
+      rules: userValidation.name,
+      error: errors.name,
+      className: "w-full mb-3",
+    }),
+    [t, control, errors.name],
+  );
+
+  const cancelProps = useMemo(
+    () => ({
+      action: "secondary" as const,
+      label: t("cancel"),
+      name: "CircleX" as const,
+      onPress: onCancel,
+    }),
+    [t],
+  );
+
+  return { nameProps, cancelProps, defaultValues: userInitValues };
+}
+```
+
+```tsx
+// components/user.form.tsx — view / HTML
+import { useUserForm } from "./user.form.ts";
+
+export function UserForm() {
+  const { nameProps, telCodeProps, langProps, countryProps, roleProps, activeProps, cancelProps } = useUserForm();
+  return (
+    <ContentLayout>
+      <TypeInput {...nameProps} />
+      <TypeSelect {...telCodeProps} />
+      <TypeList {...langProps} />
+      <TypeSelect {...countryProps} />
+      <TypeSelect {...roleProps} />
+      <TypeSwitch {...activeProps} />
+      <TypeButton {...cancelProps} />
+    </ContentLayout>
+  );
+}
+```
+
+Rules:
+- Always use `types/*` (`TypeInput`, `TypeSelect`, `TypeSwitch`, `TypeButton`, `TypeDate`, `TypeList`, …)
+- Dropdown options come from `hooks/service-load.ts` signals; use `dff-util` `countries` / `languages` for static country/language lists and `AppHttp.Load` only for backend-controlled option sets
+- Validation from `hooks/validation.ts` (`ConstKeys` messages and `RegExp` patterns only); defaults from `hooks/data.ts` (`userInitValues` / `getDefaultUser()`)
+- Every HTTP action used by form/view/list is exported from `hooks/service-http.ts`; never put HTTP calls in components or `hooks/service.ts`.
+
+---
+
+## List / grid page
+
+`components/{module}.list.ts` + `{module}.list.tsx`. Grid helpers in `components/{module}.grid.ts`.
+
+```ts
+// components/user.list.ts — TypeScript only
+import { userListCall, userListIsLoading } from "../hooks/service-http";
+import { zodiacSignOptions } from "../hooks/service-load";
+import { editModeUpdate } from "../hooks/service";
+
+export function useUserList() {
+  const searchProps = useMemo(
+    () => ({ name: "search", label: t("search"), onChange: onSearch }),
+    [t],
+  );
+  const zodiacSignProps = useMemo(
+    () => ({ name: "zodiac", label: t("zodiac"), options: zodiacSignOptions.value }),
+    [t, zodiacSignOptions.value],
+  );
+  const userStatusProps = useMemo(
+    () => ({ name: "status", label: t("status"), onChange: onStatus }),
+    [t],
+  );
+  const reloadProps = useMemo(
+    () => ({ action: "secondary" as const, label: t("reload"), onPress: onReload }),
+    [t],
+  );
+  return { searchProps, zodiacSignProps, userStatusProps, reloadProps, handleAction };
+}
+```
+
+```ts
+// components/user.grid.ts — TypeScript only
+export const columnDefs = (t: TFunction, handleAction: (row: UserType) => void) => [/* … */];
+export const getDataSource = () => ({ /* AgGrid IDatasource via userListCall */ });
+export const gridOptions = { /* … */ };
+```
+
+```tsx
+// components/user.list.tsx — HTML
+import { useUserList } from "./user.list.ts";
+import { columnDefs, getDataSource } from "./user.grid.ts";
+
+export function UserList() {
+  const { searchProps, zodiacSignProps, userStatusProps, reloadProps, handleAction } = useUserList();
+  return (
+    <>
+      <ArticleLayout>
+        <aside className="flex justify-between gap-2">
+          <h2 className="text-2xl font-bold text-primary">{t("users")}</h2>
+          <div className="flex gap-4">
+            <TypeSearch {...searchProps} />
+            <TypeSelect {...zodiacSignProps} />
+            <TypeSwitch {...userStatusProps} />
+          </div>
+        </aside>
+      </ArticleLayout>
+      <GridLayout>
+        <AgGridReact ref={gridRef} columnDefs={columnDefs(t, handleAction)} datasource={getDataSource()} />
+      </GridLayout>
+      <FloatLayout>
+        <TypeButton {...reloadProps} />
+      </FloatLayout>
+    </>
+  );
+}
+```
+
+- Open row → `editModeUpdate`
+- Status/edit actions call service methods (`userStatusCall`, etc.)
+
+---
+
+## View page
+
+`components/{module}.view.ts` + `{module}.view.tsx`. Same basename; import `./{module}.view.ts`.
+
+```ts
+// components/user.view.ts — TypeScript only
+import { editModeUpdate, userSelectedId } from "../hooks/service";
+
+export function useUserView() {
+  const cancelProps = useMemo(
+    () => ({ action: "secondary" as const, label: t("cancel"), name: "CircleX" as const, onPress: onCancel }),
+    [t],
+  );
+  const editActionProps = useMemo(
+    () => ({
+      action: "primary" as const,
+      label: t("edit"),
+      disabled: !ScreenAccess.value.update,
+      onPress: () => editModeUpdate(userSelectedId.value, "edit"),
+    }),
+    [t],
+  );
+  return { cancelProps, editActionProps };
+}
+```
+
+```tsx
+// components/user.view.tsx — HTML
+import { useUserView } from "./user.view.ts";
+
+export function UserView() {
+  const { cancelProps, editActionProps } = useUserView();
+  return (
+    <section className="w-full">
+      <ArticleLayout>
+        <div className="flex justify-between gap-4">
+          <h3>{t("userView")}</h3>
+          <TypeButton {...cancelProps} />
+        </div>
+      </ArticleLayout>
+      <ContentLayout>
+        {!SelectedUser.value ? (
+          <div className="skeleton h-40 w-full rounded-lg" />
+        ) : (
+          <TypeButton {...editActionProps} />
+        )}
+      </ContentLayout>
+    </section>
+  );
+}
+```
+
+---
+
+## No Nested Function Calls
+
+Never pass a function call directly as an argument to another function call (no `abcd(xyz())`). Always assign the inner call's result to a named intermediate variable first, then pass that variable to the outer call.
+
+```ts
+// WRONG — nested call inside another call
+abcd(xyz());
+editModeUpdate(String(AppStorage.Get(SCREEN_ACTION)));
+
+// CORRECT — intermediate variable first, then pass it
+const mnt = xyz();
+abcd(mnt);
+
+const action = String(AppStorage.Get(SCREEN_ACTION));
+editModeUpdate(action);
+```
+
+This applies everywhere — `hooks/*.ts`, `components/*.ts`/`.tsx`, and `src/pages/*` route components. One call per statement, each result named, no exceptions.
+
+## Critical rules
+
+| # | Rule |
+|---|------|
+| 1 | Route page: Suspense + Skeleton + `ScreenAccess.value.read`; plain React component, no file-based routing, no Next.js conventions |
+| 2 | No auth / no `SCREEN_ACTION` inside list / form / view |
+| 3 | `{module}.page` only: `AppStorage.Get(SCREEN_ACTION)` → `{module}:list` / `{module}:view:{id}` / `{module}:form:{id}` / `{module}:form` |
+| 4 | Every module has `hooks/{data,types,validation,service,service-http,service-load}.ts` |
+| 5 | `service-http.ts` contains all HTTP actions and loading signals; `service-load.ts` contains all load/option calls and option/loading signals; `service.ts` contains popup/edit-mode/screen-action state only |
+| 6 | Dropdowns via `service-load.ts` option signals: `dff-util` `countries` / `languages` for static country/language lists; `AppHttp.Load` for backend-controlled options |
+| 7 | List/save/status/delete/upload/etc. via `service-http.ts` with `AppHttp.Get` / `Post` and `dff-util` request/response types |
+| 8 | UI controls always from `types/` — props via `useMemo` + `{...props}` |
+| 9 | ContentLayout JSX stays simple: `<TypeInput {...emailProps} />` |
+| 10 | List uses ArticleLayout + GridLayout + FloatLayout |
+| 11 | List/form/view/grid live under `components/` — `.ts` logic, `.tsx` HTML, same basename |
+| 12 | Form/view use ArticleLayout + ContentLayout |
+| 13 | Named exports only (`export function X`). Always `import { X }`. No `export default` / `import X from` — anywhere, including route pages (no Next.js `page.tsx` default-export requirement) |
+| 14 | Before adding a constant, pattern, function, key, or message, check `dff-util` first (`ConstValue`, `RegExp.*`, mapper/helper functions, `ConstKeys.*`); reuse shared constants, messages, patterns, request/response types, files/options/domain types, countries, languages, locale/currency helpers, date/text helpers, encoding helpers, `QueryCond`, and case/entity mappers; do not duplicate them locally |
+| 15 | No nested function calls as arguments (no `abcd(xyz())`); assign to an intermediate variable first, then pass it (`const mnt = xyz(); abcd(mnt);`) |
+| 16 | No Next.js, no App Router, no file-based routing — the route/page component is plain React mounted by whatever router (or none) the project uses |
+
+---
+
+## Checklist
+
+1. `hooks/types.ts` · `data.ts` · `validation.ts` · `service.ts` · `service-http.ts` · `service-load.ts`
+2. `{module}.page.tsx` — ScreenAction (`{module}:list` / `{module}:view:{id}` / `{module}:form:{id}` / `{module}:form`) + modal
+3. `components/{module}.list.ts` + `{module}.list.tsx` — AgGrid + filter props
+4. `components/{module}.form.ts` + `{module}.form.tsx` — useMemo props → Type* spreads
+5. `components/{module}.view.ts` + `{module}.view.tsx` — read-only + edit actions
+6. `components/{module}.grid.ts` — columnDefs / datasource
+7. `app-{module}.tsx` — Suspense + ScreenAccess (plain component, no file-based routing)

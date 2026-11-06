@@ -1,0 +1,15 @@
+/*
+  shared-lib-web/styles.css
+  Import this file in your app CSS AFTER "tailwindcss" so Tailwind scans
+  the class names used inside the package:
+
+    @import "tailwindcss";
+    @import "shared-lib-web/styles.css";
+    @plugin "daisyui" { themes: all; }
+*/
+@source "./";
+
+/* HeadLayout: fields that scroll into view (for example the first error after Submit) stay below the sticky bars. */
+html:has([data-head-layout]) {
+  scroll-padding-top: 9rem;
+}

@@ -1,0 +1,56 @@
+// Session state of the example (who is logged in). Uses the library session:
+//   startSession(token, user, isRemembered)  -> sessionStorage ORG-TOKEN + ORG-AUTH_USER, localStorage ORG-REMEMBER_ME
+//   restoreSession()                         -> done by SharedWebUiProvider on start (a refresh keeps you signed in)
+//   endSession()                             -> clears AppStorage but keeps LANG, THEME, MENU_MODE ...
+import { computed, effect } from "@preact/signals-react";
+import {
+  authUserSignal,
+  endSession as endSharedSession,
+  isAuthenticatedSignal,
+  startSession as startSharedSession,
+} from "shared-lib-web";
+import { AppUUID4, ConstValue } from "dff-util";
+import { clearBranches, loadBranches } from "../../../../branch/branch.service.ts";
+import { clearNav, loadNav } from "../../../../nav/nav.service.ts";
+
+function readSessionEmail(): string {
+  const user = authUserSignal.value;
+  return user?.email ?? ConstValue.EMPTY;
+}
+
+/** Email of the signed-in user, or "". */
+export const sessionEmail = computed(readSessionEmail);
+
+/** true when signed in. */
+export const isLoggedIn = isAuthenticatedSignal;
+
+/** Fake login: any email works. A real app saves the token from the login API. */
+export function startSession(email: string, remember: boolean): void {
+  const fakeToken = AppUUID4();
+  const user = { id: email, email: email };
+  startSharedSession(fakeToken, user, remember);
+}
+
+/** Log out. */
+export function endSession(): void {
+  endSharedSession();
+}
+
+/** After sign-in: the branches first (so the menu request already sends x-branch-id), then the menu. */
+async function loadSessionData(): Promise<void> {
+  await loadBranches();
+  await loadNav();
+}
+
+/** Loads branches and menu when signed in (also after a refresh), removes them when signed out. */
+function syncNavWithSession(): void {
+  const isSignedIn = isAuthenticatedSignal.value;
+  if (isSignedIn) {
+    void loadSessionData();
+    return;
+  }
+  clearBranches();
+  clearNav();
+}
+
+effect(syncNavWithSession);

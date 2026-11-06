@@ -1,0 +1,99 @@
+{
+  "name": "shared-lib-web",
+  "version": "0.27.5",
+  "description": "Shared React 19 component library for DesignForFeature apps: Type* react-hook-form controls, menus, switchers, skeletons, AppHttp/AppStorage, plus an optional app shell (shared-lib-web/layout: sidebar with icon rail or full-width mega menu), pages by query parameter (no router), DaisyUI light/dark themes, lightweight i18n with RTL/LTR, Signals state, and markdown fields.",
+  "keywords": [
+    "dff",
+    "shared-lib-web",
+    "ui-shell",
+    "react",
+    "signals",
+    "i18n",
+    "rtl",
+    "daisyui",
+    "tailwindcss",
+    "react-hook-form",
+    "lucide-react",
+    "markdown",
+    "mega-menu"
+  ],
+  "author": "DesignForFeature",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./layout": {
+      "types": "./dist/layout.d.ts",
+      "import": "./dist/layout.js"
+    },
+    "./markdown": {
+      "types": "./dist/markdown.d.ts",
+      "import": "./dist/markdown.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CODING_RULES.md",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "clean": "node scripts/clean.mjs dist",
+    "build": "npm run clean && tsc -p tsconfig.build.json && node scripts/fix-declaration-imports.mjs && node scripts/copy-styles.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "check:style": "node scripts/check-code-style.mjs src example/src example-basic/src",
+    "test": "node scripts/clean.mjs build-test && tsc -p tsconfig.test.json && node --import ./scripts/test-setup.mjs --test --test-reporter=spec \"build-test/tests/**/*.test.js\"",
+    "verify": "npm run typecheck && npm run check:style && npm run test && npm run build",
+    "example:install": "npm --prefix example install",
+    "example:dev": "npm --prefix example run dev",
+    "example:build": "npm --prefix example run build",
+    "example-basic:install": "npm --prefix example-basic install",
+    "example-basic:dev": "npm --prefix example-basic run dev",
+    "example-basic:build": "npm --prefix example-basic run build",
+    "prepublishOnly": "npm run verify"
+  },
+  "peerDependencies": {
+    "@preact/signals-react": ">=3.0.0",
+    "@uiw/react-md-editor": ">=4.0.0",
+    "dff-util": ">=1.4.5",
+    "lucide-react": ">=0.400.0",
+    "react": ">=19.0.0",
+    "react-dom": ">=19.0.0",
+    "react-hook-form": ">=7.50.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@preact/signals-react": "^3.12.0",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@uiw/react-md-editor": "^4.2.3",
+    "dff-util": "^1.4.5",
+    "jsdom": "^30.1.3",
+    "lucide-react": "^1.69.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-hook-form": "^7.91.0",
+    "typescript": "5.9"
+  },
+  "peerDependenciesMeta": {
+    "@uiw/react-md-editor": {
+      "optional": true
+    }
+  }
+}
