@@ -24,6 +24,7 @@ import type { BranchSource, LangSource, MenuSource } from "../interfaces/app-typ
 import type { UiConfig } from "../interfaces/ui-config.ts";
 import { startQueryParamSync } from "../query/query-param.ts";
 import { registerBranches } from "../state/branch-service.ts";
+import { startPreferenceSync } from "../state/preference-sync.ts";
 import { registerLanguages } from "../state/language-service.ts";
 import { registerMenu } from "../state/menu-service.ts";
 import { startEscapeListener } from "../utils/event-util.ts";
@@ -57,15 +58,29 @@ export interface SharedWebUiProviderProps {
   loadingFallback?: ReactNode;
 }
 
-export function SharedWebUiProvider(props: SharedWebUiProviderProps) {
-  const { config, nav, lang, branch, children, loadingFallback } = props;
-  registerUiConfig(config);
+/** Applies the backend inputs (each only when it changed). */
+export function applyProviderInputs(
+  nav: MenuSource | null | undefined,
+  lang: LangSource | null | undefined,
+  branch: BranchSource | null | undefined,
+): void {
   registerMenu(nav);
   registerLanguages(lang);
   registerBranches(branch);
+}
+
+export function SharedWebUiProvider(props: SharedWebUiProviderProps) {
+  const { config, nav, lang, branch, children, loadingFallback } = props;
+  registerUiConfig(config);
+  // nav / lang / branch are written to signals AFTER the render (layout effect, still before the paint), so no other
+  // component is updated while this one renders (React warns about that).
+  const applyInputs = applyProviderInputs.bind(null, nav, lang, branch);
+  const inputs = [nav, lang, branch];
+  useLayoutEffect(applyInputs, inputs);
   useLayoutEffect(startQueryParamSync, RUN_ONCE);
   useLayoutEffect(startEscapeListener, RUN_ONCE);
   useLayoutEffect(startScrollListener, RUN_ONCE);
+  useLayoutEffect(startPreferenceSync, RUN_ONCE);
   const contextState = readContextState(config);
 
   return (

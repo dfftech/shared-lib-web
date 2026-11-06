@@ -1,0 +1,20 @@
+/* index.css — styles of the shell (AppLayout, login, home page).
+   In a real app replace the library @source line with:  @import "shared-lib-web/styles.css";  */
+@import "tailwindcss";
+
+/* The org themes, shared by all MFEs. */
+@import "../../shared/theme/org-light.css";
+@import "../../shared/theme/org-dark.css";
+
+@source "../../../src";
+@source "../../shared";
+@source "./";
+
+@plugin "daisyui" {
+  themes:
+    light --default,
+    dark --prefersdark,
+    cupcake, bumblebee, emerald, corporate, synthwave, retro, cyberpunk, valentine, halloween, garden,
+    forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn, business,
+    acid, lemonade, night, coffee, winter, dim, nord, sunset, caramellatte, abyss, silk;
+}

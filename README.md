@@ -268,6 +268,8 @@ const rows = await AppHttp.Get(`${MsUrl.main}/profile/search`, params);
 
 `startSession(token, user, isRemembered)` keeps the token in sessionStorage; `isRemembered` only saves `REMEMBER_ME`.
 On start the provider removes old app values from localStorage that are not preferences (`AppStorage.cleanLocalStorage()`).
+Saving a preference (`THEME`, `LANG` …) also fires the window event `PREFERENCE_EVENT`; every copy of the library on the
+page (microfrontends) and every other tab applies the new theme / language at once.
 
 Key constants (also as `StorageKeys.*`): `TOKEN`, `AUTH_USER`, `SESSION_INFO`, `SCREEN_ACCESS`, `SCREEN_ACTION`, `NAV`,
 `REMEMBER_ME`, `TRANS`, `DIR`, `LANG`, `THEME`, `LAYOUT_CHOICE`, `MENU_MODE`, `SIDEBAR_COLLAPSED`, `OTP_ID`, `BRANCH_ID`, `BRANCH_NAME`,
@@ -427,6 +429,12 @@ The example app shows both: Settings → *App layout* switches between `AppLayou
 There is no router and nothing redirects. A menu click only sets `?page=<menu href>` with the History API
 (no reload); the app shows the component for that value. Back / forward work.
 
+**Path mode:** `layout: { pageMode: "path" }` puts the page in the path instead — `http://host/profiles` rather than
+`http://host/?page=profiles`. Menu links, `openPage`, `PageLink`, `useCurrentPage` and back / forward all follow it;
+other query parameters still work (`/profiles?userId=7`). The server must answer every path with `index.html`
+(Vite dev does). For code outside React (for example single-spa `activeWhen`) use `readPageFromLocation(location)`,
+which reads the page in either mode.
+
 | Function | What it does |
 | --- | --- |
 | `openPage("/profiles")` | Sets `?page=profiles` (no leading slash in the address bar; inside the app pages stay menu hrefs like `"/profiles"`; old `?page=/profiles` links still work; helpers `toPageParamValue` / `toPagePath`), removes the old page's parameters, closes menus, scrolls up. `openPage(page, { userId: "42" })` adds values; `{ isKeepingOtherParams: true }` keeps the old ones. |
@@ -568,6 +576,7 @@ There are two examples, each its own small Vite app that uses the library source
 | Folder | Port | Shows |
 | --- | --- | --- |
 | `example-basic/` | 5174 | **One language** (en-US, `defaultLanguage` + `loadLocale`, no `lang`) and **no branches** (no `branch`): login, dashboard, users CRUD, settings (theme, menu mode, menu on/off). The smallest real setup to copy. |
+| `example-mfe/` | 5175 | **Microfrontends**: 4 separate Vite projects — `shell` (the only `AppLayout`, login, single-spa routing from `env.mfe.js`, event-based menu after a session) and 3 MFEs `settings`, `forms`, `profile` (page layouts only; theme and language from localStorage, kept in sync between bundles). See `example-mfe/README.md`. |
 | `example/` | 5173 | **11 languages** (`lang` from the backend, 4 RTL) and **stores** (`branch` from the backend, `isDefault` / `disabled`), plus every component, 3 layouts and all themes. |
 
 ```bash

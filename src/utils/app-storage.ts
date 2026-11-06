@@ -16,7 +16,7 @@
 
 import { ConstValue } from "dff-util";
 import { readAppConfig } from "./app-config.ts";
-import { DEFAULT_APP_STORAGE_PREFIX, ENV_NAME_START, LOCAL_STORAGE_KEYS } from "./storage-keys.ts";
+import { DEFAULT_APP_STORAGE_PREFIX, ENV_NAME_START, LOCAL_STORAGE_KEYS, PREFERENCE_EVENT } from "./storage-keys.ts";
 
 /** Any value that can be saved. */
 export type StoredValue = string | number | boolean | null | object;
@@ -115,6 +115,16 @@ function setData(key: string, value: StoredValue): void {
   } catch {
     // Storage is full or blocked: the value is not saved.
   }
+  if (isLocalKey) {
+    notifyPreferenceSaved(key);
+  }
+}
+
+/** Tells every library copy on the page (microfrontends) that a preference was saved. */
+function notifyPreferenceSaved(key: string): void {
+  const eventInit = { detail: { key: key } };
+  const preferenceEvent = new CustomEvent(PREFERENCE_EVENT, eventInit);
+  window.dispatchEvent(preferenceEvent);
 }
 
 /** Reads a value from the storage of its key. Returns null when nothing is saved. */

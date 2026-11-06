@@ -101,7 +101,16 @@ export interface LayoutConfig {
   showScrollToTop?: boolean;
   /** Query parameter that holds the current page (menu href without the leading slash): ?page=profiles. Default "page". */
   pageParam?: string;
+  /**
+   * Where the current page lives in the address:
+   *   "query" (default)  http://host/?page=profiles
+   *   "path"             http://host/profiles      (the server must answer every path with index.html)
+   */
+  pageMode?: PageMode;
 }
+
+/** "query" = ?page=profiles, "path" = /profiles. */
+export type PageMode = "query" | "path";
 
 /** Toast corner / edge. "end" is right in LTR and left in RTL. */
 export type ToastPosition = "top-start" | "top-center" | "top-end" | "bottom-start" | "bottom-center" | "bottom-end";

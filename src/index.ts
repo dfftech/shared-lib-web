@@ -22,6 +22,7 @@ export type {
   NavigationMode,
   ScreenPermissions,
   Theme,
+  PageMode,
   ToastPosition,
   UiConfig,
 } from "./interfaces/ui-config.ts";
@@ -71,6 +72,7 @@ export {
   navigationLoadingSignal,
   navigationModeSignal,
   navigationSignal,
+  pathnameSignal,
   currentPageSignal,
   queryParamsSignal,
   progressSignal,
@@ -84,10 +86,14 @@ export {
 export { PageLink, isPageActive, type PageLinkProps } from "./query/page-link.tsx";
 export {
   buildPageHref,
+  buildPagePath,
   buildQueryHref,
+  isPathPageMode,
+  readPageFromLocation,
   buildQueryString,
   openPage,
   readCurrentPage,
+  readPageParam,
   readQueryParam,
   readQueryParams,
   removeQueryParam,
@@ -98,6 +104,7 @@ export {
   type QueryParamValues,
 } from "./query/query-param.ts";
 export { toPagePath, toPageParamValue } from "./query/page-path.ts";
+export { applySavedPreference, startPreferenceSync } from "./state/preference-sync.ts";
 export { useCurrentPage, useQueryParam } from "./query/use-query-param.ts";
 
 // ---- Services ----
@@ -198,6 +205,7 @@ export {
   OTP_ID,
   REGEN_EXPIRES_AT,
   REMEMBER_ME,
+  PREFERENCE_EVENT,
   ACTIVE_SESSION_ID,
   LAYOUT_CHOICE,
   SCREEN_ACCESS,

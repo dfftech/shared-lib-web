@@ -67,6 +67,12 @@ export const StorageKeys = {
  */
 export const LOCAL_STORAGE_KEYS: string[] = [LANG, THEME, LAYOUT_CHOICE, MENU_MODE, SIDEBAR_COLLAPSED, REMEMBER_ME];
 
+/**
+ * Window event fired by AppStorage.setData when a localStorage preference is saved (detail = { key }).
+ * Every copy of the library on the page listens to it (preference-sync.ts) — useful for microfrontends.
+ */
+export const PREFERENCE_EVENT = "shared-lib-web:preference";
+
 /** AppStorage prefix when config.appNameKey is missing. */
 export const DEFAULT_APP_STORAGE_PREFIX = "UI";
 

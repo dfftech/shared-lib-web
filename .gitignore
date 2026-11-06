@@ -19,6 +19,7 @@ build/
 build-test/
 example/dist/
 example-basic/dist/
+example-mfe/dist/
 *.tsbuildinfo
 
 # ---- Packages and archives ----

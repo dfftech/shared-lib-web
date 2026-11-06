@@ -1,0 +1,79 @@
+{
+  "app": {
+    "name": "Org MFE"
+  },
+  "mfe": {
+    "settings": {
+      "title": "Paramètres",
+      "text": "Enregistrés dans localStorage (ORG-LANG, ORG-THEME). Les autres MFE les lisent à l’ouverture.",
+      "language": "Langue",
+      "theme": "Thème",
+      "saved": "Enregistré : {{lang}} · {{theme}}",
+      "layout": "Disposition",
+      "appLayout": "Disposition app (en-tête + menu)",
+      "asideLayout": "Disposition latérale (menu seul)",
+      "menu": "Navigation du menu",
+      "sidebar": "Barre latérale",
+      "megaMenu": "Méga menu"
+    },
+    "forms": {
+      "title": "Formulaires",
+      "name": "Nom complet",
+      "email": "E-mail",
+      "role": "Rôle",
+      "startDate": "Date de début",
+      "active": "Actif",
+      "notes": "Notes",
+      "submit": "Envoyer",
+      "cancel": "Annuler",
+      "submitted": "Formulaire envoyé",
+      "values": "Valeurs envoyées"
+    },
+    "profile": {
+      "title": "Profil",
+      "edit": "Modifier le profil",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "saved": "Profil enregistré",
+      "name": "Nom",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "role": "Rôle",
+      "location": "Lieu",
+      "about": "À propos",
+      "photo": "Photo de profil"
+    },
+    "roles": {
+      "admin": "Administrateur",
+      "editor": "Éditeur",
+      "viewer": "Lecteur"
+    }
+  },
+  "REQUIRED": "Ce champ est obligatoire",
+  "INVALID_EMAIL": "Format d’e-mail invalide",
+  "shell": {
+    "login": {
+      "title": "Connexion",
+      "hint": "N’importe quel e-mail. Le menu se charge après l’événement de session.",
+      "email": "E-mail",
+      "submit": "Se connecter"
+    },
+    "home": {
+      "title": "Accueil",
+      "text": "Cette page appartient au shell. Les pages ci-dessous sont des microfrontends de env.mfe.js."
+    }
+  },
+  "ui": {
+    "lightThemes": "Thèmes clairs",
+    "darkThemes": "Thèmes sombres",
+    "selectOption": "Choisir une option",
+    "settings": "Paramètres",
+    "language": "Langue",
+    "theme": "Thème",
+    "logout": "Se déconnecter",
+    "account": "Compte",
+    "collapseMenu": "Réduire le menu",
+    "expandMenu": "Agrandir le menu",
+    "close": "Fermer"
+  }
+}

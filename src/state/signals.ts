@@ -65,23 +65,43 @@ export const navigationModeSignal = signal<NavigationMode>("sidebar");
 /** The query parameters of the address bar ({ page: "/profiles", id: "42" }). Kept in sync by query-param.ts. */
 export const queryParamsSignal = signal<Record<string, string>>({});
 
+/** The path of the address bar ("/profiles"). Kept in sync by query-param.ts (used by layout.pageMode "path"). */
+export const pathnameSignal = signal<string>("/");
+
 /** Default name of the query parameter that holds the current page. */
 export const DEFAULT_PAGE_PARAM = "page";
 
 /** Default home page (used when ?page is missing). */
 export const DEFAULT_HOME_PAGE = "/";
 
+/** "/profiles/" -> "/profiles"; "/" or "" -> "" (= the home page). */
+export function toPageFromPath(pathname: string): string {
+  let end = pathname.length;
+  while (end > 0 && pathname.charAt(end - 1) === ConstValue.SLASH) {
+    end = end - 1;
+  }
+  return pathname.slice(0, end);
+}
+
 function readCurrentPage(): string {
   const config = uiConfigSignal.value;
-  const pageParam = config?.layout?.pageParam ?? DEFAULT_PAGE_PARAM;
   const homePage = config?.homePath ?? DEFAULT_HOME_PAGE;
+  if (config?.layout?.pageMode === "path") {
+    const pathname = pathnameSignal.value;
+    const pathPage = toPageFromPath(pathname);
+    return pathPage || homePage;
+  }
+  const pageParam = config?.layout?.pageParam ?? DEFAULT_PAGE_PARAM;
   const queryParams = queryParamsSignal.value;
   const pageValue = queryParams[pageParam] ?? ConstValue.EMPTY;
   const page = toPagePath(pageValue);
   return page || homePage;
 }
 
-/** The current page as a menu href: ?page=profiles -> "/profiles"; no ?page -> config.homePath. */
+/**
+ * The current page as a menu href, from ?page=profiles (layout.pageMode "query", default) or /profiles ("path").
+ * No page in the address -> config.homePath.
+ */
 export const currentPageSignal = computed(readCurrentPage);
 
 /** id of the open mega menu group, or "" when closed. */

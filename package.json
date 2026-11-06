@@ -1,6 +1,6 @@
 {
   "name": "shared-lib-web",
-  "version": "0.27.5",
+  "version": "0.0.1",
   "description": "Shared React 19 component library for DesignForFeature apps: Type* react-hook-form controls, menus, switchers, skeletons, AppHttp/AppStorage, plus an optional app shell (shared-lib-web/layout: sidebar with icon rail or full-width mega menu), pages by query parameter (no router), DaisyUI light/dark themes, lightweight i18n with RTL/LTR, Signals state, and markdown fields.",
   "keywords": [
     "dff",
@@ -53,7 +53,7 @@
     "clean": "node scripts/clean.mjs dist",
     "build": "npm run clean && tsc -p tsconfig.build.json && node scripts/fix-declaration-imports.mjs && node scripts/copy-styles.mjs",
     "typecheck": "tsc -p tsconfig.json",
-    "check:style": "node scripts/check-code-style.mjs src example/src example-basic/src",
+    "check:style": "node scripts/check-code-style.mjs src example/src example-basic/src example-mfe/shared example-mfe/shell/src example-mfe/settings/src example-mfe/forms/src example-mfe/profile/src",
     "test": "node scripts/clean.mjs build-test && tsc -p tsconfig.test.json && node --import ./scripts/test-setup.mjs --test --test-reporter=spec \"build-test/tests/**/*.test.js\"",
     "verify": "npm run typecheck && npm run check:style && npm run test && npm run build",
     "example:install": "npm --prefix example install",
@@ -62,7 +62,11 @@
     "example-basic:install": "npm --prefix example-basic install",
     "example-basic:dev": "npm --prefix example-basic run dev",
     "example-basic:build": "npm --prefix example-basic run build",
-    "prepublishOnly": "npm run verify"
+    "example-mfe:install": "node example-mfe/run-all.mjs install",
+    "example-mfe:build": "node example-mfe/run-all.mjs build",
+    "prepublishOnly": "npm run verify",
+    "example-mfe:start": "node example-mfe/run-all.mjs start",
+    "example-mfe:serve": "node example-mfe/run-all.mjs serve"
   },
   "peerDependencies": {
     "@preact/signals-react": ">=3.0.0",

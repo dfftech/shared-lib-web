@@ -2,8 +2,16 @@
 // shows no branch switcher, no language switcher and no sidebar / mega menu choice (there is no menu to show).
 import { afterEach, describe, it } from "node:test";
 import { expect } from "./expect.ts";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { SharedWebUiProvider, localeSignal, navigationSignal, type LocaleModule, type UiConfig } from "../src/index.ts";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  PREFERENCE_EVENT,
+  SharedWebUiProvider,
+  localeSignal,
+  navigationSignal,
+  themeSignal,
+  type LocaleModule,
+  type UiConfig,
+} from "../src/index.ts";
 import { AppLayout } from "../src/layout.ts";
 
 function loadLocale(languageCode: string): Promise<LocaleModule> {
@@ -50,9 +58,27 @@ async function testAllNull(): Promise<void> {
   expect(within(dialog).queryByRole("button", { name: "Mega menu" })).toBeNull();
 }
 
+/** Another copy of the library (another MFE) saved the theme: this copy follows without saving it again. */
+async function testPreferenceSync(): Promise<void> {
+  render(<NullInputsApp />);
+  await screen.findByText("page body");
+  expect(themeSignal.value).toBe("light");
+  window.localStorage.setItem("NULLS-THEME", "dark");
+  const eventInit = { detail: { key: "THEME" } };
+  const preferenceEvent = new CustomEvent(PREFERENCE_EVENT, eventInit);
+  act(dispatchPreference.bind(null, preferenceEvent));
+  expect(themeSignal.value).toBe("dark");
+  window.localStorage.removeItem("NULLS-THEME");
+}
+
+function dispatchPreference(preferenceEvent: Event): void {
+  window.dispatchEvent(preferenceEvent);
+}
+
 describe("Null inputs", function describeNullInputs() {
   afterEach(cleanup);
   it("works with nav, lang and branch all null (en-US, no switchers, no menu mode choice)", testAllNull);
+  it("follows a theme saved by another library copy (microfrontends)", testPreferenceSync);
 });
 
 /** The smallest config: no defaultLanguage, no languages, no loadLocale, no lang input. */

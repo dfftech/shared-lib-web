@@ -1,0 +1,33 @@
+{
+  "name": "@org-mfe/shell",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Shell of the shared-lib-web microfrontend example: AppLayout (header, menu, user), login, single-spa routing from env.mfe.js.",
+  "scripts": {
+    "dev": "vite --port 5175",
+    "build": "vite build",
+    "preview": "vite preview --port 5175",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@preact/signals-react": "^3.12.0",
+    "dff-util": "^1.4.5",
+    "lucide-react": "^1.69.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-hook-form": "^7.91.0",
+    "single-spa": "^6.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.4",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "daisyui": "^5.7.50",
+    "tailwindcss": "^4.3.4",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.6"
+  }
+}

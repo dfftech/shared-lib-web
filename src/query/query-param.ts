@@ -14,6 +14,8 @@ import {
   DEFAULT_PAGE_PARAM,
   currentPageSignal,
   isSidebarOpenSignal,
+  pathnameSignal,
+  toPageFromPath,
   openMegaMenuIdSignal,
   queryParamsSignal,
   railFlyoutSignal,
@@ -53,9 +55,10 @@ export function readAddressBarParams(): Record<string, string> {
   return params;
 }
 
-/** Copies the address bar parameters into queryParamsSignal. */
+/** Copies the address bar parameters (and path) into queryParamsSignal / pathnameSignal. */
 export function syncQueryParams(): void {
   queryParamsSignal.value = readAddressBarParams();
+  pathnameSignal.value = window.location.pathname;
 }
 
 /** One query parameter, or undefined. Components that call it re-render when it changes. */
@@ -92,10 +95,9 @@ export function buildQueryString(values: QueryParamValues): string {
   return queryText.length > 0 ? `?${queryText}` : ConstValue.EMPTY;
 }
 
-/** Builds the full href (path + query + hash) for changed values, for links. */
-export function buildQueryHref(values: QueryParamValues): string {
+/** Builds the full href (path + query + hash) for changed values, for links. pathname: another path (path mode). */
+export function buildQueryHref(values: QueryParamValues, pathname: string = window.location.pathname): string {
   const queryString = buildQueryString(values);
-  const pathname = window.location.pathname;
   const hash = window.location.hash;
   return `${pathname}${queryString}${hash}`;
 }
@@ -103,6 +105,11 @@ export function buildQueryHref(values: QueryParamValues): string {
 /** Sets several query parameters at once (no redirect). undefined / null / "" removes one. */
 export function setQueryParams(values: QueryParamValues, options: QueryParamOptions = {}): void {
   const href = buildQueryHref(values);
+  applyHref(href, options);
+}
+
+/** Puts a new address in the bar (history entry, no reload) and updates the signals. */
+function applyHref(href: string, options: QueryParamOptions): void {
   const currentHref = buildQueryHref({});
   if (href === currentHref) {
     syncQueryParams();
@@ -139,9 +146,33 @@ export function readHomePage(): string {
   return config?.homePath ?? DEFAULT_HOME_PAGE;
 }
 
-/** The current page (?page, else the home page). */
+/** The current page (?page or the path, else the home page). */
 export function readCurrentPage(): string {
   return currentPageSignal.value;
+}
+
+/** true when pages live in the path (/profiles) instead of ?page (config.layout.pageMode "path"). */
+export function isPathPageMode(): boolean {
+  const config = uiConfigSignal.peek();
+  return config?.layout?.pageMode === "path";
+}
+
+/**
+ * The page of any address, for code outside React (for example a single-spa activeWhen(location)):
+ *   pageMode "query": ?page=profiles -> "/profiles"     pageMode "path": /profiles -> "/profiles"
+ * No page -> the home page.
+ */
+export function readPageFromLocation(location: Location | URL): string {
+  const homePage = readHomePage();
+  if (isPathPageMode()) {
+    const pathPage = toPageFromPath(location.pathname);
+    return pathPage || homePage;
+  }
+  const params = new URLSearchParams(location.search);
+  const pageParam = readPageParam();
+  const pageValue = params.get(pageParam) ?? ConstValue.EMPTY;
+  const page = toPagePath(pageValue);
+  return page || homePage;
 }
 
 /**
@@ -159,8 +190,19 @@ export function buildPageValues(page: string): QueryParamValues {
   return { [pageParam]: pageValue };
 }
 
-/** href of a page link, for example "/?page=profiles". */
+/** The path of a page in path mode: "/profiles"; the home page -> "/". */
+export function buildPagePath(page: string): string {
+  const pagePath = toPagePath(page);
+  return pagePath || ConstValue.SLASH;
+}
+
+/** href of a page link: "/?page=profiles" (query mode) or "/profiles" (path mode). */
 export function buildPageHref(page: string): string {
+  if (isPathPageMode()) {
+    const pagePath = buildPagePath(page);
+    const clearValues = buildClearValues();
+    return buildQueryHref(clearValues, pagePath);
+  }
   const values = buildPageValues(page);
   return buildQueryHref(values);
 }
@@ -183,15 +225,23 @@ export function buildClearValues(): QueryParamValues {
 }
 
 /**
- * Shows a page: sets ?page=<page> (no redirect), closes open menus and scrolls to the top.
+ * Shows a page: sets ?page=<page> (or the path /<page> in pageMode "path"; no redirect), closes open menus and
+ * scrolls to the top.
  * The old page's parameters are removed unless options.isKeepingOtherParams is true.
  * Extra values are set in the same step, for example openPage("/profiles", { userId: "42" }).
  */
 export function openPage(page: string, extraValues: QueryParamValues = {}, options: OpenPageOptions = {}): void {
   const clearValues = options.isKeepingOtherParams ? {} : buildClearValues();
-  const pageValues = buildPageValues(page);
-  const values: QueryParamValues = { ...clearValues, ...extraValues, ...pageValues };
-  setQueryParams(values, options);
+  if (isPathPageMode()) {
+    const pagePath = buildPagePath(page);
+    const pathValues: QueryParamValues = { ...clearValues, ...extraValues };
+    const pathHref = buildQueryHref(pathValues, pagePath);
+    applyHref(pathHref, options);
+  } else {
+    const pageValues = buildPageValues(page);
+    const values: QueryParamValues = { ...clearValues, ...extraValues, ...pageValues };
+    setQueryParams(values, options);
+  }
   closeOpenMenus();
   window.scrollTo(0, 0);
 }
