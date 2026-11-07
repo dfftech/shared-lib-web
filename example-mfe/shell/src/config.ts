@@ -1,11 +1,12 @@
 // config.ts — the shell config: the same appNameKey, languages and themes as the MFEs + the app shell parts.
-// Backend data as signals (session.ts fills them): langSignal on start, navSignal after sign in (also after a refresh).
+// Everything loaded is a signal (session.ts fills them): localeSignal, themesSignal and supportLangSignal on start,
+// navSignal after sign in (also after a refresh).
 import { signal } from "@preact/signals-react";
 import {
-  loadLocaleGroups,
   toAbsoluteUrl,
   type CustomThemesModule,
   type LangSource,
+  type LocaleBundle,
   type MenuSource,
   type UiConfig,
 } from "shared-lib-web";
@@ -25,26 +26,25 @@ export const MsUrl = {
 };
 
 /** The supported languages (backend reply): null until it arrives. */
-export const langSignal = signal<LangSource | null>(null);
+export const supportLangSignal = signal<LangSource | null>(null);
 
 /** The menu of the signed-in user (backend reply): null = menu skeleton. */
 export const navSignal = signal<MenuSource | null>(null);
 
-/** The texts: src/locales/<code>/<group>.json (app, ui, root, login, home). Lazy per language. */
-const localeFiles = import.meta.glob("./locales/*/*.json");
+/** The texts per language ({ "en-US": {...} }): the library asks for codes, session.ts loads them. */
+export const localeSignal = signal<LocaleBundle | null>(null);
 
-/** The custom org themes (theme/org-themes.json), loaded lazily like the locale files. */
-function loadThemes(): Promise<CustomThemesModule> {
-  return import("./theme/org-themes.json");
-}
+/** The custom themes (theme/org-themes.json): null until loaded. */
+export const themesSignal = signal<CustomThemesModule | null>(null);
 
 export const shellConfig: UiConfig = {
   appNameKey: APP_NAME_KEY,
-  loadLocale: loadLocaleGroups.bind(null, localeFiles),
+  // The texts as a signal: { "en-US": {...}, ... }; the library asks for languages, the app loads them.
+  loadLocale: localeSignal,
   // The languages as a signal (public/api/org-api/languages.json, loaded on start by session.ts).
-  loadSupportLanguages: langSignal,
-  // Themes: the custom org themes (loadThemes -> theme/org-themes.json, listed first) + all 35 DaisyUI themes.
-  loadThemes: loadThemes,
+  loadSupportLanguages: supportLangSignal,
+  // Themes as a signal: the custom org themes (theme/org-themes.json, listed first) + all 35 DaisyUI themes.
+  loadThemes: themesSignal,
   appName: "app.name",
   homePath: "/",
   logoUrl: "/logo-light.svg",

@@ -1,11 +1,40 @@
 // backend.service.ts
-// Fills the backend signals (backend-signals.ts) through AppHttp:
-//   on start  -> langSignal (public/api/org-api/languages.json)
+// Fills the signals of backend-signals.ts:
+//   texts and themes  -> localeSignal (the languages the library asks for), themesSignal (theme/org-themes.json)
+//   on start  -> supportLangSignal (public/api/org-api/languages.json)
 //   signed in (or restored after a refresh) -> navSignal (public/api/org-api/menu-access.json); signed out -> null
 import { effect } from "@preact/signals-react";
-import { AppHttp, isAuthenticatedSignal, readJwtToken, type LangSource, type MenuSource } from "shared-lib-web";
+import { AppHttp, fillLocaleBundle, loadLocaleGroups, isAuthenticatedSignal, readJwtToken, type CustomThemesModule, type LangSource, type MenuSource } from "shared-lib-web";
 import { MsUrl } from "../config.ts";
-import { langSignal, navSignal } from "./backend-signals.ts";
+import { supportLangSignal, navSignal, localeSignal, themesSignal } from "./backend-signals.ts";
+
+/** The texts: ../locales/<code>/<group>.json — lazy, only the languages the library asks for are loaded. */
+const localeFiles = import.meta.glob("../locales/*/*.json");
+const loadTexts = loadLocaleGroups.bind(null, localeFiles);
+
+/** true once the theme file was requested (one request, also with StrictMode). */
+let isThemeRequested = false;
+
+/** Loads the custom org themes (../theme/org-themes.json) into themesSignal. */
+async function loadThemeFile(): Promise<void> {
+  if (isThemeRequested) {
+    return;
+  }
+  isThemeRequested = true;
+  try {
+    const themeModule = await import("../theme/org-themes.json");
+    themesSignal.value = themeModule as CustomThemesModule;
+  } catch {
+    themesSignal.value = [];
+  }
+}
+
+/** Stops every follower started by startBackendData. */
+function stopAll(stoppers: Array<() => void>): void {
+  for (const stop of stoppers) {
+    stop();
+  }
+}
 
 /** The token whose menu is loaded ("" = signed out); StrictMode starts things twice. */
 let loadedToken: string | undefined = undefined;
@@ -21,9 +50,9 @@ async function loadLanguages(): Promise<void> {
   isLanguageRequested = true;
   try {
     const reply = await AppHttp.Get(`${MsUrl.main}/languages.json`);
-    langSignal.value = reply as LangSource;
+    supportLangSignal.value = reply as LangSource;
   } catch {
-    langSignal.value = null;
+    supportLangSignal.value = null;
   }
 }
 
@@ -56,5 +85,8 @@ function followSession(): void {
 /** For useEffect in root.tsx (after the provider saved the config, which AppHttp reads). Returns the cleanup. */
 export function startBackendData(): () => void {
   void loadLanguages();
-  return effect(followSession);
+  void loadThemeFile();
+  const stopTexts = fillLocaleBundle(localeSignal, loadTexts);
+  const stopSession = effect(followSession);
+  return stopAll.bind(null, [stopTexts, stopSession]);
 }

@@ -1,5 +1,7 @@
-// session.ts — sign in / out and the backend data of the config signals (config.ts):
-//   langSignal  the languages, loaded once on start
+// session.ts — sign in / out and the data of the config signals (config.ts):
+//   localeSignal the texts of the languages the library asks for (locales/<code>/<group>.json)
+//   themesSignal the custom org themes (theme/org-themes.json), loaded once on start
+//   supportLangSignal  the languages, loaded once on start
 //   navSignal   the menu, loaded when a user is signed in (also after a refresh), null again on sign out
 // startBackendData() is started once in shell.tsx (after the provider saved the config, which AppHttp reads).
 
@@ -8,13 +10,44 @@ import { AppUUID4 } from "dff-util";
 import {
   AppHttp,
   endSession,
+  fillLocaleBundle,
   isAuthenticatedSignal,
+  loadLocaleGroups,
   readJwtToken,
   startSession,
+  type CustomThemesModule,
   type LangSource,
   type MenuSource,
 } from "shared-lib-web";
-import { MsUrl, langSignal, navSignal } from "./config.ts";
+import { MsUrl, supportLangSignal, navSignal, localeSignal, themesSignal } from "./config.ts";
+
+/** The texts: ./locales/<code>/<group>.json — lazy, only the languages the library asks for are loaded. */
+const localeFiles = import.meta.glob("./locales/*/*.json");
+const loadTexts = loadLocaleGroups.bind(null, localeFiles);
+
+/** true once the theme file was requested (one request, also with StrictMode). */
+let isThemeRequested = false;
+
+/** Loads the custom org themes (./theme/org-themes.json) into themesSignal. */
+async function loadThemeFile(): Promise<void> {
+  if (isThemeRequested) {
+    return;
+  }
+  isThemeRequested = true;
+  try {
+    const themeModule = await import("./theme/org-themes.json");
+    themesSignal.value = themeModule as CustomThemesModule;
+  } catch {
+    themesSignal.value = [];
+  }
+}
+
+/** Stops every follower started by startBackendData. */
+function stopAll(stoppers: Array<() => void>): void {
+  for (const stop of stoppers) {
+    stop();
+  }
+}
 
 /** The token whose menu is loaded ("" = signed out); StrictMode starts things twice. */
 let loadedToken: string | undefined = undefined;
@@ -30,9 +63,9 @@ async function loadLanguages(): Promise<void> {
   isLanguageRequested = true;
   try {
     const reply = await AppHttp.Get(`${MsUrl.main}/languages.json`);
-    langSignal.value = reply as LangSource;
+    supportLangSignal.value = reply as LangSource;
   } catch {
-    langSignal.value = null;
+    supportLangSignal.value = null;
   }
 }
 
@@ -62,10 +95,13 @@ function followSession(): void {
   navSignal.value = null;
 }
 
-/** For useEffect in shell.tsx: languages now, the menu with every sign in / out. Returns the cleanup. */
+/** For useEffect in shell.tsx: texts, themes and languages now, the menu with every sign in / out. Returns the cleanup. */
 export function startBackendData(): () => void {
   void loadLanguages();
-  return effect(followSession);
+  void loadThemeFile();
+  const stopTexts = fillLocaleBundle(localeSignal, loadTexts);
+  const stopSession = effect(followSession);
+  return stopAll.bind(null, [stopTexts, stopSession]);
 }
 
 /** Fake sign in: any email. A real shell saves the token from its login API. */

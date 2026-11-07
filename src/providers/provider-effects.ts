@@ -5,18 +5,19 @@
 import { initializeLanguage, readActiveConfig } from "../i18n/locale-service.ts";
 import { isTranslationReadySignal } from "../state/signals.ts";
 import { startDocumentSync } from "../state/document-sync.ts";
-import { loadConfigThemes } from "../theme/custom-themes.ts";
+import { followConfigThemes, loadConfigThemes } from "../theme/custom-themes.ts";
 import { initializeTheme } from "../theme/theme-service.ts";
 
 /** Empty dependency list: run the effect only once. */
 export const RUN_ONCE: never[] = [];
 
-/** Applies the saved theme and starts syncing <html> attributes. */
-export function initializeThemeOnMount(): void {
+/** Applies the saved theme, starts syncing <html> attributes and loads / follows config.loadThemes. */
+export function initializeThemeOnMount(): () => void {
   const config = readActiveConfig();
   initializeTheme(config);
   startDocumentSync();
   void loadConfigThemes(config);
+  return followConfigThemes(config);
 }
 
 /** Shows the app even when a locale file fails, so the screen is never stuck on loading. */

@@ -9,7 +9,7 @@
 import { effect } from "@preact/signals-react";
 import { SharedWebUiProvider, isAsideLayoutSignal, layoutChoiceSignal } from "shared-lib-web";
 import { useEffect, useLayoutEffect, type ReactNode } from "react";
-import { config, loadLanguages } from "./config.ts";
+import { config, startConfigData } from "./config.ts";
 
 export interface MfePageProps {
   /** true when single-spa mounted it inside the shell (the shell's <main> gives the padding). */
@@ -34,15 +34,10 @@ function markNoHeader(): void {
   isAsideLayoutSignal.value = true;
 }
 
-/** Loads the language list once (fills langSignal of the config). */
-function startLanguageLoading(): void {
-  void loadLanguages();
-}
-
 export function MfePage(props: MfePageProps) {
   const applyLayout = props.isInShell ? followShellLayout : markNoHeader;
   useLayoutEffect(applyLayout, RUN_ONCE);
-  useEffect(startLanguageLoading, RUN_ONCE);
+  useEffect(startConfigData, RUN_ONCE);
   const pageClassName = props.isInShell ? "flex flex-col gap-4" : "flex min-h-screen flex-col gap-4 bg-base-200 p-4 lg:p-6";
   return (
     <SharedWebUiProvider type="mfe" config={config}>

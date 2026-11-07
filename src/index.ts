@@ -26,6 +26,7 @@ export type {
   ValueSignal,
   CustomTheme,
   CustomThemesModule,
+  LocaleBundle,
   ThemesLoader,
   Theme,
   PageMode,
@@ -129,6 +130,13 @@ export {
 export { MAX_KEY_PARTS, findDeepLocaleKeys, interpolate, lookupMessage, translate } from "./i18n/translator.ts";
 export { RTL_LANGUAGE_CODES, findLanguageOption, resolveDirection } from "./i18n/direction.ts";
 export { matchLanguageCode, readBrowserLanguageCodes } from "./i18n/browser-language.ts";
+export { isSignalSource } from "./utils/signal-source.ts";
+export {
+  LOCALE_WAIT_MS,
+  fillLocaleBundle,
+  requestedLocalesSignal,
+  type WritableLocaleBundleSignal,
+} from "./i18n/locale-signal.ts";
 export {
   ROOT_LOCALE_GROUP,
   loadLocaleGroups,
@@ -149,6 +157,7 @@ export { DAISYUI_THEMES, DEFAULT_DARK_THEMES } from "./theme/dark-themes.ts";
 export {
   buildCustomThemeCss,
   isValidCustomTheme,
+  followConfigThemes,
   loadConfigThemes,
   mergeCustomThemes,
   setCustomThemes,
@@ -271,7 +280,6 @@ export {
 export {
   callApiSource,
   clearSessionData,
-  isSignalSource,
   loadConfigLanguages,
   loadSessionData,
 } from "./state/api-loader.ts";

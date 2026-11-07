@@ -1,6 +1,6 @@
 {
   "name": "shared-lib-web",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "Shared React 19 component library for DesignForFeature apps: Type* react-hook-form controls, menus, switchers, skeletons, AppHttp/AppStorage, plus an optional app shell (shared-lib-web/layout: sidebar with icon rail or full-width mega menu), pages by query parameter (no router), DaisyUI light/dark themes, lightweight i18n with RTL/LTR, Signals state, and markdown fields.",
   "keywords": [
     "dff",

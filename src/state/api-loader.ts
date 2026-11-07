@@ -16,6 +16,7 @@ import { effect } from "@preact/signals-react";
 import type { BranchSource, LangSource, MenuSource } from "../interfaces/app-types.ts";
 import type { ApiSource, UiConfig, ValueSignal } from "../interfaces/ui-config.ts";
 import { AppHttp, readJwtToken } from "../utils/app-http.ts";
+import { isSignalSource } from "../utils/signal-source.ts";
 import { isAuthenticatedSignal } from "./auth-service.ts";
 import { registerBranches, setBranches } from "./branch-service.ts";
 import { registerLanguages, setLanguages } from "./language-service.ts";
@@ -30,15 +31,6 @@ let loadedSessionToken: string | undefined = undefined;
 
 /** Applies one value of a source signal (menu, languages or branches). */
 type SignalValueApplier = (value: never) => void;
-
-/** true when the source is a signal (works across copies of the signals package: no instanceof). */
-export function isSignalSource(source: ApiSource | undefined): source is ValueSignal<unknown> {
-  if (typeof source !== "object" || source === null) {
-    return false;
-  }
-  const candidate = source as Partial<ValueSignal<unknown>>;
-  return typeof candidate.peek === "function" && typeof candidate.subscribe === "function" && "value" in candidate;
-}
 
 /** A source the provider calls (a function or a URL), not a signal. */
 function isCallableSource(source: ApiSource | undefined): source is string | (() => Promise<unknown>) {

@@ -21,7 +21,9 @@ import {
 import { AppStorage } from "../utils/app-storage.ts";
 import { LANG } from "../utils/storage-keys.ts";
 import { matchLanguageCode, readBrowserLanguageCodes } from "./browser-language.ts";
+import { isSignalSource } from "../utils/signal-source.ts";
 import { findLanguageOption } from "./direction.ts";
+import { waitForSignalLocale } from "./locale-signal.ts";
 import { findDeepLocaleKeys } from "./translator.ts";
 
 const UI_CONFIG_MISSING = "shared-lib-web: config is missing. Wrap your app in <SharedWebUiProvider config={config}>.";
@@ -71,6 +73,9 @@ export function runLocaleLoader(languageCode: string): Promise<LocaleModule> | u
   const loadLocale = config?.loadLocale;
   if (!loadLocale) {
     return undefined;
+  }
+  if (isSignalSource(loadLocale)) {
+    return waitForSignalLocale(loadLocale, languageCode);
   }
   return loadLocale(languageCode);
 }

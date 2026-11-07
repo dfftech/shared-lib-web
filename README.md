@@ -115,6 +115,14 @@ The variable names are the DaisyUI ones, with or without `--`: `color-base-100/2
 `radius-box`, `size-selector`, `size-field`, `border`, `depth`, `noise`. Theme names may use lowercase letters,
 digits and `-`; values with `; { } < > " \` are skipped (safe for JSON from a server).
 
+**Or a signal:** `loadThemes: themesSignal` (`signal<CustomThemesModule | null>(null)`). `null` = not here yet (a
+saved custom theme stays on screen); every new value replaces the loaded themes:
+
+```ts
+const themeModule = await import("./theme/org-themes.json");
+themesSignal.value = themeModule;
+```
+
 Any time later (for example after the user signs in) `setCustomThemes(themes)` replaces the custom themes.
 
 The theme dropdown, the ⚙ settings dialog and the example Settings page show **Light themes** and **Dark themes**
@@ -248,14 +256,14 @@ decides when it changes):
 // nav.service.ts
 export const navSignal = signal<MenuSource | null>(null);        // null = menu skeleton
 export const branchSignal = signal<BranchSource | null>(null);   // null = no branch switcher
-export const langSignal = signal<LangSource | null>(null);       // null = no list yet
+export const supportLangSignal = signal<LangSource | null>(null);       // null = no list yet
 
 export async function loadNav(): Promise<void> {
   navSignal.value = await AppHttp.Get(`${MsUrl.main}/menu-access`) as MenuSource;
 }
 
 // config.ts
-loadSupportLanguages: langSignal,
+loadSupportLanguages: supportLangSignal,
 loadBranches: branchSignal,
 loadMenuNavigation: navSignal,
 ```
@@ -402,6 +410,20 @@ export const config: UiConfig = {
   stays at the top level). The default language (en-US) is loaded too, for keys missing in the current one.
 - **Several folders:** merge them, `{ ...sharedFiles, ...ownFiles }` (MFEs: shared groups + the MFE's own); the same
   group in two folders is merged, the later file wins per key.
+- **Or a signal:** `loadLocale: localeSignal`, a `LocaleBundle` (`{ "en-US": {...}, "fr-FR": {...} }`) your app fills.
+  The library adds the codes it needs to `requestedLocalesSignal` and waits; `fillLocaleBundle` loads them for you
+  (a code set to `null` = no texts for that language, the next one is tried):
+
+  ```ts
+  export const localeSignal = signal<LocaleBundle | null>(null);
+  const loadTexts = loadLocaleGroups.bind(null, import.meta.glob("./locales/*/*.json"));
+  loadLocale: localeSignal,                                   // config.ts
+  useEffect(() => fillLocaleBundle(localeSignal, loadTexts)); // start once (returns the stop function)
+  ```
+
+  This `localeSignal` is your app's own signal. The library also exports a `localeSignal` (the current language
+  code); in a file that needs both, import the library one with an alias:
+  `import { localeSignal as currentLanguageSignal } from "shared-lib-web"`.
 - One JSON per language still works: `loadLocale: (code) => import(\`./locales/${code}.json\`)`.
 
 **One sublevel only:** a key is `"key"` or `"group.key"` (`t("user.title")`, `t("branch.title")`). Deeper keys like

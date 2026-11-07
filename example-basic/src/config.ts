@@ -1,11 +1,11 @@
 // config.ts — basic example: ONE language (en-US), NO branches.
 // The static shell setup: app key, service URLs (MsUrl), the one language + its texts, themes, logos, layout, http.
 // No router: the current page is the ?page query parameter (see app.tsx).
-// Backend data as signals (backend/backend-signals.ts): loadSupportLanguages = langSignal (one language: no switcher),
+// Backend data as signals (backend/backend-signals.ts): loadSupportLanguages = supportLangSignal (one language: no switcher),
 // loadMenuNavigation = navSignal (after sign in). No branches.
 
-import { loadLocaleGroups, readEnvData, toAbsoluteUrl, type CustomThemesModule, type UiConfig } from "shared-lib-web";
-import { langSignal, navSignal } from "./backend/backend-signals.ts";
+import { readEnvData, toAbsoluteUrl, type UiConfig } from "shared-lib-web";
+import { supportLangSignal, navSignal, localeSignal, themesSignal } from "./backend/backend-signals.ts";
 
 /** Key / base name (ENV_BASE_NAME): AppStorage keys ORG-TOKEN, ORG-LANG ...; window.env REACT_APP_ORG_... */
 const APP_NAME_KEY = "ORG";
@@ -30,23 +30,16 @@ export const MsUrl = {
   utils: `/${APP_API_KEY}-util`,
 };
 
-/** The texts of the one language: locales/en-US/<group>.json (file name = group; root.json = top level). */
-const localeFiles = import.meta.glob("./locales/*/*.json");
-
-/** The custom org themes (theme/org-themes.json), loaded lazily like the locale files. */
-function loadThemes(): Promise<CustomThemesModule> {
-  return import("./theme/org-themes.json");
-}
-
 export const config: UiConfig = {
   appNameKey: APP_NAME_KEY,
   // Label: t("app.name") from the locale files.
   appName: "app.name",
   // One language: no languages list and no lang input, so no language switcher is shown.
   defaultLanguage: "en-US",
-  loadLocale: loadLocaleGroups.bind(null, localeFiles),
-  // Themes: the custom org themes (loadThemes -> theme/org-themes.json, listed first) + all 35 DaisyUI themes.
-  loadThemes: loadThemes,
+  // The texts as a signal: { "en-US": {...}, ... }; the library asks for languages, the app loads them.
+  loadLocale: localeSignal,
+  // Themes as a signal: the custom org themes (theme/org-themes.json, listed first) + all 35 DaisyUI themes.
+  loadThemes: themesSignal,
   logoUrl: "/logo-light.svg",
   logoDarkUrl: "/logo-dark.svg",
   homePath: "/",
@@ -57,5 +50,5 @@ export const config: UiConfig = {
   // The menu of the signed-in user (the "backend" of the example is public/api/org-api/menu-access.json).
   loadMenuNavigation: navSignal,
   // The languages as a signal (public/api/org-api/languages.json: only en-US, so no language switcher).
-  loadSupportLanguages: langSignal,
+  loadSupportLanguages: supportLangSignal,
 };

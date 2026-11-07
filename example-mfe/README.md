@@ -87,7 +87,7 @@ build with its own Docker context:
 
 | File (in `src/`) | shell | settings | forms | profile |
 | --- | --- | --- | --- | --- |
-| `config.ts` (app key `ORG`, `langSignal`, themes, `loadLocale`, `MsUrl`) | ✓ (+ shell parts, `navSignal`) | ✓ | ✓ | ✓ |
+| `config.ts` (app key `ORG`, `MsUrl`, signals: `localeSignal`, `themesSignal`, `supportLangSignal`) | ✓ (+ shell parts, `navSignal`) | ✓ | ✓ | ✓ |
 | `locales/<code>/` | `app`, `ui`, `root`, `login`, `home` | `ui`, `root`, `settings` | `ui`, `root`, `forms` | `ui`, `root`, `profile` |
 | `theme/org-themes.json` | ✓ | ✓ | ✓ | ✓ |
 | `public/api/org-api/languages.json` | ✓ | ✓ (alone) | ✓ (alone) | ✓ (alone) |
@@ -96,8 +96,12 @@ build with its own Docker context:
 Keep the common parts the same in every project: `appNameKey` (`ORG`, so all read the same `ORG-THEME` / `ORG-LANG` /
 `ORG-LAYOUT_CHOICE`) and the theme file.
 
-**Languages** are a signal in every config, `loadSupportLanguages: langSignal`, filled from
-`/api/org-api/languages.json` (the shell in `session.ts`, each MFE in `mfe-page.tsx`). Inside the shell the MFE asks
+**Everything loaded is a signal** in every config: `loadLocale: localeSignal` (texts per language, filled with
+`fillLocaleBundle`), `loadThemes: themesSignal` (`theme/org-themes.json`) and `loadSupportLanguages: supportLangSignal`. The
+shell fills them in `session.ts`, each MFE in `startConfigData()` (`config.ts`, started by `mfe-page.tsx`).
+
+**Languages** (`supportLangSignal`) come from
+`/api/org-api/languages.json` (the shell in `session.ts`, each MFE in `startConfigData()`). Inside the shell the MFE asks
 the shell's site (`/api` is relative to the page); alone it uses its own `public/api`.
 
 **Layout choice** (app / aside) lives in the library: `layoutChoiceSignal` and `changeLayoutChoice()`. The settings MFE

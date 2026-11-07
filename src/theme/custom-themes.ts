@@ -12,6 +12,7 @@
 
 import type { CustomTheme, CustomThemesModule, UiConfig } from "../interfaces/ui-config.ts";
 import { customThemesSignal, uiConfigSignal } from "../state/signals.ts";
+import { isSignalSource } from "../utils/signal-source.ts";
 import { applySavedThemeWhenKnown, leaveUnknownTheme } from "./theme-service.ts";
 
 const STYLE_ELEMENT_ID = "shared-lib-web-custom-themes";
@@ -135,7 +136,7 @@ const loadedConfigs = new WeakSet<UiConfig>();
 export async function loadConfigThemes(config: UiConfig): Promise<void> {
   const loadThemes = config.loadThemes;
   const isLoaded = loadedConfigs.has(config);
-  if (!loadThemes || isLoaded) {
+  if (typeof loadThemes !== "function" || isLoaded) {
     return;
   }
   loadedConfigs.add(config);
@@ -151,4 +152,31 @@ export async function loadConfigThemes(config: UiConfig): Promise<void> {
     console.error("shared-lib-web: could not load the custom themes (config.loadThemes).", error);
   }
   leaveUnknownTheme();
+}
+
+/** One value of a loadThemes signal: null = not here yet; a list (or JSON module) replaces the loaded themes. */
+function applyThemesFromSignal(config: UiConfig, themesModule: CustomThemesModule | null): void {
+  const isConfigActive = uiConfigSignal.peek() === config;
+  if (!themesModule || !isConfigActive) {
+    return;
+  }
+  const loadedThemes = unwrapThemesModule(themesModule);
+  const mergedThemes = mergeCustomThemes(config.customThemes ?? [], loadedThemes);
+  setCustomThemes(mergedThemes);
+  leaveUnknownTheme();
+}
+
+/** Follows config.loadThemes when it is a signal. Returns the stop function (nothing to stop otherwise). */
+export function followConfigThemes(config: UiConfig): () => void {
+  const themesSource = config.loadThemes;
+  if (!isSignalSource(themesSource)) {
+    return stopNothing;
+  }
+  const applyThemes = applyThemesFromSignal.bind(null, config);
+  return themesSource.subscribe(applyThemes as (value: unknown) => void);
+}
+
+/** Nothing to clean up. */
+function stopNothing(): void {
+  return;
 }

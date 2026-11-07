@@ -32,6 +32,9 @@ export interface CustomTheme {
   variables: Record<string, string>;
 }
 
+/** Texts per language code for a loadLocale signal: { "en-US": {...}, "fr-FR": {...} }; null = no texts. */
+export type LocaleBundle = Record<string, LocaleMessages | null>;
+
 /** What a themes loader may return: the list, or a JSON module with a default export. */
 export type CustomThemesModule = CustomTheme[] | { default: CustomTheme[] };
 
@@ -224,8 +227,12 @@ export interface UiConfig {
    * pass them with config.loadSupportLanguages or setLanguages(langResponse).
    */
   languages?: LanguageOption[];
-  /** Loads locales/{code}.json for any code ("en-US" -> en-US.json). Needed for backend languages. */
-  loadLocale?: LocaleCodeLoader;
+  /**
+   * The texts of a language: a function loadLocale(code) (lazy JSON / API), or a SIGNAL with a LocaleBundle
+   * ({ "en-US": {...} }) that the app fills — the library adds the codes it needs to requestedLocalesSignal and
+   * waits; fillLocaleBundle(signal, loader) does the filling.
+   */
+  loadLocale?: LocaleCodeLoader | ValueSignal<LocaleBundle | null>;
   /**
    * Language code used on the first visit (nothing saved; a backend isDefault language still wins).
    * Optional: without it the browser / system language (navigator.languages matched to the list,
@@ -243,10 +250,11 @@ export interface UiConfig {
    */
   customThemes?: CustomTheme[];
   /**
-   * Loads custom themes lazily when the provider mounts (JSON file or API), like loadLocale. They are added to
-   * customThemes (same name: the loaded one wins). A saved custom theme stays on screen while they load.
+   * Custom themes loaded when the provider mounts (JSON file or API), like loadLocale — or a SIGNAL with the themes
+   * (null = not here yet; every new value replaces them). They are added to customThemes (same name: the loaded one
+   * wins). A saved custom theme stays on screen while they load.
    */
-  loadThemes?: ThemesLoader;
+  loadThemes?: ThemesLoader | ValueSignal<CustomThemesModule | null>;
   /**
    * Theme used on the first visit (nothing saved yet). Optional: without it the browser preference decides,
    * "dark" when it prefers a dark colour scheme, otherwise "light".
