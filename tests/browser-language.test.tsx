@@ -3,6 +3,7 @@ import { afterEach, describe, it } from "node:test";
 import { expect } from "./expect.ts";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import {
+  LanguageSwitcher,
   SharedWebUiProvider,
   localeSignal,
   matchLanguageCode,
@@ -84,5 +85,23 @@ describe("browser language", () => {
     const config: UiConfig = { appNameKey: "BROWSER3", loadLocale: loadLocale };
     render(<SharedWebUiProvider config={config}><p>page</p></SharedWebUiProvider>);
     await waitFor(() => expect(localeSignal.value).toBe("fr-FR"));
+  });
+});
+
+describe("language switcher text", () => {
+  afterEach(cleanup);
+
+  it("shows the code in the header and the full name with isFullName (login)", async () => {
+    const config: UiConfig = { appNameKey: "SWITCHER", defaultLanguage: "fr-FR", languages: listedLanguages, loadLocale: loadLocale };
+    const view = render(
+      <SharedWebUiProvider config={config}>
+        <LanguageSwitcher />
+        <LanguageSwitcher isFullName />
+      </SharedWebUiProvider>,
+    );
+    await waitFor(() => expect(localeSignal.value).toBe("fr-FR"));
+    const buttons = view.container.querySelectorAll("[role=button]");
+    expect(buttons[0]?.textContent).toBe("FR");
+    expect(buttons[1]?.textContent).toBe("Français");
   });
 });

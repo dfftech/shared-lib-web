@@ -324,7 +324,7 @@ export { findNavTrail, isNavItemActive, isPathMatch } from "./layouts/navigation
 
 // ---- Components ----
 export { AppBrand, type AppBrandProps } from "./components/app-brand.tsx";
-export { LanguageSwitcher } from "./components/language-switcher.tsx";
+export { LanguageSwitcher, type LanguageSwitcherProps } from "./components/language-switcher.tsx";
 export { ThemeSwitcher } from "./components/theme-switcher.tsx";
 export { ToastContainer } from "./components/toast-container.tsx";
 export { UserMenu, readInitials, type UserMenuItem, type UserMenuProps } from "./components/user-menu.tsx";

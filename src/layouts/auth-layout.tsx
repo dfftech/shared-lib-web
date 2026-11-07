@@ -25,7 +25,7 @@ export function AuthLayout(props: AuthLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col bg-base-200">
       <header className="flex justify-end gap-1 p-3">
-        <LanguageSwitcher />
+        <LanguageSwitcher isFullName />
         <ThemeSwitcher />
       </header>
       <main className="flex flex-1 items-center justify-center p-4">

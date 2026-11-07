@@ -1,6 +1,8 @@
 // language-switcher.tsx
 // Dropdown that lists the languages (config.languages or the lang reply) and switches the language.
-// Hidden while there is no list.
+// Hidden while there is no list (or only one language).
+//   <LanguageSwitcher />              -> 🌐 EN          (compact: header)
+//   <LanguageSwitcher isFullName />   -> 🌐 English     (login / AuthLayout: the user may not know the codes)
 
 import { readBaseLanguageCode } from "../i18n/direction.ts";
 import type { MouseEvent, ReactElement } from "react";
@@ -52,12 +54,29 @@ function buildLanguageItems(languages: LanguageOption[], activeCode: string): Re
   return items;
 }
 
-export function LanguageSwitcher() {
+export interface LanguageSwitcherProps {
+  /** Show the full name of the current language ("English", "Français") instead of the code ("EN"). */
+  isFullName?: boolean;
+}
+
+/** The button text: the language name (isFullName) or the upper-case base code ("EN"). */
+function readButtonText(languages: LanguageOption[], locale: string, isFullName: boolean): string {
+  if (isFullName) {
+    for (const language of languages) {
+      if (language.code === locale) {
+        return language.label;
+      }
+    }
+  }
+  const baseCode = readBaseLanguageCode(locale);
+  return baseCode.toUpperCase();
+}
+
+export function LanguageSwitcher(props: LanguageSwitcherProps = {}) {
   const { languages, locale, t } = useUi();
   const languageText = t("ui.language");
   const items = buildLanguageItems(languages, locale);
-  const baseCode = readBaseLanguageCode(locale);
-  const activeCode = baseCode.toUpperCase();
+  const buttonText = readButtonText(languages, locale, props.isFullName === true);
   // No list, or only one language: nothing to switch.
   if (languages.length < 2) {
     return null;
@@ -67,7 +86,7 @@ export function LanguageSwitcher() {
     <div className="dropdown dropdown-end">
       <div tabIndex={0} role="button" className="btn btn-ghost btn-sm gap-1" aria-label={languageText}>
         <TypeIcon name="Globe" size={16} />
-        <span className="text-xs font-semibold">{activeCode}</span>
+        <span className="text-xs font-semibold">{buttonText}</span>
       </div>
       <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-40 mt-2 w-48 p-2 shadow-lg">
         {items}
