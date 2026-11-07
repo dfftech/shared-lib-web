@@ -1,0 +1,9 @@
+{
+  "title": "Anmelden",
+  "email": "E-Mail",
+  "password": "Passwort",
+  "remember": "Angemeldet bleiben",
+  "submit": "Anmelden",
+  "hint": "Jede E-Mail und ein Passwort mit mindestens 6 Zeichen funktionieren.",
+  "logout": "Abmelden"
+}

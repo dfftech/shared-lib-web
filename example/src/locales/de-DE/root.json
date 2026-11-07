@@ -1,0 +1,10 @@
+{
+  "REQUIRED": "Dieses Feld ist erforderlich",
+  "INVALID_EMAIL": "Ungültiges E-Mail-Format",
+  "INVALID_PHONE": "Ungültige Telefonnummer",
+  "MIN_LENGTH_REQUIRED": "Mindestlänge erforderlich",
+  "MAX_LENGTH_EXCEED": "Maximale Länge überschritten",
+  "PASSWORD_TOO_WEAK": "Passwort ist zu schwach",
+  "WENT_WRONG": "Etwas ist schiefgelaufen",
+  "INVALID_DATA": "Ungültige Daten"
+}

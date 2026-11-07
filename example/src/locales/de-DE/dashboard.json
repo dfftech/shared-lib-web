@@ -1,0 +1,8 @@
+{
+  "title": "Dashboard",
+  "welcome": "Willkommen zurück, {{name}}",
+  "language": "Sprache",
+  "theme": "Design",
+  "direction": "Richtung",
+  "languages": "Sprachen"
+}

@@ -1,0 +1,12 @@
+{
+  "photo1": "Foto cielo",
+  "photo2": "Foto pizarra",
+  "photo3": "Foto ámbar",
+  "video": "Vídeo de demostración",
+  "videoFirstFrame": "Vídeo de demostración (primer fotograma)",
+  "brokenImage": "Imagen que falta",
+  "images": "Imágenes",
+  "imagesText": "Haz clic en una imagen para abrirla. Se muestra un esqueleto mientras carga. Tamaños: por defecto, 240 × 160, solo altura 96, redonda 108 × 108, archivo que falta.",
+  "videos": "Vídeo",
+  "videosText": "Haz clic en un vídeo para reproducirlo en la ventana. Tamaños: por defecto, 320 × 180 (primer fotograma), solo altura 110."
+}

@@ -1,0 +1,78 @@
+{
+  "data": [
+    {
+      "code": "en-US",
+      "name": "English",
+      "flag": "🇺🇸",
+      "direction": "ltr",
+      "isDefault": true,
+      "priority": 1
+    },
+    {
+      "code": "fr-FR",
+      "name": "Français",
+      "flag": "🇫🇷",
+      "direction": "ltr",
+      "priority": 2
+    },
+    {
+      "code": "de-DE",
+      "name": "Deutsch",
+      "flag": "🇩🇪",
+      "direction": "ltr",
+      "priority": 3
+    },
+    {
+      "code": "es-ES",
+      "name": "Español",
+      "flag": "🇪🇸",
+      "direction": "ltr",
+      "priority": 4
+    },
+    {
+      "code": "ar-SA",
+      "name": "العربية",
+      "flag": "🇸🇦",
+      "direction": "rtl",
+      "priority": 5
+    },
+    {
+      "code": "he-IL",
+      "name": "עברית",
+      "flag": "🇮🇱",
+      "direction": "rtl",
+      "priority": 6
+    },
+    {
+      "code": "fa-IR",
+      "name": "فارسی",
+      "flag": "🇮🇷",
+      "direction": "rtl",
+      "priority": 7
+    },
+    {
+      "code": "te-IN",
+      "name": "తెలుగు",
+      "flag": "🇮🇳",
+      "direction": "ltr",
+      "priority": 9
+    },
+    {
+      "code": "kn-IN",
+      "name": "ಕನ್ನಡ",
+      "flag": "🇮🇳",
+      "direction": "ltr",
+      "priority": 10
+    },
+    {
+      "code": "ta-IN",
+      "name": "தமிழ்",
+      "flag": "🇮🇳",
+      "direction": "ltr",
+      "priority": 11
+    }
+  ],
+  "meta": {
+    "requestId": "example"
+  }
+}

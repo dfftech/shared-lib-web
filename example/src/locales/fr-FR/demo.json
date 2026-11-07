@@ -1,0 +1,12 @@
+{
+  "photo1": "Photo ciel",
+  "photo2": "Photo ardoise",
+  "photo3": "Photo ambre",
+  "video": "Vidéo de démo",
+  "videoFirstFrame": "Vidéo de démo (première image)",
+  "brokenImage": "Image manquante",
+  "images": "Images",
+  "imagesText": "Cliquez sur une image pour l’ouvrir. Un squelette s’affiche pendant le chargement. Tailles : par défaut, 240 × 160, hauteur seule 96, rond 108 × 108, fichier manquant.",
+  "videos": "Vidéo",
+  "videosText": "Cliquez sur une vidéo pour la lire dans la fenêtre. Tailles : par défaut, 320 × 180 (première image), hauteur seule 110."
+}

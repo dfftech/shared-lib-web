@@ -1,0 +1,22 @@
+{
+  "dashboard": "Panel",
+  "profiles": "Perfiles",
+  "users": "Usuarios",
+  "settings": "Configuración",
+  "usersText": "Gestionar a todas las personas que usan la aplicación",
+  "staff": "Personal",
+  "staffText": "Miembros del equipo y sus roles",
+  "roles": "Roles",
+  "components": "Componentes",
+  "forms": "Formularios",
+  "formsText": "Todos los controles de react-hook-form",
+  "overlays": "Superposiciones",
+  "overlaysText": "Modal, cajón, confirmación, menú y avisos",
+  "feedback": "Retroalimentación",
+  "feedbackText": "Esqueletos, estado vacío y páginas de error",
+  "reports": "Informes",
+  "sales": "Ventas",
+  "salesText": "Ingresos por mes y región",
+  "audit": "Registro de auditoría",
+  "auditText": "Quién cambió qué y cuándo"
+}

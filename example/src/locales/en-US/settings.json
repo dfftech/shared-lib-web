@@ -1,0 +1,16 @@
+{
+  "title": "Settings",
+  "language": "Language",
+  "theme": "Theme",
+  "current": "Current: {{locale}} · {{theme}} · {{direction}}",
+  "navigation": "Navigation",
+  "sidebar": "Sidebar",
+  "megamenu": "Mega menu",
+  "layout": "App layout",
+  "singleLayout": "Single layout (AppLayout)",
+  "mainLayout": "Main layout (parts)",
+  "asideLayout": "Aside layout (AsideLayout, no header)",
+  "menu": "Menu",
+  "menuOn": "Show",
+  "menuOff": "Hide"
+}

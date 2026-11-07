@@ -1,0 +1,10 @@
+{
+  "REQUIRED": "שדה זה הוא חובה",
+  "INVALID_EMAIL": "פורמט אימייל לא תקין",
+  "INVALID_PHONE": "מספר טלפון לא תקין",
+  "MIN_LENGTH_REQUIRED": "נדרש אורך מינימלי",
+  "MAX_LENGTH_EXCEED": "חריגה מהאורך המרבי",
+  "PASSWORD_TOO_WEAK": "הסיסמה חלשה מדי",
+  "WENT_WRONG": "משהו השתבש",
+  "INVALID_DATA": "נתונים לא תקינים"
+}

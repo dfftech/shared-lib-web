@@ -1,0 +1,16 @@
+{
+  "title": "அமைப்புகள்",
+  "language": "மொழி",
+  "theme": "தீம்",
+  "current": "தற்போது: {{locale}} · {{theme}} · {{direction}}",
+  "navigation": "வழிசெலுத்தல்",
+  "sidebar": "பக்கப்பட்டி",
+  "megamenu": "மெகா மெனு",
+  "layout": "ஆப் தளவமைப்பு",
+  "singleLayout": "ஒற்றைத் தளவமைப்பு (AppLayout)",
+  "mainLayout": "முதன்மைத் தளவமைப்பு (பகுதிகள்)",
+  "asideLayout": "பக்க அமைப்பு (AsideLayout, தலைப்பு இல்லாமல்)",
+  "menu": "மெனு",
+  "menuOn": "காட்டு",
+  "menuOff": "மறை"
+}

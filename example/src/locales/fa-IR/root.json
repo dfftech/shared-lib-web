@@ -1,0 +1,10 @@
+{
+  "REQUIRED": "این فیلد الزامی است",
+  "INVALID_EMAIL": "قالب ایمیل نامعتبر است",
+  "INVALID_PHONE": "شماره تلفن نامعتبر است",
+  "MIN_LENGTH_REQUIRED": "حداقل طول لازم است",
+  "MAX_LENGTH_EXCEED": "از حداکثر طول بیشتر است",
+  "PASSWORD_TOO_WEAK": "رمز عبور خیلی ضعیف است",
+  "WENT_WRONG": "مشکلی پیش آمد",
+  "INVALID_DATA": "داده نامعتبر"
+}

@@ -1,0 +1,16 @@
+{
+  "title": "Paramètres",
+  "language": "Langue",
+  "theme": "Thème",
+  "current": "Actuel : {{locale}} · {{theme}} · {{direction}}",
+  "navigation": "Navigation",
+  "sidebar": "Barre latérale",
+  "megamenu": "Méga menu",
+  "layout": "Mise en page",
+  "singleLayout": "Mise en page unique (AppLayout)",
+  "mainLayout": "Mise en page principale (éléments)",
+  "asideLayout": "Disposition latérale (AsideLayout, sans en-tête)",
+  "menu": "Menu",
+  "menuOn": "Afficher",
+  "menuOff": "Masquer"
+}

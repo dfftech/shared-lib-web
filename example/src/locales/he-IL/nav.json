@@ -1,0 +1,22 @@
+{
+  "dashboard": "לוח בקרה",
+  "profiles": "פרופילים",
+  "users": "משתמשים",
+  "settings": "הגדרות",
+  "usersText": "ניהול כל מי שמשתמש באפליקציה",
+  "staff": "צוות",
+  "staffText": "חברי הצוות ותפקידיהם",
+  "roles": "תפקידים",
+  "components": "רכיבים",
+  "forms": "טפסים",
+  "formsText": "כל פקדי react-hook-form",
+  "overlays": "חלונות צפים",
+  "overlaysText": "חלון, מגירה, אישור, תפריט והודעות",
+  "feedback": "משוב",
+  "feedbackText": "שלדים, מצב ריק ודפי שגיאה",
+  "reports": "דוחות",
+  "sales": "מכירות",
+  "salesText": "הכנסות לפי חודש ואזור",
+  "audit": "יומן ביקורת",
+  "auditText": "מי שינה מה ומתי"
+}

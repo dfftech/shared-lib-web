@@ -1,0 +1,10 @@
+{
+  "REQUIRED": "ಈ ಕ್ಷೇತ್ರ ಅಗತ್ಯವಿದೆ",
+  "INVALID_EMAIL": "ಅಮಾನ್ಯ ಇಮೇಲ್ ಸ್ವರೂಪ",
+  "INVALID_PHONE": "ಅಮಾನ್ಯ ಫೋನ್ ಸಂಖ್ಯೆ",
+  "MIN_LENGTH_REQUIRED": "ಕನಿಷ್ಠ ಉದ್ದ ಅಗತ್ಯವಿದೆ",
+  "MAX_LENGTH_EXCEED": "ಗರಿಷ್ಠ ಉದ್ದ ಮೀರಿದೆ",
+  "PASSWORD_TOO_WEAK": "ಪಾಸ್‌ವರ್ಡ್ ತುಂಬಾ ದುರ್ಬಲವಾಗಿದೆ",
+  "WENT_WRONG": "ಏನೋ ತಪ್ಪಾಗಿದೆ",
+  "INVALID_DATA": "ಅಮಾನ್ಯ ಡೇಟಾ"
+}

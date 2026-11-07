@@ -1,0 +1,22 @@
+{
+  "dashboard": "Dashboard",
+  "profiles": "Profile",
+  "users": "Benutzer",
+  "settings": "Einstellungen",
+  "usersText": "Alle Personen verwalten, die die App nutzen",
+  "staff": "Mitarbeiter",
+  "staffText": "Teammitglieder und ihre Rollen",
+  "roles": "Rollen",
+  "components": "Komponenten",
+  "forms": "Formulare",
+  "formsText": "Alle react-hook-form-Steuerelemente",
+  "overlays": "Overlays",
+  "overlaysText": "Modal, Schublade, Bestätigung, Dropdown und Hinweise",
+  "feedback": "Feedback",
+  "feedbackText": "Skelette, leerer Zustand und Fehlerseiten",
+  "reports": "Berichte",
+  "sales": "Umsatz",
+  "salesText": "Umsatz nach Monat und Region",
+  "audit": "Prüfprotokoll",
+  "auditText": "Wer hat was wann geändert"
+}

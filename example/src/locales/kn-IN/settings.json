@@ -1,0 +1,16 @@
+{
+  "title": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+  "language": "ಭಾಷೆ",
+  "theme": "ಥೀಮ್",
+  "current": "ಪ್ರಸ್ತುತ: {{locale}} · {{theme}} · {{direction}}",
+  "navigation": "ನ್ಯಾವಿಗೇಶನ್",
+  "sidebar": "ಸೈಡ್‌ಬಾರ್",
+  "megamenu": "ಮೆಗಾ ಮೆನು",
+  "layout": "ಆ್ಯಪ್ ಲೇಔಟ್",
+  "singleLayout": "ಏಕ ಲೇಔಟ್ (AppLayout)",
+  "mainLayout": "ಮುಖ್ಯ ಲೇಔಟ್ (ಭಾಗಗಳು)",
+  "asideLayout": "ಪಕ್ಕದ ವಿನ್ಯಾಸ (AsideLayout, ಹೆಡರ್ ಇಲ್ಲದೆ)",
+  "menu": "ಮೆನು",
+  "menuOn": "ತೋರಿಸಿ",
+  "menuOff": "ಮರೆಮಾಡಿ"
+}

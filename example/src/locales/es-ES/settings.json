@@ -1,0 +1,16 @@
+{
+  "title": "Configuración",
+  "language": "Idioma",
+  "theme": "Tema",
+  "current": "Actual: {{locale}} · {{theme}} · {{direction}}",
+  "navigation": "Navegación",
+  "sidebar": "Barra lateral",
+  "megamenu": "Mega menú",
+  "layout": "Diseño de la app",
+  "singleLayout": "Diseño único (AppLayout)",
+  "mainLayout": "Diseño principal (partes)",
+  "asideLayout": "Diseño lateral (AsideLayout, sin encabezado)",
+  "menu": "Menú",
+  "menuOn": "Mostrar",
+  "menuOff": "Ocultar"
+}

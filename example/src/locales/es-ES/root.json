@@ -1,0 +1,10 @@
+{
+  "REQUIRED": "Este campo es obligatorio",
+  "INVALID_EMAIL": "Formato de correo no válido",
+  "INVALID_PHONE": "Número de teléfono no válido",
+  "MIN_LENGTH_REQUIRED": "Longitud mínima requerida",
+  "MAX_LENGTH_EXCEED": "Longitud máxima superada",
+  "PASSWORD_TOO_WEAK": "La contraseña es demasiado débil",
+  "WENT_WRONG": "Algo salió mal",
+  "INVALID_DATA": "Datos no válidos"
+}

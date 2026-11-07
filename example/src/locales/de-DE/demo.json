@@ -1,0 +1,12 @@
+{
+  "photo1": "Himmel-Foto",
+  "photo2": "Schiefer-Foto",
+  "photo3": "Bernstein-Foto",
+  "video": "Demo-Video",
+  "videoFirstFrame": "Demo-Video (erstes Bild)",
+  "brokenImage": "Fehlendes Bild",
+  "images": "Bilder",
+  "imagesText": "Klicken Sie auf ein Bild zum Öffnen. Beim Laden erscheint ein Platzhalter. Größen: Standard, 240 × 160, nur Höhe 96, rund 108 × 108, fehlende Datei.",
+  "videos": "Video",
+  "videosText": "Klicken Sie auf ein Video, um es im Fenster abzuspielen. Größen: Standard, 320 × 180 (erstes Bild), nur Höhe 110."
+}
