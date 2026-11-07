@@ -2,6 +2,7 @@
 // shows no branch switcher, no language switcher and no sidebar / mega menu choice (there is no menu to show).
 import { afterEach, describe, it } from "node:test";
 import { expect } from "./expect.ts";
+import { BackendData } from "./backend-data.tsx";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import {
   PREFERENCE_EVENT,
@@ -33,7 +34,8 @@ const nullConfig: UiConfig = {
 function NullInputsApp() {
   const page = <p>page body</p>;
   return (
-    <SharedWebUiProvider config={nullConfig} nav={null} lang={null} branch={null}>
+    <SharedWebUiProvider config={nullConfig}>
+      <BackendData nav={null} lang={null} branch={null} />
       <AppLayout>{page}</AppLayout>
     </SharedWebUiProvider>
   );

@@ -1,19 +1,18 @@
 // root.tsx
-// Basic example: the provider gets only config and nav.
-//   config = config.ts (one language: defaultLanguage "en-US" + loadLocale, no language list)
-//   nav    = menu from the backend (null while loading, later the reply)
-// No lang input (no language switcher) and no branch input (no store switcher, x-branch-id is "").
-import { useSignals } from "@preact/signals-react/runtime";
+// Basic example: the menu is a signal in the config (backend/backend-signals.ts); backend.service.ts fills it after
+// sign in. No languages list (no language switcher) and no branches (x-branch-id is "").
 import { SharedWebUiProvider } from "shared-lib-web";
+import { useEffect } from "react";
 import { App } from "./app.tsx";
+import { startBackendData } from "./backend/backend.service.ts";
 import { config } from "./config.ts";
-import { navSignal } from "./nav/nav.service.ts";
+
+const RUN_ONCE: never[] = [];
 
 export function Root() {
-  useSignals();
-  const nav = navSignal.value;
+  useEffect(startBackendData, RUN_ONCE);
   return (
-    <SharedWebUiProvider config={config} nav={nav}>
+    <SharedWebUiProvider type="spa" config={config}>
       <App />
     </SharedWebUiProvider>
   );

@@ -1,7 +1,7 @@
 // vite.config.ts — the "profile" MFE: its own Vite project.
 //   npm run dev     -> http://localhost:5188   the MFE alone (index.html + src/dev.tsx), with hot reload
 //   npm run serve   -> http://localhost:5178/profile.js   built as ONE ES module + profile.css for the single-spa root
-// It uses the library source (../../src) through an alias, and the shared MFE files in ../shared.
+// It uses the library source (../../src) through an alias.
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -27,7 +27,7 @@ const aliasOptions = [
   { find: /^shared-lib-web$/, replacement: libraryEntry },
 ];
 
-// The library source and ../shared live outside this folder: resolve these packages from THIS project.
+// The library source lives outside this folder: resolve these packages from THIS project.
 const dedupePackages = ["react", "react-dom", "@preact/signals-react", "react-hook-form", "lucide-react", "dff-util", "single-spa", "single-spa-react"];
 
 // Library build: one ES module (profile.js) + its CSS (profile.css). React and shared-lib-web are bundled in,

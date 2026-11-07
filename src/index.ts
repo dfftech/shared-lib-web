@@ -21,6 +21,9 @@ export type {
   NavItem,
   NavigationMode,
   ScreenPermissions,
+  ApiSource,
+  AppType,
+  ValueSignal,
   CustomTheme,
   CustomThemesModule,
   ThemesLoader,
@@ -80,6 +83,7 @@ export {
   queryParamsSignal,
   progressSignal,
   themeSignal,
+  appTypeSignal,
   customThemesSignal,
   toastsSignal,
   translationSignal,
@@ -122,9 +126,16 @@ export {
   readStartLanguageCandidates,
   unwrapLocaleModule,
 } from "./i18n/locale-service.ts";
-export { translate, interpolate, lookupMessage } from "./i18n/translator.ts";
+export { MAX_KEY_PARTS, findDeepLocaleKeys, interpolate, lookupMessage, translate } from "./i18n/translator.ts";
 export { RTL_LANGUAGE_CODES, findLanguageOption, resolveDirection } from "./i18n/direction.ts";
 export { matchLanguageCode, readBrowserLanguageCodes } from "./i18n/browser-language.ts";
+export {
+  ROOT_LOCALE_GROUP,
+  loadLocaleGroups,
+  readLocaleFilePath,
+  type LocaleFileLoader,
+  type LocaleGroupFiles,
+} from "./i18n/locale-groups.ts";
 export { DEFAULT_UI_MESSAGES } from "./i18n/default-messages.ts";
 export {
   changeTheme,
@@ -250,6 +261,20 @@ export {
 } from "./utils/menu-util.ts";
 export { clearMenu, setMenu, setMenuLoading } from "./state/menu-service.ts";
 export { setLanguages } from "./state/language-service.ts";
+export {
+  applySavedLayoutChoice,
+  changeLayoutChoice,
+  layoutChoiceSignal,
+  toLayoutChoice,
+  type LayoutChoice,
+} from "./state/layout-choice-service.ts";
+export {
+  callApiSource,
+  clearSessionData,
+  isSignalSource,
+  loadConfigLanguages,
+  loadSessionData,
+} from "./state/api-loader.ts";
 export {
   readDefaultLanguageCode,
   readLanguageRows,

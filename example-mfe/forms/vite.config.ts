@@ -1,7 +1,7 @@
 // vite.config.ts — the "forms" MFE: its own Vite project.
 //   npm run dev     -> http://localhost:5187   the MFE alone (index.html + src/dev.tsx), with hot reload
 //   npm run serve   -> http://localhost:5177/forms.js   built as ONE ES module + forms.css for the single-spa root
-// It uses the library source (../../src) through an alias, and the shared MFE files in ../shared.
+// It uses the library source (../../src) through an alias.
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -27,7 +27,7 @@ const aliasOptions = [
   { find: /^shared-lib-web$/, replacement: libraryEntry },
 ];
 
-// The library source and ../shared live outside this folder: resolve these packages from THIS project.
+// The library source lives outside this folder: resolve these packages from THIS project.
 const dedupePackages = ["react", "react-dom", "@preact/signals-react", "react-hook-form", "lucide-react", "dff-util", "single-spa", "single-spa-react"];
 
 // Library build: one ES module (forms.js) + its CSS (forms.css). React and shared-lib-web are bundled in,

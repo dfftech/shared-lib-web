@@ -1,7 +1,7 @@
 // main.tsx — the "settings" MFE entry: exports the single-spa lifecycles (bootstrap / mount / unmount).
 // The shell loads it from env.mfe.js: the dev server (npm run dev: http://localhost:PORT/src/main.tsx)
 // or the build (npm run serve: settings.js).
-import { createMfeLifecycles } from "../../shared/mfe-lifecycles.ts";
+import { createMfeLifecycles } from "./mfe-lifecycles.ts";
 import { SettingsMfe } from "./settings.page.tsx";
 import "./index.css";
 

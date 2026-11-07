@@ -29,7 +29,7 @@ export function setContactReset(reset: UseFormReset<ContactFormType>): void {
 
 export function handleContactSubmit(values: ContactFormType): void {
   submittedContactSignal.value = values;
-  const message = translate("mfe.forms.submitted");
+  const message = translate("forms.submitted");
   ShowToast(message, "success");
 }
 

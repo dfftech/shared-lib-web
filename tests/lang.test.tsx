@@ -1,7 +1,8 @@
-// Tests for backend languages: toLanguageOptions(), setLanguages() and <SharedWebUiProvider lang={...}>.
+// Tests for backend languages: toLanguageOptions(), setLanguages() and config.loadSupportLanguages.
 // Separate file = fresh module state (chosen language, locale cache).
 import { afterEach, describe, it } from "node:test";
 import { expect } from "./expect.ts";
+import { BackendData } from "./backend-data.tsx";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import {
   SharedWebUiProvider,
@@ -84,7 +85,8 @@ interface LangShellProps {
 
 function LangShell(props: LangShellProps) {
   return (
-    <SharedWebUiProvider config={props.config} lang={props.lang}>
+    <SharedWebUiProvider config={props.config}>
+      <BackendData lang={props.lang} />
       <LangProbe />
     </SharedWebUiProvider>
   );

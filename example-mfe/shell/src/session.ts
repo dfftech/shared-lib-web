@@ -1,62 +1,79 @@
-// session.ts — sign in / out and the menu. Event based: when user info is in the session, SESSION_EVENT is fired
-// and the shell loads the menu. Fired on start (session restored from sessionStorage) and after sign in;
-// any MFE can fire it too: window.dispatchEvent(new CustomEvent("org:session")).
+// session.ts — sign in / out and the backend data of the config signals (config.ts):
+//   langSignal  the languages, loaded once on start
+//   navSignal   the menu, loaded when a user is signed in (also after a refresh), null again on sign out
+// startBackendData() is started once in shell.tsx (after the provider saved the config, which AppHttp reads).
 
-import { signal } from "@preact/signals-react";
+import { effect } from "@preact/signals-react";
 import { AppUUID4 } from "dff-util";
-import { AppHttp, authUserSignal, endSession, startSession, type MenuSource } from "shared-lib-web";
-import { MsUrl } from "./config.ts";
+import {
+  AppHttp,
+  endSession,
+  isAuthenticatedSignal,
+  readJwtToken,
+  startSession,
+  type LangSource,
+  type MenuSource,
+} from "shared-lib-web";
+import { MsUrl, langSignal, navSignal } from "./config.ts";
 
-export const SESSION_EVENT = "org:session";
+/** The token whose menu is loaded ("" = signed out); StrictMode starts things twice. */
+let loadedToken: string | undefined = undefined;
 
-/** The menu: null = loading or signed out. Passed to the provider as nav. */
-export const navSignal = signal<MenuSource | null>(null);
+/** true once the languages were requested (one request, also with StrictMode). */
+let isLanguageRequested = false;
 
-let isLoadingNav = false;
-
-/** GET the menu (AppHttp adds the token, x-session-id and x-branch-id). One request at a time. */
-async function loadNav(): Promise<void> {
-  if (isLoadingNav) {
+/** GET the languages once. On an error the default language stays. */
+async function loadLanguages(): Promise<void> {
+  if (isLanguageRequested) {
     return;
   }
-  isLoadingNav = true;
+  isLanguageRequested = true;
+  try {
+    const reply = await AppHttp.Get(`${MsUrl.main}/languages.json`);
+    langSignal.value = reply as LangSource;
+  } catch {
+    langSignal.value = null;
+  }
+}
+
+/** GET the menu: null first (skeleton), an empty menu on an error. */
+async function loadNav(): Promise<void> {
   navSignal.value = null;
   try {
     const reply = await AppHttp.Get(`${MsUrl.main}/menu-access.json`);
     navSignal.value = reply as MenuSource;
   } catch {
     navSignal.value = [];
-  } finally {
-    isLoadingNav = false;
   }
 }
 
-/** A session is available: load the menu. */
-function handleSessionEvent(): void {
-  void loadNav();
-}
-
-/** Call once at start. */
-export function listenForSession(): void {
-  window.addEventListener(SESSION_EVENT, handleSessionEvent);
-}
-
-/** Fires SESSION_EVENT when user info is in the session. */
-export function announceSession(): void {
-  if (authUserSignal.peek()) {
-    const sessionEvent = new CustomEvent(SESSION_EVENT);
-    window.dispatchEvent(sessionEvent);
+/** Signed in -> load the menu; signed out -> remove it. */
+function followSession(): void {
+  const isSignedIn = isAuthenticatedSignal.value;
+  const token = isSignedIn ? readJwtToken() : "";
+  if (token === loadedToken) {
+    return;
   }
+  loadedToken = token;
+  if (isSignedIn) {
+    void loadNav();
+    return;
+  }
+  navSignal.value = null;
+}
+
+/** For useEffect in shell.tsx: languages now, the menu with every sign in / out. Returns the cleanup. */
+export function startBackendData(): () => void {
+  void loadLanguages();
+  return effect(followSession);
 }
 
 /** Fake sign in: any email. A real shell saves the token from its login API. */
 export function signIn(email: string): void {
   const token = AppUUID4();
   startSession(token, { id: email, email: email, name: email });
-  announceSession();
 }
 
 export function signOut(): void {
   endSession([], false);
-  navSignal.value = null;
 }

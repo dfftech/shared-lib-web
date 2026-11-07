@@ -1,0 +1,36 @@
+{
+  "data": [
+    {
+      "code": "en-US",
+      "name": "English",
+      "flag": "🇺🇸",
+      "direction": "ltr",
+      "isDefault": true,
+      "priority": 1
+    },
+    {
+      "code": "fr-FR",
+      "name": "Français",
+      "flag": "🇫🇷",
+      "direction": "ltr",
+      "priority": 2
+    },
+    {
+      "code": "ar-SA",
+      "name": "العربية",
+      "flag": "🇸🇦",
+      "direction": "rtl",
+      "priority": 3
+    },
+    {
+      "code": "te-IN",
+      "name": "తెలుగు",
+      "flag": "🇮🇳",
+      "direction": "ltr",
+      "priority": 4
+    }
+  ],
+  "meta": {
+    "total": 4
+  }
+}

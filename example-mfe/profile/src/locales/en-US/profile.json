@@ -1,0 +1,14 @@
+{
+  "title": "Profile",
+  "edit": "Edit profile",
+  "save": "Save",
+  "cancel": "Cancel",
+  "saved": "Profile saved",
+  "name": "Name",
+  "email": "Email",
+  "phone": "Phone",
+  "role": "Role",
+  "location": "Location",
+  "about": "About",
+  "photo": "Profile photo"
+}

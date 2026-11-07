@@ -14,11 +14,10 @@ single parts, or skip `shared-lib-web/layout` completely and write the whole lay
 
 An app keeps **only**:
 
-1. `config.ts` – app name, default language + locale loader, themes, logos, layout and http
-   (no menu, no language list)
-2. two backend inputs passed to the provider, `null` first and the reply later:
-   `nav` (the menu) and `lang` (the languages)
-3. `locales/{code}.json` – its texts (`en-US.json`, `ar-SA.json` …)
+1. `config.ts` – app name, logos, layout, http and the loaders: `loadLocale`, `loadThemes`, `loadSupportLanguages`,
+   `loadBranches`, `loadMenuNavigation` (the provider calls them itself)
+2. `<SharedWebUiProvider type="spa" | "shell" | "mfe" config={config}>
+3. `locales/<code>/<group>.json` – its texts, one folder per language and one file per group (`en-US/nav.json` …)
 4. its pages / modules
 
 Everything else lives in the library: components and (optionally) layouts, header, sidebar (with icon rail),
@@ -139,28 +138,28 @@ export default defineConfig({
 ## 1. config.ts
 
 ```ts
-import { readEnvData, toAbsoluteUrl, type CustomThemesModule, type LocaleModule, type UiConfig } from "shared-lib-web";
+import { loadLocaleGroups, readEnvData, toAbsoluteUrl, type CustomThemesModule, type UiConfig } from "shared-lib-web";
 
 const APP_NAME_KEY = "ORG";
+const APP_API_KEY = APP_NAME_KEY.toLowerCase();   // "org" -> /org-api, /org-sor ...
 
 // window.env.REACT_APP_ORG_API_BASE_URL (env.js), else the default
 const envBaseUrl = readEnvData(APP_NAME_KEY, "API_BASE_URL");
 const API_BASE_URL = toAbsoluteUrl(envBaseUrl ?? "https://api.example.com/api");
 
-// Service URLs are PROJECT level (not part of AppHttp)
+// Service paths are PROJECT level (not part of AppHttp). AppHttp adds the base URL to a path:
+// AppHttp.Get(`${MsUrl.main}/menu-access`) -> https://api.example.com/api/org-api/menu-access
 export const MsUrl = {
-  api: `${API_BASE_URL}/xxx-api`,
-  main: `${API_BASE_URL}/xxx-api`,
-  sor: `${API_BASE_URL}/xxx-sor`,
-  events: `${API_BASE_URL}/xxx-events`,
-  tms: `${API_BASE_URL}/xxx-tms`,
-  utils: `${API_BASE_URL}/xxx-util`,
+  api: `/${APP_API_KEY}-api`,
+  main: `/${APP_API_KEY}-api`,
+  sor: `/${APP_API_KEY}-sor`,
+  events: `/${APP_API_KEY}-events`,
+  tms: `/${APP_API_KEY}-tms`,
+  utils: `/${APP_API_KEY}-util`,
 };
 
-/** locales/{code}.json, loaded only when that language is used: "en-US" -> locales/en-US.json */
-function loadLocale(languageCode: string): Promise<LocaleModule> {
-  return import(`./locales/${languageCode}.json`);
-}
+/** locales/<code>/<group>.json — lazy: only the files of the language in use are downloaded (see section 2) */
+const localeFiles = import.meta.glob("./locales/*/*.json");
 
 /** theme/org-themes.json, loaded lazily like the locale files (see "Custom themes as JSON") */
 function loadThemes(): Promise<CustomThemesModule> {
@@ -173,7 +172,7 @@ export const config: UiConfig = {
   logoUrl: "/logo-light.svg",
   logoDarkUrl: "/logo-dark.svg",
   // defaultLanguage: "en-US",             // optional: without it the browser / system language, else en-US
-  loadLocale: loadLocale,
+  loadLocale: loadLocaleGroups.bind(null, localeFiles),
   // defaultTheme: "light",              // optional: without it the browser preference picks "dark" or "light"
   loadThemes: loadThemes,                  // optional: your own themes as JSON (see "Custom themes as JSON")
   // themes: ["light", "dark"],            // optional: default all 35 DaisyUI themes
@@ -184,9 +183,9 @@ export const config: UiConfig = {
 
 | Setting | What it does |
 | --- | --- |
-| `defaultLanguage` | Optional. Language of the first visit (nothing saved). Without it the **browser / system language** is used: `navigator.languages` matched to the language list (exact code, else the same base language: `fr-CA` → `fr-FR`); without a list each browser code is tried and a missing locale file is skipped. Nothing matches → `"en-US"`. Keys missing in a language are shown in `defaultLanguage` (else en-US). Without `defaultLanguage`, `languages`, `loadLocale` and `lang` the app runs in en-US with the library's built-in English texts and no language switcher. |
-| `loadLocale(code)` | Loads `locales/{code}.json` lazily for any language code. |
-| `languages` | Not needed: the list comes from `lang` (below). Only for apps with a fixed list (`{ code, label, flag?, direction?, load? }`). |
+| `defaultLanguage` | Optional. Language of the first visit (nothing saved). Without it the **browser / system language** is used: `navigator.languages` matched to the language list (exact code, else the same base language: `fr-CA` → `fr-FR`); without a list each browser code is tried and a missing locale file is skipped. Nothing matches → `"en-US"`. Keys missing in a language are shown in `defaultLanguage` (else en-US). Without `defaultLanguage`, `languages`, `loadLocale` and `loadSupportLanguages` the app runs in en-US with the library's built-in English texts and no language switcher. |
+| `loadLocale(code)` | Loads the texts of a language lazily (dynamic `import()` / `import.meta.glob`): `loadLocaleGroups.bind(null, localeFiles)` for `locales/<code>/<group>.json`, or your own function returning one JSON. |
+| `languages` | Not needed: the list comes from `loadSupportLanguages` (below). Only for apps with a fixed list (`{ code, label, flag?, direction?, load? }`). |
 | `themes`, `darkThemes` | Optional. The theme switcher list (default: all 35 DaisyUI themes) and the dark ones (default: the DaisyUI dark themes). Dark themes switch to `logoDarkUrl` and dark markdown. |
 | `customThemes`, `loadThemes` | Optional. Your own themes as data / JSON (`{ name, isDark, variables }`), listed first: `customThemes` directly, or `loadThemes()` lazily like `loadLocale` (JSON file or API). Later ones: `setCustomThemes(json)`. |
 | `defaultTheme` | Optional. Theme of the first visit (nothing saved yet). Without it the browser preference decides: `"dark"` when it prefers a dark colour scheme, otherwise `"light"`. |
@@ -201,48 +200,87 @@ export const config: UiConfig = {
 | `appNameKey` | Key of the app (`ENV_BASE_NAME`): prefix of every AppStorage key (`ORG-TOKEN`, `ORG-LANG`) and of the `window.env` names (`REACT_APP_ORG_…`). The key names are fixed constants — no `storage` / `languageKey` / `themeKey` settings. |
 | `appName` | Label shown in header, sidebar and login: `t(config.appName)` (plain text or a translation key). Default: `appNameKey`. |
 
-| `navigation` | Not needed: the menu comes from `nav` (below). Only for apps with a fixed menu and no backend (`NavItem[]`). |
+| `loadSupportLanguages`, `loadBranches`, `loadMenuNavigation` | Backend loaders the provider calls (like `loadThemes`): languages on start, branches then menu after sign in. See "Backend data" below. |
+| `navigation` | Not needed: the menu comes from `loadMenuNavigation` (below). Only for apps with a fixed menu and no backend (`NavItem[]`). |
 | `navOptions` | How the backend menu is converted: `rootMenuIds` (default: groups named "Root" or ids ending in `_ROOT`), `isRootFlattened` (default `true`). |
 
-### Second config: `nav` (menu from the backend)
+### Backend data: `loadSupportLanguages`, `loadBranches`, `loadMenuNavigation`
 
-The menu is passed separately from `config` and can change at any time (login, persona switch, refresh).
-Pass the backend reply as it is — `{ data: [...], meta }` or only the list:
+Like `loadThemes`, these are loaders in the config, and the provider calls them itself — no `nav` / `lang` /
+`branch` props. A loader is your function returning the reply (or just a URL / path, sent with `AppHttp.Get`).
+Replies may be `{ data: [...], meta }` or only the list.
 
-```tsx
-const menuResponse = await AppHttp.Get(menuUrl);            // { data: [...], meta: {...} }
+```ts
+// config.ts
+function loadSupportLanguages(): Promise<unknown> {
+  return AppHttp.Get(`${MsUrl.main}/languages`);           // { data: [{ code: "en-US", name: "English", isDefault: true }] }
+}
 
-<SharedWebUiProvider config={config} nav={menuResponse}>   // null = skeleton, then the reply
-  <App />
-</SharedWebUiProvider>
+function loadBranches(): Promise<unknown> {
+  return AppHttp.Get(`${MsUrl.main}/branches`);
+}
+
+function loadMenuNavigation(): Promise<unknown> {
+  return AppHttp.Get(`${MsUrl.main}/menu-access`, { persona: "admin" });
+}
+
+export const config: UiConfig = {
+  appNameKey: "ORG",
+  loadLocale: loadLocale,
+  loadThemes: loadThemes,
+  loadSupportLanguages: loadSupportLanguages,   // on start             -> language switchers
+  loadBranches: loadBranches,                   // after sign in         -> branch switcher (before the menu)
+  loadMenuNavigation: loadMenuNavigation,       // after sign in         -> menu (skeleton until it answers)
+};
 ```
 
-Typical flow — the value starts as `null` and the reply arrives later:
+| When | What happens |
+| --- | --- |
+| Provider mounts | `loadSupportLanguages` runs once; on an error the default language stays. |
+| Sign in (`startSession`) or a restored session on start | `loadBranches`, then `loadMenuNavigation` (so the menu request sends `x-branch-id`). A menu error shows an empty menu, a branch error no switcher. |
+| Sign out (`endSession`) | Branches removed; the menu goes back to the skeleton for the next user. |
 
-```tsx
+**Or pass signals.** Each of the three can also be a signal you fill yourself (`null` first, then the reply). The
+provider follows it: every new value is shown at once, and nothing is called for it (no sign-in rule — your code
+decides when it changes):
+
+```ts
 // nav.service.ts
-export const navSignal = signal<MenuSource | null>(null);      // null = menu skeleton
+export const navSignal = signal<MenuSource | null>(null);        // null = menu skeleton
+export const branchSignal = signal<BranchSource | null>(null);   // null = no branch switcher
+export const langSignal = signal<LangSource | null>(null);       // null = no list yet
 
 export async function loadNav(): Promise<void> {
-  navSignal.value = null;
-  const reply = await AppHttp.Get(menuUrl);
-  navSignal.value = reply;                                     // menu appears; a new reply replaces it
+  navSignal.value = await AppHttp.Get(`${MsUrl.main}/menu-access`) as MenuSource;
 }
 
-// root.tsx
-export function Root() {
-  useSignals();
-  const nav = navSignal.value;
-  return (
-    <SharedWebUiProvider config={config} nav={nav}>
-      <App />
-    </SharedWebUiProvider>
-  );
-}
+// config.ts
+loadSupportLanguages: langSignal,
+loadBranches: branchSignal,
+loadMenuNavigation: navSignal,
 ```
 
-On an API error set `[]` (empty menu), otherwise the skeleton stays. On logout set `null` again.
-Without the prop: `setMenuLoading()` → `setMenu(menuResponse)`; `clearMenu()` on logout.
+Functions, URLs and signals can be mixed (for example languages as a function, the menu as a signal).
+
+Without `loadMenuNavigation` the menu is `config.navigation` (static). By hand, without loaders: `setLanguages(reply)`,
+`setBranches(reply)`, `setMenuLoading()` → `setMenu(reply)`, `clearMenu()`.
+
+### Layout choice (shell with microfrontends)
+
+`layoutChoiceSignal` (`"app"` | `"aside"`) and `changeLayoutChoice(choice)` keep the picked app layout in
+`LAYOUT_CHOICE` (localStorage). The provider reads it on start, and every copy of the library on the page (shell and
+MFEs) follows a change at once, like the theme. The shell renders `AppLayout` or `AsideLayout` from it; an MFE uses
+it to know whether the shell shows a header (`isAsideLayoutSignal`).
+
+### App type: `<SharedWebUiProvider type="...">`
+
+| `type` | For | Differences |
+| --- | --- | --- |
+| `"spa"` (default) | a normal app | layouts, menu, login; pages in `?page=...` |
+| `"shell"` | the root app that hosts microfrontends | like `spa`, but pages are paths by default (`/settings`) |
+| `"mfe"` | a microfrontend inside a shell | page layouts only: no menu (no skeleton), `loadMenuNavigation` / `loadBranches` not called (the shell owns them); `appName`, `logoUrl`, `logoDarkUrl`, `homePath`, `branchLabel` are not used. `loadSupportLanguages` still works. |
+
+`layout.pageMode` set in the config always wins over the type.
 
 What happens to the reply (`MenuAccessType`: `id`, `name`, `nameLang`, `href`, `icon`, `type`, `priority`,
 `read/create/update/delete` or `permissions`, `active`, `children`):
@@ -255,33 +293,20 @@ What happens to the reply (`MenuAccessType`: `id`, `name`, `nameLang`, `href`, `
 
 `toNavigation(menuResponse, options)` does the conversion if you need the `NavItem[]` yourself.
 
-### Third input: `lang` (languages from the backend)
+### Languages from the backend (`loadSupportLanguages`)
 
-Passed the same way as `nav`: `null` first, the reply later. Texts come from `locales/{code}.json` via `loadLocale`.
-
-```tsx
-// lang.service.ts
-export const langSignal = signal<LangSource | null>(null);
-
-export async function loadLanguages(): Promise<void> {
-  const reply = await AppHttp.Get(languagesUrl);   // { data: [{ code: "en-US", name: "English", isDefault: true }, ...] }
-  langSignal.value = reply;
-}
-
-// root.tsx
-<SharedWebUiProvider config={config} nav={navSignal.value} lang={langSignal.value}>
-```
+Called once on start (see above). Texts come from `locales/<code>/<group>.json` via `loadLocale`.
 
 - Row fields: `code` (or `langCode` / `languageCode` / `id`), `name` or `label`, `flag`, `direction` or `dir`,
   `isDefault` (or `default`), `active` (false hides it), `priority`. RTL is automatic for `ar`, `he`, `fa`, `ur`.
-- While `lang` is `null`: the saved language, else `defaultLanguage`, else the browser language (when its file
+- Until the reply arrives: the saved language, else `defaultLanguage`, else the browser language (when its file
   loads), else `en-US` is shown; the switchers have no list yet.
 - When the list arrives: the user's saved language stays if it is listed; otherwise the row with `isDefault`,
   else `defaultLanguage`, else the browser / system language (matched to the list), else `en-US`,
   else the first is loaded. Only a language the user picks is saved to localStorage.
 - `TypeLang` / `TypeLangMd` fields get one entry per listed language: `{ "en-US": "...", "ar-SA": "..." }`;
   backend `nameLang` with the same codes is shown by `trans()` and the menu.
-- Without the prop: `setLanguages(reply)`. Conversion only: `toLanguageOptions(reply)`, `readDefaultLanguageCode(reply)`.
+- By hand: `setLanguages(reply)`. Conversion only: `toLanguageOptions(reply)`, `readDefaultLanguageCode(reply)`.
 
 ### AppStorage and AppHttp
 
@@ -301,7 +326,7 @@ AppStorage.envData("API_BASE_URL");               // window.env.REACT_APP_ORG_AP
 const rows = await AppHttp.Get(`${MsUrl.main}/profile/search`, params);
 
 // A path works too: it is appended to http.baseUrl (or window.env API_BASE_URL)
-const same = await AppHttp.Get("/app-api/profile/search", params);   // -> https://api.example.com/api/app-api/profile/search
+const same = await AppHttp.Get("/org-api/profile/search", params);   // -> https://api.example.com/api/org-api/profile/search
 ```
 
 **URLs in every AppHttp method** (`Get`, `Post`, `Put`, `Delete`, `Patch`, `Load`, `CloudUpload`, `DownloadFile`): a URL that
@@ -329,35 +354,59 @@ AppHttp headers on every request: `Content-Type`, `Authorization: Bearer <TOKEN>
 Pick the branch with `setBranch(branch.id, branch.name)` (saved as `BRANCH_ID` / `BRANCH_NAME`, read back with
 `readBranchId()` or `branchIdSignal`); `clearBranch()` removes it and `endSession()` clears it too.
 
-**Branch switcher** – pass the user's branches like `lang` (null first, the reply later); the default and disabled
+**Branch switcher** – `config.loadBranches` (called after sign in, before the menu); the default and disabled
 branches come with the rows:
 
-```tsx
-<SharedWebUiProvider config={config} nav={nav} lang={lang} branch={branchReply}>
-// config.branchLabel = "branch.title"   -> title of the switcher, shown with t() (default "ui.branch" = "Branch")
+```ts
+loadBranches: loadBranches,    // () => AppHttp.Get(`${MsUrl.main}/branches`)
+branchLabel: "branch.title",   // title of the switcher, shown with t() (default "ui.branch" = "Branch")
 ```
 
 - Rows: `{ id | branchId | code, name | branchName | label, nameLang?, isDefault?, disabled?, active?, priority? }`, as `{ data: [...] }` or the list.
 - `disabled: true` shows the branch greyed out; it can not be selected. `active: false` hides it.
 - Selected when the list arrives: the saved `BRANCH_ID` (if listed and not disabled) → the row with `isDefault` → the first one that is not disabled.
 - Shown as a dropdown in the `Header` and as the first section of the settings dialog. `null` or `[]` = no switcher.
-- `setBranches(reply)` does the same without the provider (call it before the menu request so it already
+- `setBranches(reply)` does the same by hand (call it before the menu request so it already
   sends `x-branch-id`). Own layouts: `<BranchSwitcher />`. Helpers: `toBranchOptions`, `pickBranch`, `branchesSignal`.
 The token is read from AppStorage (`TOKEN`, sessionStorage then localStorage).
 
 `AppHttp` and `AppStorage` use no signals: they read the config saved by `<SharedWebUiProvider>`.
 Code that runs before the provider (for example at module load) calls `setAppConfig(config)` first, in `main.tsx`.
 
-## 2. locales/en-US.json
+## 2. locales: one folder per language, one file per group
 
-```json
-{
-  "app": { "name": "My App" },
-  "nav": { "dashboard": "Dashboard", "users": "Users", "usersText": "Everyone who uses the app" },
-  "greeting": "Hello {{name}}",
-  "REQUIRED": "This field is required"
-}
 ```
+locales/
+  en-US/
+    app.json     { "name": "My App" }                                  -> t("app.name")
+    nav.json     { "dashboard": "Dashboard", "users": "Users" }        -> t("nav.users")
+    roles.json   { "admin": "Admin", "viewer": "Viewer" }              -> t("roles.admin")
+    root.json    { "greeting": "Hello {{name}}", "REQUIRED": "..." }   -> t("greeting"), t("REQUIRED")  (top level)
+  fr-FR/
+    app.json …
+```
+
+```ts
+// config.ts
+import { loadLocaleGroups } from "shared-lib-web";
+
+const localeFiles = import.meta.glob("./locales/*/*.json");    // lazy: nothing is downloaded yet
+
+export const config: UiConfig = {
+  loadLocale: loadLocaleGroups.bind(null, localeFiles),        // fr-FR used -> only locales/fr-FR/*.json load
+};
+```
+
+- **Dynamic:** `import.meta.glob` (without `eager`) gives one lazy loader per file; `loadLocaleGroups` runs only
+  the files of the language that is used, in parallel, and merges them (the file name is the group, `root.json`
+  stays at the top level). The default language (en-US) is loaded too, for keys missing in the current one.
+- **Several folders:** merge them, `{ ...sharedFiles, ...ownFiles }` (MFEs: shared groups + the MFE's own); the same
+  group in two folders is merged, the later file wins per key.
+- One JSON per language still works: `loadLocale: (code) => import(\`./locales/${code}.json\`)`.
+
+**One sublevel only:** a key is `"key"` or `"group.key"` (`t("user.title")`, `t("branch.title")`). Deeper keys like
+`user.role.admin` are not looked up, and the library warns in the console when a locale file has them — use
+`role.admin` or `user.roleAdmin` instead.
 
 Lookup order: current language → `defaultLanguage` (else en-US) → library defaults (`ui.*` and dff-util `ConstMessages`) → the key.
 Shell texts to translate: `ui.language, theme, openMenu, expandMenu, collapseMenu, home, loading, close, noData,
@@ -368,13 +417,10 @@ openPreview, playVideo, mediaError`.
 ## 3. main.tsx and app.tsx
 
 ```tsx
-// root.tsx – the three inputs: static config + two backend replies (null first)
+// root.tsx – one input: the config (menu, languages, branches come from its loaders)
 export function Root() {
-  useSignals();
-  const nav = navSignal.value;
-  const lang = langSignal.value;
   return (
-    <SharedWebUiProvider config={config} nav={nav} lang={lang}>
+    <SharedWebUiProvider type="spa" config={config}>
       <App />
     </SharedWebUiProvider>
   );
@@ -467,7 +513,7 @@ isMenuVisibleSignal.value    // current state (re-renders components)
 | `AppLayout` | `headerEnd`, `sidebarFooter`, `showHeader`, `showSidebar` (default: `isMenuVisibleSignal`), `header`, `sidebar`, `footer` |
 | `Header` | `endContent`, `startContent`, `showMenuButtons`, `showSwitchers`, `isStandalone` |
 | `Sidebar` | `footer`, `showBrand` |
-| `SidebarNav` | `className`, `isAlwaysExpanded`, `isAlwaysShown` (menu list only, follows permissions and the menu on/off switch, skeleton while `nav` is `null`) |
+| `SidebarNav` | `className`, `isAlwaysExpanded`, `isAlwaysShown` (menu list only, follows permissions and the menu on/off switch, skeleton until `loadMenuNavigation` answers) |
 
 The example app shows both: Settings → *App layout* switches between `AppLayout` and
 `MainLayout` in `example/src/layout/main-layout.tsx`.
@@ -623,9 +669,9 @@ There are two examples, each its own small Vite app that uses the library source
 
 | Folder | Port | Shows |
 | --- | --- | --- |
-| `example-basic/` | 5174 | **One language** (en-US, `defaultLanguage` + `loadLocale`, no `lang`) and **no branches** (no `branch`): login, dashboard, users CRUD, settings (theme, menu mode, menu on/off). The smallest real setup to copy. |
-| `example-mfe/` | 9000 | **Microfrontends**: 4 separate Vite projects — `shell` (the only `AppLayout`, login, single-spa routing from `env.mfe.js`, event-based menu after a session) and 3 MFEs `settings`, `forms`, `profile` (page layouts only; theme and language from localStorage, kept in sync between bundles). See `example-mfe/README.md`. |
-| `example/` | 5173 | **11 languages** (`lang` from the backend, 4 RTL) and **stores** (`branch` from the backend, `isDefault` / `disabled`), plus every component, 3 layouts and all themes. |
+| `example-basic/` | 5174 | **One language** (en-US, `defaultLanguage` + `loadLocale`, no `loadSupportLanguages`) and **no branches** (no `loadBranches`): login, dashboard, users CRUD, settings (theme, menu mode, menu on/off). The smallest real setup to copy. |
+| `example-mfe/` | 9000 | **Microfrontends**: 4 separate Vite projects — `shell` (the only `AppLayout`, login, single-spa routing from `env.mfe.js`, menu as a signal (`loadMenuNavigation: navSignal`), `type="shell"`) and 3 MFEs `settings`, `forms`, `profile` (`type="mfe"`, page layouts only; theme and language from localStorage, kept in sync between bundles). No shared folder: each project has its own config, texts and theme. See `example-mfe/README.md`. |
+| `example/` | 5173 | **10 languages** (`loadSupportLanguages`, 3 RTL) and **stores** (`loadBranches`, `isDefault` / `disabled`), plus every component, 3 layouts and all themes. |
 
 ```bash
 npm run example-basic:install
@@ -636,9 +682,10 @@ npm run example-basic:dev   # http://localhost:5174
 
 `example/` is its own small app package (Vite is used only there — an app needs a bundler; the library does not).
 It shows login, dashboard, users CRUD (drawer + confirm + permissions), a **Components** section with every control,
-upload, overlay, skeleton and state, and settings for language (11, including 4 RTL and Telugu, Kannada, Tamil), theme (all 35 DaisyUI themes + custom `org-light` / `org-dark`) and navigation style.
-All pages live in one `App` component (`example/src/app.tsx`) and are picked by `?page`; the menu (`nav`) and the
-languages (`lang`) come from fake backend replies. It uses the library source directly, so changes show up without a build.
+upload, overlay, skeleton and state, and settings for language (10, including 3 RTL and Telugu, Kannada, Tamil), theme (all 35 DaisyUI themes + custom `org-light` / `org-dark`) and navigation style.
+All pages live in one `App` component (`example/src/app.tsx`) and are picked by `?page`; the languages, branches and
+menu are signals in the config (`example/src/backend/backend-signals.ts`), filled from fake backend replies by
+`backend/backend.service.ts`. It uses the library source directly, so changes show up without a build.
 
 ```bash
 npm run example:install

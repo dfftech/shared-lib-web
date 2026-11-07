@@ -2,7 +2,7 @@
 # build-shell-script.py — turns example-mfe/shell into ONE stand-alone bash script (mfe-shell-web.sh).
 #   python3 scripts/build-shell-script.py [out-file]      (default: dist-scripts/mfe-shell-web.sh)
 # The generated script creates the shell as its own project:
-#   - the files of example-mfe/shell, plus the example-mfe/shared files it uses copied into src/shared/
+#   - the files of example-mfe/shell (it has its own config, locales, theme and layout-choice: no shared folder)
 #   - shared-lib-web from npm (no alias to the library source)
 #   - text files as quoted heredocs, images (svg, png, jpg, gif, ico, webp) as base64
 # Run it again after changing the shell, so the script stays the same as the example.
@@ -15,12 +15,10 @@ import sys
 REPO = pathlib.Path(__file__).resolve().parent.parent
 MFE = REPO / "example-mfe"
 SHELL = MFE / "shell"
-SHARED = MFE / "shared"
 OUT = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else REPO / "dist-scripts" / "mfe-shell-web.sh"
 
 IMAGE_SUFFIXES = {".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp"}
 SKIP_NAMES = {"node_modules", "dist", "package-lock.json", "package.json", "vite.config.ts", "tsconfig.json"}
-SHARED_FILES = ["config.ts", "roles.ts", "layout-choice.ts", "theme", "locales"]
 
 # path in the new project -> source file
 files: dict[str, pathlib.Path] = {}
@@ -29,17 +27,10 @@ for source in sorted(SHELL.rglob("*")):
     if source.is_dir() or relative.parts[0] in SKIP_NAMES:
         continue
     files[str(relative)] = source
-for name in SHARED_FILES:
-    source = SHARED / name
-    sources = sorted(source.rglob("*")) if source.is_dir() else [source]
-    for item in sources:
-        if item.is_file():
-            files["src/shared/" + str(item.relative_to(SHARED))] = item
 
 
 def fix_text(path: str, text: str) -> str:
     """Rewrites the monorepo paths so the project stands alone."""
-    text = text.replace("../../shared/", "./shared/")
     if path == "src/index.css":
         text = text.replace(
             '/* index.css — styles of the shell (AppLayout, login, home page).\n'
@@ -48,11 +39,7 @@ def fix_text(path: str, text: str) -> str:
         )
         text = text.replace('@import "tailwindcss";', '@import "tailwindcss";\n@import "shared-lib-web/styles.css";', 1)
         text = re.sub(r'@source "\.\./\.\./\.\./src";\n', "", text)
-        text = re.sub(r'@source "\.\./\.\./shared";\n', "", text)
-        text = text.replace("come from theme/org-themes.json", "come from src/shared/theme/org-themes.json")
-    if path == "src/shared/config.ts":
-        text = text.replace("ONE config shared by every MFE (import it, do not copy it).",
-                            "the config shared with the MFEs (keep it the same in every MFE).")
+        text = text.replace("come from theme/org-themes.json", "come from src/theme/org-themes.json")
     if path == "index.html":
         text = text.replace("<title>Org MFE shell</title>", "<title>__APP_NAME__</title>")
     return text
@@ -129,7 +116,7 @@ npm run build    # -> dist/
 ```
 
 - `public/env.mfe.js` — the MFEs: `{ id, path, url, render }` (change per environment, no build needed)
-- `src/config.ts` — shell config (logo, layout, http); `src/shared/` — config, themes and texts shared with the MFEs
+- `src/config.ts` — shell config (app key, languages, themes, logo, layout, http, menu); `src/locales/<code>/<group>.json` — texts; `src/theme/` — custom themes
 - `src/shell.tsx` — provider, AppLayout / AsideLayout, login, home; MFEs mount in `<div id="mfe-body">`
 - `src/mfe.ts` — single-spa registration; `src/session.ts` — sign in / out and the menu
 - Sign in with any email; the menu comes from `public/api/app-api/menu-access.json`

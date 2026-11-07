@@ -4,7 +4,7 @@
 //   setBranch(branch.id, branch.name);   // after the user picks a branch (saved in AppStorage BRANCH_ID / BRANCH_NAME)
 //   branchIdSignal.value                 // current id, "" when none (re-renders components)
 //   clearBranch();                       // no branch (endSession() clears it too)
-//   <SharedWebUiProvider branch={reply}>  // list for the switcher (see below)
+//   config.loadBranches: "/app-api/branches"  // the provider calls it after sign in
 
 import { signal } from "@preact/signals-react";
 import { ConstValue } from "dff-util";
@@ -49,7 +49,7 @@ export function restoreBranch(): void {
 
 // ---- Branch list (the switcher) ----
 //
-//   <SharedWebUiProvider config={config} branch={branchReply}>
+//   config.loadBranches (the provider calls it after sign in)
 //   setBranches(branchReply);               // the same without the provider (for example before the menu request)
 //
 // Which branch is selected when the list arrives (disabled branches are never selected):
@@ -187,7 +187,7 @@ export function setBranches(source: BranchSource | null | undefined): void {
 }
 
 /**
- * Used by <SharedWebUiProvider branch={...}>. Applies the value only when it changed.
+ * Used by the config loaders (and tests). Applies the value only when it changed.
  * undefined leaves the branches alone; null or [] hides the switcher.
  */
 export function registerBranches(source: BranchSource | null | undefined): void {

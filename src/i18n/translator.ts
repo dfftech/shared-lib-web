@@ -4,6 +4,9 @@
 //   t("nav.users")                    -> looks up { "nav": { "users": "..." } }
 //   t("greeting", { name: "Asha" })   -> "Hello {{name}}" becomes "Hello Asha"
 //
+// Locale files have at most ONE sublevel: "key" or "group.key" ({ "user": { "title": "..." } }).
+// Deeper keys ("user.role.admin") are not looked up; use "role.admin" or "user.roleAdmin" instead.
+//
 // Search order: current language -> fallback language -> package defaults -> the key itself.
 
 import { ConstValue } from "dff-util";
@@ -14,26 +17,49 @@ import { DEFAULT_CONST_MESSAGES, DEFAULT_UI_MESSAGES } from "./default-messages.
 
 const PLACEHOLDER_PATTERN = /\{\{\s*(\w+)\s*\}\}/g;
 
-/** Finds a text in a messages object by a dotted key. Returns undefined when not found. */
+/** The deepest key: "group.key" (one sublevel). */
+export const MAX_KEY_PARTS = 2;
+
+/**
+ * Finds a text in a messages object by a key: "key" or "group.key" (one sublevel only).
+ * Returns undefined when not found or when the key is deeper ("a.b.c").
+ */
 export function lookupMessage(messages: LocaleMessages, key: string): string | undefined {
   const directValue = messages[key];
   if (typeof directValue === "string") {
     return directValue;
   }
   const keyParts = key.split(ConstValue.PERIOD);
-  let currentValue: string | LocaleMessages | undefined = messages;
-  for (const keyPart of keyParts) {
-    const isGroup = typeof currentValue === "object" && currentValue !== null;
-    if (!isGroup) {
-      return undefined;
+  if (keyParts.length !== MAX_KEY_PARTS) {
+    return undefined;
+  }
+  const groupName = keyParts[0] ?? ConstValue.EMPTY;
+  const itemName = keyParts[1] ?? ConstValue.EMPTY;
+  const group = messages[groupName];
+  const isGroup = typeof group === "object" && group !== null;
+  if (!isGroup) {
+    return undefined;
+  }
+  const value = group[itemName];
+  return typeof value === "string" ? value : undefined;
+}
+
+/** The keys of a locale file that are deeper than "group.key" (they are never shown). [] when the file is fine. */
+export function findDeepLocaleKeys(messages: LocaleMessages): string[] {
+  const deepKeys: string[] = [];
+  const groupEntries = Object.entries(messages);
+  for (const [groupName, group] of groupEntries) {
+    if (typeof group !== "object" || group === null) {
+      continue;
     }
-    const group = currentValue as LocaleMessages;
-    currentValue = group[keyPart];
+    const itemEntries = Object.entries(group);
+    for (const [itemName, value] of itemEntries) {
+      if (typeof value === "object" && value !== null) {
+        deepKeys.push(`${groupName}.${itemName}.*`);
+      }
+    }
   }
-  if (typeof currentValue === "string") {
-    return currentValue;
-  }
-  return undefined;
+  return deepKeys;
 }
 
 /** Replaces {{name}} placeholders with values from params. Unknown placeholders stay as they are. */

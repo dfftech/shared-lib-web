@@ -22,6 +22,7 @@ import { AppStorage } from "../utils/app-storage.ts";
 import { LANG } from "../utils/storage-keys.ts";
 import { matchLanguageCode, readBrowserLanguageCodes } from "./browser-language.ts";
 import { findLanguageOption } from "./direction.ts";
+import { findDeepLocaleKeys } from "./translator.ts";
 
 const UI_CONFIG_MISSING = "shared-lib-web: config is missing. Wrap your app in <SharedWebUiProvider config={config}>.";
 
@@ -74,6 +75,15 @@ export function runLocaleLoader(languageCode: string): Promise<LocaleModule> | u
   return loadLocale(languageCode);
 }
 
+/** Locale files allow one sublevel ("group.key"); deeper groups are never shown, so say so once per file. */
+function warnAboutDeepKeys(languageCode: string, messages: LocaleMessages): void {
+  const deepKeys = findDeepLocaleKeys(messages);
+  if (deepKeys.length > 0) {
+    const keyList = deepKeys.join(", ");
+    console.warn(`shared-lib-web: ${languageCode}.json is deeper than "group.key" (one sublevel); not used: ${keyList}`);
+  }
+}
+
 /** Loads (or reads from cache) the messages of one language. undefined when it cannot be loaded. */
 export async function loadLocaleMessages(languageCode: string): Promise<LocaleMessages | undefined> {
   const cachedMessages = loadedMessagesCache.get(languageCode);
@@ -87,6 +97,7 @@ export async function loadLocaleMessages(languageCode: string): Promise<LocaleMe
   try {
     const localeModule = await loading;
     const messages = unwrapLocaleModule(localeModule);
+    warnAboutDeepKeys(languageCode, messages);
     loadedMessagesCache.set(languageCode, messages);
     return messages;
   } catch {

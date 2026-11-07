@@ -35,6 +35,6 @@ export function closeProfileEdit(): void {
 export function handleProfileSave(values: ProfileType): void {
   profileSignal.value = values;
   isProfileEditOpen.value = false;
-  const message = translate("mfe.profile.saved");
+  const message = translate("profile.saved");
   ShowToast(message, "success");
 }

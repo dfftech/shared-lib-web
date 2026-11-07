@@ -142,7 +142,7 @@ export function SettingsMenu(props: SettingsMenuProps) {
   const hasMenu = navigationSignal.value.length > 0;
   const isNavigationModeAllowed = hasMenu && !isAsideLayout;
   const showNavigationMode = isNavigationModeAllowed && (props.showNavigationMode ?? true);
-  const hasLanguages = languages.length > 0;
+  const hasLanguages = languages.length > 1;
   const isCollapsed = isSidebarCollapsedSignal.value || isRailEverywhereSignal.value;
   const showLabel = isInSidebar && !isCollapsed;
   const isOpen = isSettingsOpenSignal.value;

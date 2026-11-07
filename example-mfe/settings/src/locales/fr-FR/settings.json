@@ -1,0 +1,13 @@
+{
+  "title": "Paramètres",
+  "text": "Enregistrés dans localStorage (ORG-LANG, ORG-THEME). Les autres MFE les lisent à l’ouverture.",
+  "language": "Langue",
+  "theme": "Thème",
+  "saved": "Enregistré : {{lang}} · {{theme}}",
+  "layout": "Disposition",
+  "appLayout": "Disposition app (en-tête + menu)",
+  "asideLayout": "Disposition latérale (menu seul)",
+  "menu": "Navigation du menu",
+  "sidebar": "Barre latérale",
+  "megaMenu": "Méga menu"
+}

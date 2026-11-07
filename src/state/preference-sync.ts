@@ -1,5 +1,5 @@
 // preference-sync.ts
-// Keeps the theme, language and menu mode the same in every copy of the library on the page — for microfrontends,
+// Keeps the theme, language, menu mode and layout choice the same in every copy of the library on the page — for microfrontends,
 // where each MFE bundles its own shared-lib-web — and in other tabs.
 //
 //   AppStorage.setData(THEME | LANG, ...)  -> fires window event PREFERENCE_EVENT (same tab, storage-keys.ts)
@@ -9,7 +9,8 @@
 import { applyLanguage } from "../i18n/locale-service.ts";
 import { isKnownTheme } from "../theme/theme-service.ts";
 import { AppStorage, readPrefixedKey } from "../utils/app-storage.ts";
-import { LANG, MENU_MODE, PREFERENCE_EVENT, THEME } from "../utils/storage-keys.ts";
+import { LANG, LAYOUT_CHOICE, MENU_MODE, PREFERENCE_EVENT, THEME } from "../utils/storage-keys.ts";
+import { applySavedLayoutChoice } from "./layout-choice-service.ts";
 import { localeSignal, navigationModeSignal, themeSignal, uiConfigSignal } from "./signals.ts";
 
 let isPreferenceSyncStarted = false;
@@ -45,7 +46,7 @@ export function applySavedMenuMode(): void {
   }
 }
 
-/** Applies the preference named by the key ("THEME", "LANG" or "MENU_MODE"). */
+/** Applies the preference named by the key ("THEME", "LANG", "MENU_MODE" or "LAYOUT_CHOICE"). */
 export function applySavedPreference(key: string): void {
   if (key === THEME) {
     applySavedTheme();
@@ -55,6 +56,9 @@ export function applySavedPreference(key: string): void {
   }
   if (key === MENU_MODE) {
     applySavedMenuMode();
+  }
+  if (key === LAYOUT_CHOICE) {
+    applySavedLayoutChoice();
   }
 }
 
@@ -70,6 +74,7 @@ export function handleStorageEvent(event: StorageEvent): void {
   const themeKey = readPrefixedKey(THEME);
   const languageKey = readPrefixedKey(LANG);
   const menuModeKey = readPrefixedKey(MENU_MODE);
+  const layoutChoiceKey = readPrefixedKey(LAYOUT_CHOICE);
   if (event.key === themeKey) {
     applySavedTheme();
   }
@@ -78,6 +83,9 @@ export function handleStorageEvent(event: StorageEvent): void {
   }
   if (event.key === menuModeKey) {
     applySavedMenuMode();
+  }
+  if (event.key === layoutChoiceKey) {
+    applySavedLayoutChoice();
   }
 }
 

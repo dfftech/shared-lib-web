@@ -58,8 +58,8 @@ export function LanguageSwitcher() {
   const items = buildLanguageItems(languages, locale);
   const baseCode = readBaseLanguageCode(locale);
   const activeCode = baseCode.toUpperCase();
-  // No language list (lang null and no config.languages): only config.defaultLanguage, nothing to switch.
-  if (languages.length === 0) {
+  // No list, or only one language: nothing to switch.
+  if (languages.length < 2) {
     return null;
   }
 

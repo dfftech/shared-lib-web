@@ -1,26 +1,29 @@
 // settings.page.tsx — page layout only (HeadLayout + ContentLayout), no AppLayout.
 import {
   AppStorage,
+  changeLanguage,
+  changeLayoutChoice,
+  changeNavigationMode,
+  changeTheme,
   ContentLayout,
   HeadLayout,
   LANG,
-  THEME,
-  TypeButton,
-  TypeIcon,
-  changeLanguage,
-  changeNavigationMode,
-  changeTheme,
+  layoutChoiceSignal,
   navigationModeSignal,
   readDataValue,
+  THEME,
+  toLayoutChoice,
+  TypeButton,
+  TypeIcon,
   useUi,
   type LanguageOption,
   type NavigationMode,
   type Theme,
 } from "shared-lib-web";
 import type { MouseEvent, ReactElement } from "react";
-import type { MfeProps } from "../../shared/mfe-lifecycles.ts";
-import { MfePage } from "../../shared/mfe-page.tsx";
-import { layoutChoiceSignal, saveLayoutChoice, type LayoutChoice } from "../../shared/layout-choice.ts";
+import type { MfeProps } from "./mfe-lifecycles.ts";
+import { MfePage } from "./mfe-page.tsx";
+
 
 /** Language buttons carry the code in data-value. Saved as ORG-LANG. */
 function handleLanguageClick(event: MouseEvent<HTMLButtonElement>): void {
@@ -30,8 +33,9 @@ function handleLanguageClick(event: MouseEvent<HTMLButtonElement>): void {
 
 /** Layout buttons carry "app" or "aside". Saved as ORG-LAYOUT_CHOICE; the shell switches its layout. */
 function handleLayoutClick(event: MouseEvent<HTMLButtonElement>): void {
-  const choice = readDataValue(event) as LayoutChoice;
-  saveLayoutChoice(choice);
+  const value = readDataValue(event);
+  const choice = toLayoutChoice(value);
+  changeLayoutChoice(choice);
 }
 
 /** Menu buttons carry "sidebar" or "megamenu". Saved as ORG-MENU_MODE; the shell menu switches. */
@@ -109,18 +113,18 @@ function SettingsPage() {
 
   return (
     <>
-      <HeadLayout title={t("mfe.settings.title")} />
-      <p className="text-sm opacity-70">{t("mfe.settings.text")}</p>
+      <HeadLayout title={t("settings.title")} />
+      <p className="text-sm opacity-70">{t("settings.text")}</p>
       <ContentLayout className="space-y-6">
         <div>
-          <h3 className="mb-2 font-semibold">{t("mfe.settings.layout")}</h3>
+          <h3 className="mb-2 font-semibold">{t("settings.layout")}</h3>
           <div className="join">
             <TypeButton
               size="sm"
               icon="LayoutTemplate"
               action={isAppLayout ? "primary" : "ghost"}
               className="join-item border border-base-300"
-              label={t("mfe.settings.appLayout")}
+              label={t("settings.appLayout")}
               dataValue="app"
               onPress={handleLayoutClick}
             />
@@ -129,7 +133,7 @@ function SettingsPage() {
               icon="PanelLeftDashed"
               action={isAppLayout ? "ghost" : "primary"}
               className="join-item border border-base-300"
-              label={t("mfe.settings.asideLayout")}
+              label={t("settings.asideLayout")}
               dataValue="aside"
               onPress={handleLayoutClick}
             />
@@ -138,14 +142,14 @@ function SettingsPage() {
         {/* The aside layout has no mega menu, so the menu navigation choice is only for the app layout. */}
         {isAppLayout ? (
           <div>
-            <h3 className="mb-2 font-semibold">{t("mfe.settings.menu")}</h3>
+            <h3 className="mb-2 font-semibold">{t("settings.menu")}</h3>
             <div className="join">
               <TypeButton
                 size="sm"
                 icon="PanelLeft"
                 action={isSidebarMode ? "primary" : "ghost"}
                 className="join-item border border-base-300"
-                label={t("mfe.settings.sidebar")}
+                label={t("settings.sidebar")}
                 dataValue="sidebar"
                 onPress={handleMenuModeClick}
               />
@@ -154,7 +158,7 @@ function SettingsPage() {
                 icon="PanelTop"
                 action={isSidebarMode ? "ghost" : "primary"}
                 className="join-item border border-base-300"
-                label={t("mfe.settings.megaMenu")}
+                label={t("settings.megaMenu")}
                 dataValue="megamenu"
                 onPress={handleMenuModeClick}
               />
@@ -162,11 +166,11 @@ function SettingsPage() {
           </div>
         ) : null}
         <div>
-          <h3 className="mb-2 font-semibold">{t("mfe.settings.language")}</h3>
+          <h3 className="mb-2 font-semibold">{t("settings.language")}</h3>
           <div className="flex flex-wrap gap-2">{languageButtons}</div>
         </div>
         <div>
-          <h3 className="mb-2 font-semibold">{t("mfe.settings.theme")}</h3>
+          <h3 className="mb-2 font-semibold">{t("settings.theme")}</h3>
           <h4 className="mb-1 flex items-center gap-1 text-sm opacity-70">
             <TypeIcon name="Sun" size={14} />
             {t("ui.lightThemes")}
@@ -178,7 +182,7 @@ function SettingsPage() {
           </h4>
           <div className="flex flex-wrap gap-2">{darkButtons}</div>
         </div>
-        <p className="badge badge-ghost font-mono" dir="ltr">{t("mfe.settings.saved", savedParams)}</p>
+        <p className="badge badge-ghost font-mono" dir="ltr">{t("settings.saved", savedParams)}</p>
       </ContentLayout>
     </>
   );

@@ -3,6 +3,7 @@
 // and no switcher for null / [].
 import { afterEach, describe, it } from "node:test";
 import { expect } from "./expect.ts";
+import { BackendData } from "./backend-data.tsx";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import {
   AppHttp,
@@ -34,7 +35,8 @@ async function renderShell(branch: BranchSource | null): Promise<void> {
   window.history.pushState({}, "", "/");
   const page = <p>branch page</p>;
   render(
-    <SharedWebUiProvider config={branchConfig} branch={branch}>
+    <SharedWebUiProvider config={branchConfig}>
+      <BackendData branch={branch} />
       <AppLayout>{page}</AppLayout>
     </SharedWebUiProvider>,
   );

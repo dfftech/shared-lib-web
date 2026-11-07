@@ -1,0 +1,11 @@
+{
+  "title": "Settings",
+  "theme": "Theme",
+  "current": "Current: {{locale}} · {{theme}} · {{direction}}",
+  "navigation": "Navigation",
+  "sidebar": "Sidebar",
+  "megamenu": "Mega menu",
+  "menu": "Menu",
+  "menuOn": "Show",
+  "menuOff": "Hide"
+}

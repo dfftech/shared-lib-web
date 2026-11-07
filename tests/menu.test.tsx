@@ -1,6 +1,7 @@
-// Tests for backend menus: toNavigation(), setMenu() and <SharedWebUiProvider nav={...}>.
+// Tests for backend menus: toNavigation(), setMenu() and config.loadMenuNavigation.
 import { afterEach, describe, it } from "node:test";
 import { expect } from "./expect.ts";
+import { BackendData } from "./backend-data.tsx";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import {
   SharedWebUiProvider,
@@ -46,7 +47,8 @@ interface MenuShellProps {
 
 function MenuShell(props: MenuShellProps) {
   return (
-    <SharedWebUiProvider config={menuConfig} nav={props.nav}>
+    <SharedWebUiProvider config={menuConfig}>
+      <BackendData nav={props.nav} />
       <AppLayout>
         <p>page</p>
       </AppLayout>

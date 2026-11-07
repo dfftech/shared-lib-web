@@ -4,6 +4,7 @@
 //                   the shell's home page ("/"), or the MFE of the current page in <div id="mfe-body" />
 
 import { useSignals } from "@preact/signals-react/runtime";
+import { ConstKeys, RegExp } from "dff-util";
 import {
   ComingSoon,
   ContentLayout,
@@ -18,15 +19,20 @@ import {
   isDesktopSidebarSignal,
   useCurrentPage,
   useUi,
+  layoutChoiceSignal,
 } from "shared-lib-web";
 import { AppLayout, AsideLayout, AuthLayout } from "shared-lib-web/layout";
-import { useEffect, useLayoutEffect, type ReactElement } from "react";
+import { useEffect, type ReactElement } from "react";
 import { useForm } from "react-hook-form";
-import { emailRules } from "../../shared/roles.ts";
 import { shellConfig } from "./config.ts";
-import { layoutChoiceSignal, startLayoutChoiceSync } from "../../shared/layout-choice.ts";
 import { attachMfeBody, findMfeRoute, mfeErrorSignal, readMfeRoutes, syncMfes } from "./mfe.ts";
-import { announceSession, navSignal, signIn, signOut } from "./session.ts";
+import { signIn, signOut, startBackendData } from "./session.ts";
+
+/** Login email: required + a valid address (dff-util messages, translated in root.json). */
+const emailRules = {
+  required: { value: true, message: ConstKeys.REQUIRED },
+  pattern: { value: RegExp.EMAIL, message: ConstKeys.INVALID_EMAIL },
+};
 
 const RUN_ONCE: never[] = [];
 
@@ -47,10 +53,10 @@ function LoginPage() {
   const onSubmit = form.handleSubmit(handleLoginSubmit);
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2">
-      <h1 className="text-2xl font-bold text-primary">{t("shell.login.title")}</h1>
-      <p className="mb-2 text-sm opacity-70">{t("shell.login.hint")}</p>
-      <TypeInput control={form.control} name="email" type="email" label={t("shell.login.email")} rules={emailRules} />
-      <TypeButton type="submit" icon="LogIn" label={t("shell.login.submit")} isBlock />
+      <h1 className="text-2xl font-bold text-primary">{t("login.title")}</h1>
+      <p className="mb-2 text-sm opacity-70">{t("login.hint")}</p>
+      <TypeInput control={form.control} name="email" type="email" label={t("login.email")} rules={emailRules} />
+      <TypeButton type="submit" icon="LogIn" label={t("login.submit")} isBlock />
     </form>
   );
 }
@@ -72,9 +78,9 @@ function HomePage() {
   }
   return (
     <>
-      <HeadLayout title={t("shell.home.title")} />
+      <HeadLayout title={t("home.title")} />
       <ContentLayout>
-        <p className="mb-4 opacity-70">{t("shell.home.text")}</p>
+        <p className="mb-4 opacity-70">{t("home.text")}</p>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{cards}</div>
       </ContentLayout>
     </>
@@ -84,9 +90,8 @@ function HomePage() {
 // ---- Layout ----
 
 function Shell() {
+  useSignals();
   const page = useCurrentPage();
-  // Read ORG-LAYOUT_CHOICE here, inside the provider: the "ORG" storage prefix comes from the config it registers.
-  useLayoutEffect(startLayoutChoiceSync, RUN_ONCE);
   const isSignedIn = isAuthenticatedSignal.value;
   // After the layout (with #mfe-body) is on screen, and after every sign in / out: let single-spa (un)mount MFEs.
   const signedInState = [isSignedIn];
@@ -137,13 +142,11 @@ function Shell() {
   );
 }
 
-/** The provider (config + menu) around the shell. */
+/** The provider around the shell (type "shell": pages are paths; languages and menu are signals, see config.ts / session.ts). */
 export function Root() {
-  useSignals();
-  // After the provider restored the session: user info there -> SESSION_EVENT -> menu.
-  useEffect(announceSession, RUN_ONCE);
+  useEffect(startBackendData, RUN_ONCE);
   return (
-    <SharedWebUiProvider config={shellConfig} nav={navSignal.value}>
+    <SharedWebUiProvider type="shell" config={shellConfig}>
       <Shell />
     </SharedWebUiProvider>
   );

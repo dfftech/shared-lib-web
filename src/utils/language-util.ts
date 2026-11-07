@@ -4,7 +4,7 @@
 //   const languages = toLanguageOptions(langResponse);   // { data: [...], meta } or the plain list
 //   const defaultCode = readDefaultLanguageCode(langResponse);
 //
-// Usually you do not call this yourself: <SharedWebUiProvider lang={langResponse}> or setLanguages() do it.
+// Usually you do not call this yourself: config.loadSupportLanguages or setLanguages() do it.
 
 import { ConstValue } from "dff-util";
 import type { LangSource, LanguageRowType } from "../interfaces/app-types.ts";

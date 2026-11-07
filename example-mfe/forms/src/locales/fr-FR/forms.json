@@ -1,0 +1,13 @@
+{
+  "title": "Formulaires",
+  "name": "Nom complet",
+  "email": "E-mail",
+  "role": "Rôle",
+  "startDate": "Date de début",
+  "active": "Actif",
+  "notes": "Notes",
+  "submit": "Envoyer",
+  "cancel": "Annuler",
+  "submitted": "Formulaire envoyé",
+  "values": "Valeurs envoyées"
+}

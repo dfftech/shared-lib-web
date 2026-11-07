@@ -1,8 +1,9 @@
 // Session state of the example (who is logged in). Uses the library session:
 //   startSession(token, user, isRemembered)  -> sessionStorage ORG-TOKEN + ORG-AUTH_USER, localStorage ORG-REMEMBER_ME
 //   restoreSession()                         -> done by SharedWebUiProvider on start (a refresh keeps you signed in)
+//   Menu: backend/backend.service.ts loads it after sign in, removed on sign out.
 //   endSession()                             -> clears AppStorage but keeps THEME, MENU_MODE ...
-import { computed, effect } from "@preact/signals-react";
+import { computed } from "@preact/signals-react";
 import {
   authUserSignal,
   endSession as endSharedSession,
@@ -10,7 +11,6 @@ import {
   startSession as startSharedSession,
 } from "shared-lib-web";
 import { AppUUID4, ConstValue } from "dff-util";
-import { clearNav, loadNav } from "../../../../nav/nav.service.ts";
 
 function readSessionEmail(): string {
   const user = authUserSignal.value;
@@ -34,15 +34,3 @@ export function startSession(email: string, remember: boolean): void {
 export function endSession(): void {
   endSharedSession();
 }
-
-/** Loads the menu when signed in (also after a refresh), removes it when signed out. */
-function syncNavWithSession(): void {
-  const isSignedIn = isAuthenticatedSignal.value;
-  if (isSignedIn) {
-    void loadNav();
-    return;
-  }
-  clearNav();
-}
-
-effect(syncNavWithSession);

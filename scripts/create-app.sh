@@ -210,7 +210,7 @@ EOF
 
 cat > src/config.ts <<EOF
 // config.ts — app settings and the menu.
-import type { CustomThemesModule, MenuAccessType, UiConfig } from "shared-lib-web";
+import type { CustomThemesModule, UiConfig } from "shared-lib-web";
 
 /** The custom org themes (theme/org-themes.json), loaded lazily like the locale files. */
 function loadThemes(): Promise<CustomThemesModule> {
@@ -224,13 +224,13 @@ export const config: UiConfig = {
   loadThemes: loadThemes,
   homePath: "/",
   layout: { menuMode: "sidebar", isSidebarCollapsible: true, headerSettings: "menu" },
+  // A fixed menu. With a backend and a login use  loadMenuNavigation: () => AppHttp.Get("/app-api/menu-access")  instead
+  // (the provider calls it after sign in; also loadSupportLanguages and loadBranches).
+  navigation: [
+    { id: "home", labelKey: "Home", path: "/", icon: "House" },
+    { id: "users", labelKey: "Users", path: "/users", icon: "Users" },
+  ],
 };
-
-// The menu, in the same shape your backend sends it (usually loaded with an API call after login).
-export const nav: MenuAccessType[] = [
-  { id: "HOME", name: "Home", href: "/", icon: "house", read: true },
-  { id: "USERS", name: "Users", href: "/users", icon: "users", read: true },
-];
 EOF
 
 cat > src/pages/home.page.tsx <<'EOF'
@@ -266,7 +266,7 @@ cat > src/app.tsx <<'EOF'
 // app.tsx — provider + layout + the page for the current URL (?page=users -> "/users").
 import { PageNotFound, SharedWebUiProvider, useCurrentPage } from "shared-lib-web";
 import { AppLayout } from "shared-lib-web/layout";
-import { config, nav } from "./config.ts";
+import { config } from "./config.ts";
 import { HomePage } from "./pages/home.page.tsx";
 import { UsersPage } from "./pages/users.page.tsx";
 
@@ -279,7 +279,7 @@ function Pages() {
 
 export function App() {
   return (
-    <SharedWebUiProvider config={config} nav={nav}>
+    <SharedWebUiProvider type="spa" config={config}>
       <AppLayout>
         <Pages />
       </AppLayout>

@@ -1,7 +1,7 @@
 // menu-service.ts
 // Menus that come from the backend at runtime, separate from config.ts.
 //
-//   <SharedWebUiProvider config={config} nav={menuResponse}>   // reactive: a new reply replaces the menu
+//   config.loadMenuNavigation: "/app-api/menu-access"   // the provider calls it after sign in
 //   setMenu(menuResponse);                                      // or call it yourself, for example after login
 //   setMenuLoading();                                           // sidebar shows a skeleton until setMenu()
 //
@@ -44,7 +44,7 @@ export function clearMenu(): void {
 }
 
 /**
- * Used by <SharedWebUiProvider nav={...}>. Applies the value only when it changed.
+ * Used by the config loaders (and tests). Applies the value only when it changed.
  *   undefined     -> use config.navigation
  *   null          -> still loading: menu skeleton (typical first value before the API answers)
  *   reply / list  -> show it (a new reply object later replaces the menu)

@@ -3,7 +3,6 @@
 @import "tailwindcss";
 
 @source "../../../src";
-@source "../../shared";
 @source "./";
 
 /* All 35 DaisyUI 5 themes. The custom org themes come from theme/org-themes.json (config.loadThemes): no CSS. */

@@ -1,7 +1,7 @@
 // Tests for the lightweight translator and direction helpers.
 import { describe, it } from "node:test";
 import { expect } from "./expect.ts";
-import { fallbackTranslationSignal, interpolate, lookupMessage, resolveDirection, translate, translationSignal } from "../src/index.ts";
+import { fallbackTranslationSignal, findDeepLocaleKeys, interpolate, lookupMessage, resolveDirection, translate, translationSignal } from "../src/index.ts";
 import { testConfig } from "./test-config.ts";
 
 function testLookupNestedAndFlatKeys(): void {
@@ -11,6 +11,11 @@ function testLookupNestedAndFlatKeys(): void {
   expect(lookupMessage(messages, "REQUIRED")).toBe("Needed");
   expect(lookupMessage(messages, "nav.missing")).toBeUndefined();
   expect(lookupMessage(messages, "nav")).toBeUndefined();
+  // One sublevel only: "group.key"; deeper keys are never looked up.
+  const deepMessages = { user: { role: { admin: "Admin" }, title: "Users" } };
+  expect(lookupMessage(deepMessages, "user.role.admin")).toBeUndefined();
+  expect(lookupMessage(deepMessages, "user.title")).toBe("Users");
+  expect(findDeepLocaleKeys(deepMessages)[0]).toBe("user.role.*");
 }
 
 function testInterpolate(): void {

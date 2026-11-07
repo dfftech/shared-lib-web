@@ -1,6 +1,6 @@
 // vite.config.ts — the shell: its own Vite project (a normal app, not a library build).
 //   npm run dev   -> http://localhost:9000   (start the MFEs with "npm run serve" in their folders first)
-// It uses the library source (../../src) through an alias, and the shared MFE files in ../shared.
+// It uses the library source (../../src) through an alias.
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -24,7 +24,7 @@ const aliasOptions = [
   { find: /^shared-lib-web$/, replacement: libraryEntry },
 ];
 
-// The library source and ../shared live outside this folder: resolve these packages from THIS project.
+// The library source lives outside this folder: resolve these packages from THIS project.
 const dedupePackages = ["react", "react-dom", "@preact/signals-react", "react-hook-form", "lucide-react", "dff-util", "single-spa"];
 
 export default defineConfig({

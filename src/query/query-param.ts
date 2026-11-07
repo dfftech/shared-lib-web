@@ -19,6 +19,7 @@ import {
   openMegaMenuIdSignal,
   queryParamsSignal,
   railFlyoutSignal,
+  readIsPathPageMode,
   uiConfigSignal,
 } from "../state/signals.ts";
 import { toPagePath, toPageParamValue } from "./page-path.ts";
@@ -151,10 +152,13 @@ export function readCurrentPage(): string {
   return currentPageSignal.value;
 }
 
-/** true when pages live in the path (/profiles) instead of ?page (config.layout.pageMode "path"). */
+/**
+ * true when pages live in the path (/profiles) instead of ?page: config.layout.pageMode "path",
+ * or no pageMode and the app type "shell".
+ */
 export function isPathPageMode(): boolean {
   const config = uiConfigSignal.peek();
-  return config?.layout?.pageMode === "path";
+  return readIsPathPageMode(config);
 }
 
 /**

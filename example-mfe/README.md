@@ -8,7 +8,6 @@ Four separate Vite projects, each with its own `package.json`:
 | `settings/` | 5186 (dev) / 5176 (built) | MFE: layout (app / aside), menu navigation (sidebar / mega menu), language and theme (saved as `ORG-LAYOUT_CHOICE`, `ORG-MENU_MODE`, `ORG-LANG`, `ORG-THEME`) |
 | `forms/` | 5187 (dev) / 5177 (built) | MFE: form with a sticky `HeadLayout` (Cancel / Submit), validation, toast |
 | `profile/` | 5188 (dev) / 5178 (built) | MFE: profile with a `TypeImage` avatar and an edit `TypeDrawer` |
-| `shared/` | – | Files every project imports: `config.ts`, locales, org themes, MFE helpers |
 
 ```bash
 node run-all.mjs install   # npm install in every folder   (or: npm run example-mfe:install from the repo root)
@@ -33,8 +32,8 @@ Each folder also runs on its own:
 
 | File | What |
 | --- | --- |
-| `config.ts` | The shared config + the shell parts (logo, header settings, API URL) |
-| `session.ts` | Sign in / out and the menu (event based, see below) |
+| `config.ts` | App key, languages, themes, texts + the shell parts (logo, header settings, API URL, menu) |
+| `session.ts` | Sign in / out and `navSignal` (the menu, filled after sign in) |
 | `mfe.ts` | Everything single-spa: reads `env.mfe.js`, registers the MFEs, `syncMfes()` |
 | `shell.tsx` | The UI: provider, `AppLayout` with a plain `<div id="mfe-body" />`, login page, home page |
 | `main.tsx` | Start: listen for the session event, render |
@@ -72,18 +71,51 @@ window.envMfe = [
 - `shell/src/mfe.ts` registers every entry: active when signed in and the address is its path; the module
   is imported from its `url` the first time; `render` goes to the MFE as `customProps.domElementId`.
 
-## Session → menu (event based)
+## Session → menu (a signal)
 
-`shell/src/session.ts`: when user info is in the session a window event `org:session` is fired
-and the shell then requests the menu.
+`shell/src/session.ts` has `navSignal`, passed in the config as `loadMenuNavigation: navSignal`; the provider shows
+every new value at once (`null` = menu skeleton). `startMenuSync()` (started in `shell.tsx`) fills it:
 
-- start: the provider restores `ORG-TOKEN` / `ORG-AUTH_USER` from sessionStorage → user found → event → menu
-- sign in (shell login, or any MFE: `window.dispatchEvent(new CustomEvent("org:session"))`) → event → menu
-- sign out → menu cleared, MFE unmounted
+- start: the provider restores `ORG-TOKEN` / `ORG-AUTH_USER` from sessionStorage → signed in → menu request
+- sign in (`signIn` in `session.ts`) → menu request
+- sign out (`signOut`) → `navSignal` back to `null`, MFE unmounted
+
+## Every project stands alone (no shared folder)
+
+The shell and each MFE have their own copies of what they need, so each one can live in its own repository and
+build with its own Docker context:
+
+| File (in `src/`) | shell | settings | forms | profile |
+| --- | --- | --- | --- | --- |
+| `config.ts` (app key `ORG`, `langSignal`, themes, `loadLocale`, `MsUrl`) | ✓ (+ shell parts, `navSignal`) | ✓ | ✓ | ✓ |
+| `locales/<code>/` | `app`, `ui`, `root`, `login`, `home` | `ui`, `root`, `settings` | `ui`, `root`, `forms` | `ui`, `root`, `profile` |
+| `theme/org-themes.json` | ✓ | ✓ | ✓ | ✓ |
+| `public/api/org-api/languages.json` | ✓ | ✓ (alone) | ✓ (alone) | ✓ (alone) |
+| `mfe-page.tsx`, `mfe-lifecycles.ts` | – | ✓ | ✓ | ✓ |
+
+Keep the common parts the same in every project: `appNameKey` (`ORG`, so all read the same `ORG-THEME` / `ORG-LANG` /
+`ORG-LAYOUT_CHOICE`) and the theme file.
+
+**Languages** are a signal in every config, `loadSupportLanguages: langSignal`, filled from
+`/api/org-api/languages.json` (the shell in `session.ts`, each MFE in `mfe-page.tsx`). Inside the shell the MFE asks
+the shell's site (`/api` is relative to the page); alone it uses its own `public/api`.
+
+**Layout choice** (app / aside) lives in the library: `layoutChoiceSignal` and `changeLayoutChoice()`. The settings MFE
+calls `changeLayoutChoice`, the shell renders `AppLayout` or `AsideLayout` from `layoutChoiceSignal`, and every MFE's
+`mfe-page.tsx` copies it into `isAsideLayoutSignal` (HeadLayout below the header, or at the very top). No
+layout-choice file in the projects.
+
+Texts are one file per group, loaded lazily per language:
+
+```ts
+const localeFiles = import.meta.glob("./locales/*/*.json");
+loadLocale: loadLocaleGroups.bind(null, localeFiles),
+```
 
 ## Theme and language
 
-Every MFE renders `<SharedWebUiProvider config={sharedConfig} nav={[]}>` (no app layout, only page layouts), which
+Every MFE renders `<SharedWebUiProvider type="mfe" config={config}>` (its own `src/config.ts`) (no app layout, only page layouts; no menu or
+branch calls), which
 applies `ORG-THEME` / `ORG-LANG` from localStorage when it mounts. Each MFE bundles its own copy of the library, so
 the library fires a window event when a preference is saved (`PREFERENCE_EVENT`); every copy follows it at once:
 change the language in the shell's settings dialog and the open MFE switches too (and the other way round).

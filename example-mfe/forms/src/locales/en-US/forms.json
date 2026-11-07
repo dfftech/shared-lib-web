@@ -1,0 +1,13 @@
+{
+  "title": "Forms",
+  "name": "Full name",
+  "email": "Email",
+  "role": "Role",
+  "startDate": "Start date",
+  "active": "Active",
+  "notes": "Notes",
+  "submit": "Submit",
+  "cancel": "Cancel",
+  "submitted": "Form submitted",
+  "values": "Submitted values"
+}

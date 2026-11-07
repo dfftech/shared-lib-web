@@ -28,9 +28,6 @@
   },
   "include": [
     "src",
-    "../shared/config.ts",
-    "../shared/roles.ts",
-    "../shared/layout-choice.ts",
     "vite.config.ts"
   ]
 }

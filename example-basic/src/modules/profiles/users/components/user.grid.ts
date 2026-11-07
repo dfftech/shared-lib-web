@@ -4,7 +4,7 @@ import { TimeAgo } from "dff-util";
 import type { UserType } from "../hooks/types.ts";
 
 export function renderUserRole(user: UserType): string {
-  const roleKey = `user.roles.${user.role}`;
+  const roleKey = `roles.${user.role}`;
   return translate(roleKey);
 }
 

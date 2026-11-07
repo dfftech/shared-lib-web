@@ -1,0 +1,6 @@
+{
+  "title": "Sign in",
+  "hint": "Any email works. The menu loads after the session event.",
+  "email": "Email",
+  "submit": "Sign in"
+}

@@ -15,6 +15,7 @@ import { ConstValue } from "dff-util";
 import { toPagePath } from "../query/page-path.ts";
 import { resolveDirection } from "../i18n/direction.ts";
 import type {
+  AppType,
   CustomTheme,
   Direction,
   LanguageOption,
@@ -29,6 +30,9 @@ import { buildDarkThemeNames } from "../theme/dark-themes.ts";
 
 /** The config given to <SharedWebUiProvider>. null until the provider renders. */
 export const uiConfigSignal = signal<UiConfig | null>(null);
+
+/** What the app is: <SharedWebUiProvider type="spa" | "shell" | "mfe"> (default "spa"). */
+export const appTypeSignal = signal<AppType>("spa");
 
 /** Current language code. */
 export const localeSignal = signal<string>(ConstValue.EMPTY);
@@ -87,10 +91,29 @@ export function toPageFromPath(pathname: string): string {
   return pathname.slice(0, end);
 }
 
+/** true when pages live in the path: layout.pageMode "path", or no pageMode and the app type "shell". */
+export function readIsPathPageMode(config: UiConfig | null): boolean {
+  const pageMode = config?.layout?.pageMode;
+  if (pageMode) {
+    return pageMode === "path";
+  }
+  return appTypeSignal.value === "shell";
+}
+
+/** config.homePath (not used by an "mfe": the shell owns the home page), else "/". */
+function readHomePage(config: UiConfig | null): string {
+  const isMfe = appTypeSignal.value === "mfe";
+  if (isMfe) {
+    return DEFAULT_HOME_PAGE;
+  }
+  return config?.homePath ?? DEFAULT_HOME_PAGE;
+}
+
 function readCurrentPage(): string {
   const config = uiConfigSignal.value;
-  const homePage = config?.homePath ?? DEFAULT_HOME_PAGE;
-  if (config?.layout?.pageMode === "path") {
+  const homePage = readHomePage(config);
+  const isPathMode = readIsPathPageMode(config);
+  if (isPathMode) {
     const pathname = pathnameSignal.value;
     const pathPage = toPageFromPath(pathname);
     return pathPage || homePage;

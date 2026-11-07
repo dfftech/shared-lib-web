@@ -1,7 +1,7 @@
 // language-service.ts
 // Languages that come from the backend at runtime, separate from config.ts (like the menu: nav).
 //
-//   <SharedWebUiProvider config={config} lang={langResponse}>   // null first, the reply later
+//   config.loadSupportLanguages: "/app-api/languages"    // the provider calls it on start
 //   setLanguages(langResponse);                                 // or call it yourself
 //
 // langResponse is the backend reply { data: [...], meta } or only the list.
@@ -68,7 +68,7 @@ export function setLanguages(source: LangSource): void {
 }
 
 /**
- * Used by <SharedWebUiProvider lang={...}>. Applies the value only when it changed.
+ * Used by the config loaders (and tests). Applies the value only when it changed.
  *   undefined / null -> keep config.languages (or no list yet); texts of config.defaultLanguage still load
  *   reply / list     -> show it (a new reply replaces the list)
  */

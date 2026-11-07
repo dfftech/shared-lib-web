@@ -1,7 +1,7 @@
 // dev.tsx — runs the "forms" MFE alone (npm run dev), without the single-spa root. Hot reload works here.
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { MFE_CONTAINER_ID } from "../../shared/mfe-lifecycles.ts";
+import { MFE_CONTAINER_ID } from "./mfe-lifecycles.ts";
 import { FormsMfe } from "./forms.page.tsx";
 import "./index.css";
 

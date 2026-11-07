@@ -132,11 +132,39 @@ export interface LayoutConfig {
   pageParam?: string;
   /**
    * Where the current page lives in the address:
-   *   "query" (default)  http://host/?page=profiles
-   *   "path"             http://host/profiles      (the server must answer every path with index.html)
+   *   "query"            http://host/?page=profiles   (default for type "spa")
+   *   "path"             http://host/profiles         (default for type "shell"; the server must answer every path
+   *                                                    with index.html)
    */
   pageMode?: PageMode;
 }
+
+/**
+ * What the app is, passed as <SharedWebUiProvider type="...">:
+ *   "spa"    a normal single app (default): layouts, menu, login, ?page=... pages
+ *   "shell"  the root app that hosts microfrontends: like "spa", but pages are paths by default (/settings)
+ *   "mfe"    a microfrontend inside a shell: page layouts only. The shell owns the menu, branches, logos and app name,
+ *            so loadMenuNavigation / loadBranches are not called and appName, logoUrl, logoDarkUrl, homePath and
+ *            branchLabel are not used.
+ */
+export type AppType = "spa" | "shell" | "mfe";
+
+/** Anything with a reactive value: a @preact/signals signal or computed (read only). */
+export interface ValueSignal<TValue = unknown> {
+  readonly value: TValue;
+  peek(): TValue;
+  subscribe(listener: (value: TValue) => void): () => void;
+}
+
+/**
+ * A backend source of the config, one of:
+ *   - your function that returns the reply (like loadThemes / loadLocale)
+ *   - a URL / path (sent with AppHttp.Get; a path gets the base URL, see AppHttp)
+ *   - a signal you fill yourself: null = not here yet (menu: skeleton, branches: no switcher), then the reply;
+ *     every new value is applied at once (the provider does not call anything for a signal)
+ * Replies may be { data: [...], meta } or the list.
+ */
+export type ApiSource = string | (() => Promise<unknown>) | ValueSignal<unknown>;
 
 /** "query" = ?page=profiles, "path" = /profiles. */
 export type PageMode = "query" | "path";
@@ -168,6 +196,23 @@ export interface UiConfig {
    *   - window.env names: REACT_APP_ORG_API_BASE_URL (AppStorage.envData("API_BASE_URL"))
    */
   appNameKey: string;
+  /**
+   * Loads the supported languages (backend list): called once when the provider mounts, like loadThemes.
+   * On an error the default language stays. By hand: setLanguages(reply).
+   */
+  loadSupportLanguages?: ApiSource;
+  /**
+   * Loads the branches of the signed-in user: called after sign in (and on start when a session is restored),
+   * BEFORE loadMenuNavigation, so the menu request already sends x-branch-id. Removed on sign out.
+   * Not called for type "mfe". By hand: setBranches(reply).
+   */
+  loadBranches?: ApiSource;
+  /**
+   * Loads the menu of the signed-in user: called after sign in (and on start when a session is restored); the menu
+   * shows a skeleton until it answers, an error shows an empty menu. Removed on sign out. Not called for type "mfe".
+   * Without it the menu is config.navigation. By hand: setMenuLoading() -> setMenu(reply).
+   */
+  loadMenuNavigation?: ApiSource;
   /** Label shown in the header, sidebar and login: t(appName), so plain text or a translation key. Default: appNameKey. */
   appName?: string;
   /** Optional logo image URL (light themes). */
@@ -176,7 +221,7 @@ export interface UiConfig {
   logoDarkUrl?: string;
   /**
    * Static language list. Not needed when the languages come from the backend:
-   * pass them with <SharedWebUiProvider lang={langResponse}> or setLanguages(langResponse).
+   * pass them with config.loadSupportLanguages or setLanguages(langResponse).
    */
   languages?: LanguageOption[];
   /** Loads locales/{code}.json for any code ("en-US" -> en-US.json). Needed for backend languages. */
@@ -214,7 +259,7 @@ export interface UiConfig {
   darkThemes?: Theme[];
   /**
    * Static navigation items. Optional when the menu comes from the backend:
-   * pass it with <SharedWebUiProvider nav={menuResponse}> or setMenu(menuResponse).
+   * pass it with config.loadMenuNavigation or setMenu(menuResponse).
    */
   navigation?: NavItem[];
   /** How backend menus are converted (root group flattening). */

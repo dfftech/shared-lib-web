@@ -4,7 +4,7 @@
 //   const navItems = toNavigation(menuResponse);   // { data: [...], meta } or the plain list
 //   setNavigation(navItems);
 //
-// Usually you do not call this yourself: <SharedWebUiProvider nav={menuResponse}> or setMenu(menuResponse) do it.
+// Usually you do not call this yourself: config.loadMenuNavigation or setMenu(menuResponse) do it.
 //
 // What it does:
 //   - accepts the full reply { data, meta } or only the list
