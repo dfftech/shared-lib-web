@@ -11,7 +11,7 @@ import { changeLanguage } from "../i18n/locale-service.ts";
 import { translate } from "../i18n/translator.ts";
 import type { UiContextValue } from "../interfaces/ui-context.ts";
 import { directionSignal, isTranslationReadySignal, languagesSignal, localeSignal, themeSignal } from "../state/signals.ts";
-import { changeTheme, splitThemesByMode } from "../theme/theme-service.ts";
+import { changeTheme, readThemeNames, splitThemesByMode } from "../theme/theme-service.ts";
 import { UiContext } from "./ui-context.ts";
 
 const USE_UI_OUTSIDE_PROVIDER = "shared-lib-web: useUi() must be used inside <SharedWebUiProvider config={config}>.";
@@ -23,7 +23,8 @@ export function useUi(): UiContextValue {
     throw new Error(USE_UI_OUTSIDE_PROVIDER);
   }
   const config = contextState.config;
-  const themeGroups = splitThemesByMode(config.themes);
+  const themeNames = readThemeNames(config);
+  const themeGroups = splitThemesByMode(themeNames);
   const uiValue: UiContextValue = {
     config: config,
     locale: localeSignal.value,
@@ -31,7 +32,7 @@ export function useUi(): UiContextValue {
     direction: directionSignal.value,
     isReady: isTranslationReadySignal.value,
     languages: languagesSignal.value,
-    themes: config.themes,
+    themes: themeNames,
     lightThemes: themeGroups.lightThemes,
     darkThemes: themeGroups.darkThemes,
     t: translate,

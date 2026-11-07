@@ -1,5 +1,5 @@
 // vite.config.ts — the shell: its own Vite project (a normal app, not a library build).
-//   npm run dev   -> http://localhost:5175   (start the MFEs with "npm run serve" in their folders first)
+//   npm run dev   -> http://localhost:9000   (start the MFEs with "npm run serve" in their folders first)
 // It uses the library source (../../src) through an alias, and the shared MFE files in ../shared.
 
 import tailwindcss from "@tailwindcss/vite";

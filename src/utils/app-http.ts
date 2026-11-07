@@ -13,6 +13,9 @@
 //
 //   Service URLs (MsUrl) are NOT part of AppHttp: each project keeps them in its own config.ts.
 //
+//   Every method takes a full URL or a path: a URL that starts with http:// or https:// is used as it is,
+//   anything else is appended to the base URL ("/profile/search" -> "<baseUrl>/profile/search").
+//
 //   // hooks/service-http.ts
 //   const listUrl = `${MsUrl.main}/profile/search`;
 //   const response = await AppHttp.Get(listUrl, params);
@@ -79,6 +82,18 @@ export function toAbsoluteUrl(url: string): string {
   return fullUrl.replace(/\/+$/, "");
 }
 
+/** true for "http://..." and "https://..." (any case). */
+export function isHttpUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
+/** Joins a base URL and a path with exactly one "/" between them. */
+export function joinUrl(baseUrl: string, path: string): string {
+  const trimmedBase = baseUrl.replace(/\/+$/, "");
+  const trimmedPath = path.replace(/^\/+/, "");
+  return trimmedPath.length > 0 ? `${trimmedBase}/${trimmedPath}` : trimmedBase;
+}
+
 /** Turns a Response body into JSON or text. */
 async function readResponseBody(response: Response): Promise<unknown> {
   const contentType = response.headers.get("content-type") ?? "";
@@ -104,6 +119,19 @@ export class AppHttp {
     const absoluteBaseUrl = toAbsoluteUrl(baseUrl);
     Http.API_BASE_URL = absoluteBaseUrl;
     return absoluteBaseUrl;
+  }
+
+  /**
+   * The URL a request goes to: a URL starting with http:// or https:// stays as it is,
+   * anything else is appended to BaseUrl() ("/profile/search" or "profile/search" -> "<baseUrl>/profile/search").
+   */
+  static FullUrl(url: string): string {
+    const isAbsolute = isHttpUrl(url);
+    if (isAbsolute) {
+      return url;
+    }
+    const baseUrl = AppHttp.BaseUrl();
+    return joinUrl(baseUrl, url);
   }
 
   /** Adds (or with "" removes) a header sent with every request, for example the selected branch. */
@@ -139,7 +167,8 @@ export class AppHttp {
   static async Get(url: string, params: HttpParams = {}, customHeaders: HttpHeaders = {}): Promise<unknown> {
     const baseHeaders = AppHttp.Headers();
     const headers = { ...baseHeaders, ...customHeaders };
-    const request = Http.Get(url, params, headers);
+    const fullUrl = AppHttp.FullUrl(url);
+    const request = Http.Get(fullUrl, params, headers);
     return AppHttp.withProgress(request);
   }
 
@@ -147,14 +176,16 @@ export class AppHttp {
   static async Post(url: string, body: unknown, customHeaders: HttpHeaders = {}): Promise<unknown> {
     const baseHeaders = AppHttp.Headers();
     const headers = { ...baseHeaders, ...customHeaders };
-    const request = Http.Post(url, body, headers);
+    const fullUrl = AppHttp.FullUrl(url);
+    const request = Http.Post(fullUrl, body, headers);
     return AppHttp.withProgress(request);
   }
 
   /** PUT a JSON body to url/id. */
   static async Put(url: string, id: string, body: unknown): Promise<unknown> {
     const headers = AppHttp.Headers();
-    const itemUrl = `${url}/${id}`;
+    const fullUrl = AppHttp.FullUrl(url);
+    const itemUrl = `${fullUrl}/${id}`;
     const request = Http.Put(itemUrl, body, headers);
     return AppHttp.withProgress(request);
   }
@@ -162,7 +193,8 @@ export class AppHttp {
   /** DELETE url/id. */
   static async Delete(url: string, id: string, params: HttpParams = {}): Promise<unknown> {
     const headers = AppHttp.Headers();
-    const itemUrl = `${url}/${id}`;
+    const fullUrl = AppHttp.FullUrl(url);
+    const itemUrl = `${fullUrl}/${id}`;
     const request = Http.Delete(itemUrl, params, headers);
     return AppHttp.withProgress(request);
   }
@@ -172,7 +204,8 @@ export class AppHttp {
     const headers = AppHttp.Headers();
     const bodyText = JSON.stringify(body ?? {});
     const requestInit = { method: "PATCH", headers: headers, body: bodyText };
-    const request = fetch(url, requestInit);
+    const fullUrl = AppHttp.FullUrl(url);
+    const request = fetch(fullUrl, requestInit);
     const response = await AppHttp.withProgress(request);
     if (!response.ok) {
       const errorText = await response.text();
@@ -184,16 +217,17 @@ export class AppHttp {
   /** Option lists from the backend loader: GET `${config.http.loadUrl}/${id}`. */
   static async Load(id: string, params: HttpParams = {}): Promise<unknown> {
     const savedConfig = readSavedConfig();
-    const baseUrl = AppHttp.BaseUrl();
-    const loadUrl = savedConfig.http?.loadUrl ?? `${baseUrl}/load`;
-    const fullUrl = `${loadUrl}/${id}`;
-    return AppHttp.Get(fullUrl, params);
+    const loadUrl = savedConfig.http?.loadUrl ?? "/load";
+    const fullLoadUrl = AppHttp.FullUrl(loadUrl);
+    const itemUrl = `${fullLoadUrl}/${id}`;
+    return AppHttp.Get(itemUrl, params);
   }
 
   /** PUT a file to a signed upload URL (plain PUT, no extra headers, so bucket CORS accepts it). */
   static async CloudUpload(uploadUrl: string, file: File): Promise<Response> {
     const requestInit = { method: "PUT", body: file };
-    const request = fetch(uploadUrl, requestInit);
+    const fullUrl = AppHttp.FullUrl(uploadUrl);
+    const request = fetch(fullUrl, requestInit);
     const response = await AppHttp.withProgress(request);
     if (!response.ok) {
       throw new Error(`Upload failed: ${response.status}`);
@@ -209,7 +243,8 @@ export class AppHttp {
   /** Downloads a file and saves it in the browser. */
   static async DownloadFile(url: string, params: HttpParams = {}, fileName?: string): Promise<void> {
     const headers = AppHttp.RawHeaders();
-    const request = Http.FileDownload(url, params, headers);
+    const fullUrl = AppHttp.FullUrl(url);
+    const request = Http.FileDownload(fullUrl, params, headers);
     const blob = await AppHttp.withProgress(request);
     const downloadUrl = window.URL.createObjectURL(blob);
     const link = document.createElement("a");

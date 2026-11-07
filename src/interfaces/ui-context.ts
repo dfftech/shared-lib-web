@@ -23,7 +23,7 @@ export interface UiContextValue {
   isReady: boolean;
   /** Languages from the config. */
   languages: LanguageOption[];
-  /** Themes from the config. */
+  /** Themes of the switcher: the custom themes first, then config.themes (default: all DaisyUI themes). */
   themes: Theme[];
   /** themes without the dark ones (config order). */
   lightThemes: Theme[];

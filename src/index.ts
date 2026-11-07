@@ -21,6 +21,9 @@ export type {
   NavItem,
   NavigationMode,
   ScreenPermissions,
+  CustomTheme,
+  CustomThemesModule,
+  ThemesLoader,
   Theme,
   PageMode,
   ToastPosition,
@@ -77,6 +80,7 @@ export {
   queryParamsSignal,
   progressSignal,
   themeSignal,
+  customThemesSignal,
   toastsSignal,
   translationSignal,
   uiConfigSignal,
@@ -113,19 +117,32 @@ export {
   changeLanguage,
   loadLocaleMessages,
   readDefaultLanguage,
+  readFallbackLanguage,
+  readBrowserLanguage,
+  readStartLanguageCandidates,
   unwrapLocaleModule,
 } from "./i18n/locale-service.ts";
 export { translate, interpolate, lookupMessage } from "./i18n/translator.ts";
 export { RTL_LANGUAGE_CODES, findLanguageOption, resolveDirection } from "./i18n/direction.ts";
+export { matchLanguageCode, readBrowserLanguageCodes } from "./i18n/browser-language.ts";
 export { DEFAULT_UI_MESSAGES } from "./i18n/default-messages.ts";
 export {
   changeTheme,
   isDarkThemeName,
   readDarkThemeNames,
+  readThemeNames,
   splitThemesByMode,
   type ThemeGroups,
 } from "./theme/theme-service.ts";
-export { DEFAULT_DARK_THEMES } from "./theme/dark-themes.ts";
+export { DAISYUI_THEMES, DEFAULT_DARK_THEMES } from "./theme/dark-themes.ts";
+export {
+  buildCustomThemeCss,
+  isValidCustomTheme,
+  loadConfigThemes,
+  mergeCustomThemes,
+  setCustomThemes,
+  unwrapThemesModule,
+} from "./theme/custom-themes.ts";
 export { ShowToast, clearToasts, removeToast } from "./state/toast-service.ts";
 export { ShowProgress } from "./state/progress-service.ts";
 export { closeSidebar, toggleSidebar } from "./state/sidebar-service.ts";
@@ -156,6 +173,8 @@ export {
 export {
   API_BASE_URL_ENV,
   AppHttp,
+  isHttpUrl,
+  joinUrl,
   readJwtToken,
   toAbsoluteUrl,
   uploadToSignedUrl,

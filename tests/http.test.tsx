@@ -181,6 +181,33 @@ async function testLogoutRedirect(): Promise<void> {
   expect(AppStorage.getData(TOKEN)).toBeNull();
 }
 
+async function testFullUrlForAllMethods(): Promise<void> {
+  await renderWithHttp();
+  receivedRequests.length = 0;
+  globalThis.fetch = fakeBackendFetch as typeof fetch;
+  // A path is appended to http.baseUrl (one "/" between), an http(s) URL is used as it is.
+  expect(AppHttp.FullUrl("/items")).toBe("https://api.test/api/items");
+  expect(AppHttp.FullUrl("items")).toBe("https://api.test/api/items");
+  expect(AppHttp.FullUrl("https://other.test/x")).toBe("https://other.test/x");
+  expect(AppHttp.FullUrl("HTTP://other.test/y")).toBe("HTTP://other.test/y");
+  await AppHttp.Get("/items", { page: 1 });
+  await AppHttp.Post("items", { name: "x" });
+  await AppHttp.Put("/items", "9", { name: "y" });
+  await AppHttp.Delete("/items", "9");
+  await AppHttp.Patch("/items/9", { name: "z" });
+  await AppHttp.Get("http://other.test/plain");
+  const urls: string[] = [];
+  for (const sentRequest of receivedRequests) {
+    urls.push(sentRequest.url);
+  }
+  expect(urls[0]).toBe("https://api.test/api/items?page=1");
+  expect(urls[1]).toBe("https://api.test/api/items");
+  expect(urls[2]).toBe("https://api.test/api/items/9");
+  expect(urls[3]).toContain("https://api.test/api/items/9");
+  expect(urls[4]).toBe("https://api.test/api/items/9");
+  expect(urls[5]).toContain("http://other.test/plain");
+}
+
 describe("AppHttp", function describeHttp() {
   afterEach(cleanup);
   it("sends token, x-session-id, x-branch-id and extra headers", testServiceUrlsAndHeaders);
@@ -189,4 +216,5 @@ describe("AppHttp", function describeHttp() {
   it("goes to http.logoutUrl after endSession()", testLogoutRedirect);
   it("keeps LANG and THEME on log out and removes the token", testStorageKeysAndLogout);
   it("makes a relative base URL absolute and shows appNameKey when appName is missing", testRelativeBaseUrlAndAppName);
+  it("adds http.baseUrl to paths in every method; http(s) URLs stay as they are", testFullUrlForAllMethods);
 });

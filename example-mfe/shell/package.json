@@ -5,9 +5,9 @@
   "type": "module",
   "description": "Shell of the shared-lib-web microfrontend example: AppLayout (header, menu, user), login, single-spa routing from env.mfe.js.",
   "scripts": {
-    "dev": "vite --port 5175",
+    "dev": "vite --port 9000 --strictPort",
     "build": "vite build",
-    "preview": "vite preview --port 5175",
+    "preview": "vite preview --port 9000 --strictPort",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {

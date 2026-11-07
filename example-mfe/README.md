@@ -4,7 +4,7 @@ Four separate Vite projects, each with its own `package.json`:
 
 | Folder | Port | What |
 | --- | --- | --- |
-| `shell/` | 5175 | **The only app layout**: `AppLayout` or `AsideLayout` (from `ORG-LAYOUT_CHOICE`) (header with the settings dialog, side menu, user), login, single-spa |
+| `shell/` | 9000 | **The only app layout**: `AppLayout` or `AsideLayout` (from `ORG-LAYOUT_CHOICE`) (header with the settings dialog, side menu, user), login, single-spa |
 | `settings/` | 5186 (dev) / 5176 (built) | MFE: layout (app / aside), menu navigation (sidebar / mega menu), language and theme (saved as `ORG-LAYOUT_CHOICE`, `ORG-MENU_MODE`, `ORG-LANG`, `ORG-THEME`) |
 | `forms/` | 5187 (dev) / 5177 (built) | MFE: form with a sticky `HeadLayout` (Cancel / Submit), validation, toast |
 | `profile/` | 5188 (dev) / 5178 (built) | MFE: profile with a `TypeImage` avatar and an edit `TypeDrawer` |
@@ -12,8 +12,8 @@ Four separate Vite projects, each with its own `package.json`:
 
 ```bash
 node run-all.mjs install   # npm install in every folder   (or: npm run example-mfe:install from the repo root)
-node run-all.mjs start     # npm run dev everywhere: shell 5175, MFEs 5186-5188 -> open http://localhost:5175
-node run-all.mjs serve     # MFEs built + served on 5176-5178 (switch the urls in env.mfe.js), shell 5175
+node run-all.mjs start     # npm run dev everywhere: shell 9000, MFEs 5186-5188 -> open http://localhost:9000
+node run-all.mjs serve     # MFEs built + served on 5176-5178 (switch the urls in env.mfe.js), shell 9000
 node run-all.mjs build     # production builds
 ```
 
@@ -21,7 +21,7 @@ Each folder also runs on its own:
 
 | Folder | `npm run dev` | `npm run serve` (built) |
 | --- | --- | --- |
-| `shell/` | 5175 | – |
+| `shell/` | 9000 | – |
 | `settings/` | 5186 – alone at `/`, or loaded by the shell from `/src/main.tsx` | 5176 `settings.js` |
 | `forms/` | 5187 | 5177 `forms.js` |
 | `profile/` | 5188 | 5178 `profile.js` |
@@ -45,10 +45,10 @@ The shell uses `layout.pageMode: "path"`, so every page is a real address:
 
 | Page | Address |
 | --- | --- |
-| Home (the shell's own page) | `http://localhost:5175/` |
-| Settings | `http://localhost:5175/settings` |
-| Forms | `http://localhost:5175/forms` |
-| Profile | `http://localhost:5175/profile` |
+| Home (the shell's own page) | `http://localhost:9000/` |
+| Settings | `http://localhost:9000/settings` |
+| Forms | `http://localhost:9000/forms` |
+| Profile | `http://localhost:9000/profile` |
 
 ## Routing: `shell/public/env.mfe.js`
 
@@ -60,7 +60,7 @@ window.envMfe = [
 ];
 ```
 
-- `id` – single-spa application name · `path` – the address (`http://localhost:5175/forms` → `/forms`) · `url` – the MFE build ·
+- `id` – single-spa application name · `path` – the address (`http://localhost:9000/forms` → `/forms`) · `url` – the MFE build ·
   `render` – a **fixed slot of the shell layout**; the MFE mounts there.
 - The places are part of the shell layout, not of the config: `shell.tsx` has a plain `<div id="mfe-body" />` inside
   `AppLayout`'s `<main>`. All page MFEs share `mfe-body` (one at a time; single-spa unmounts the old one first).

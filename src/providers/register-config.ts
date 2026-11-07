@@ -9,6 +9,7 @@ import { forgetAppliedLanguages } from "../state/language-service.ts";
 import { forgetAppliedMenu } from "../state/menu-service.ts";
 import { initializeNavigation } from "../state/navigation-service.ts";
 import { languagesSignal, uiConfigSignal } from "../state/signals.ts";
+import { setCustomThemes } from "../theme/custom-themes.ts";
 import { setAppConfig } from "../utils/app-config.ts";
 import { AppStorage } from "../utils/app-storage.ts";
 
@@ -21,6 +22,7 @@ export function registerUiConfig(config: UiConfig): void {
   setAppConfig(config);
   uiConfigSignal.value = config;
   languagesSignal.value = config.languages ?? [];
+  setCustomThemes(config.customThemes);
   forgetAppliedLanguages();
   initializeNavigation(config);
   forgetAppliedMenu();

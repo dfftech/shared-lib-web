@@ -3,8 +3,7 @@
 // No router: the current page is the ?page query parameter (see app.tsx).
 // NOT here: nav = the menu from the backend (nav/nav.service.ts). No language list and no branch list at all.
 
-import { readEnvData, toAbsoluteUrl, type LocaleModule, type UiConfig } from "shared-lib-web";
-import { DARK_THEMES, THEMES } from "./theme/themes.ts";
+import { readEnvData, toAbsoluteUrl, type CustomThemesModule, type LocaleModule, type UiConfig } from "shared-lib-web";
 
 /** Key / base name (ENV_BASE_NAME): AppStorage keys ORG-TOKEN, ORG-LANG ...; window.env REACT_APP_ORG_... */
 const APP_NAME_KEY = "ORG";
@@ -28,6 +27,11 @@ function loadLocale(): Promise<LocaleModule> {
   return import("./locales/en-US.json");
 }
 
+/** The custom org themes (theme/org-themes.json), loaded lazily like the locale files. */
+function loadThemes(): Promise<CustomThemesModule> {
+  return import("./theme/org-themes.json");
+}
+
 export const config: UiConfig = {
   appNameKey: APP_NAME_KEY,
   // Label: t("app.name") from the locale files.
@@ -35,10 +39,8 @@ export const config: UiConfig = {
   // One language: no languages list and no lang input, so no language switcher is shown.
   defaultLanguage: "en-US",
   loadLocale: loadLocale,
-  defaultTheme: "light",
-  // Theme names live in theme/themes.ts; custom theme colours in theme/org-light.css and theme/org-dark.css.
-  themes: THEMES,
-  darkThemes: DARK_THEMES,
+  // Themes: the custom org themes (loadThemes -> theme/org-themes.json, listed first) + all 35 DaisyUI themes.
+  loadThemes: loadThemes,
   logoUrl: "/logo-light.svg",
   logoDarkUrl: "/logo-dark.svg",
   homePath: "/",

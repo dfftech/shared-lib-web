@@ -15,6 +15,7 @@ import { ConstValue } from "dff-util";
 import { toPagePath } from "../query/page-path.ts";
 import { resolveDirection } from "../i18n/direction.ts";
 import type {
+  CustomTheme,
   Direction,
   LanguageOption,
   LocaleMessages,
@@ -24,7 +25,7 @@ import type {
   UiConfig,
 } from "../interfaces/ui-config.ts";
 import type { ToastItem } from "../interfaces/toast.ts";
-import { DEFAULT_DARK_THEMES } from "../theme/dark-themes.ts";
+import { buildDarkThemeNames } from "../theme/dark-themes.ts";
 
 /** The config given to <SharedWebUiProvider>. null until the provider renders. */
 export const uiConfigSignal = signal<UiConfig | null>(null);
@@ -34,6 +35,9 @@ export const localeSignal = signal<string>(ConstValue.EMPTY);
 
 /** Current DaisyUI theme. */
 export const themeSignal = signal<Theme>(ConstValue.LIGHT);
+
+/** The custom themes (config.customThemes or setCustomThemes), listed first in the theme switcher. */
+export const customThemesSignal = signal<CustomTheme[]>([]);
 
 /** Messages of the current language. */
 export const translationSignal = signal<LocaleMessages>({});
@@ -174,7 +178,8 @@ export const directionSignal = computed(readDirection);
 function readIsDarkTheme(): boolean {
   const config = uiConfigSignal.value;
   const theme = themeSignal.value;
-  const darkThemes = config?.darkThemes ?? DEFAULT_DARK_THEMES;
+  const customThemes = customThemesSignal.value;
+  const darkThemes = buildDarkThemeNames(config?.darkThemes, customThemes);
   const isDark = darkThemes.includes(theme);
   return isDark;
 }

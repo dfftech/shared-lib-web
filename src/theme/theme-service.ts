@@ -3,30 +3,89 @@
 //
 //   changeTheme("dark");  -> <html data-theme="dark">, saved to localStorage
 //
+// First visit (nothing saved): config.defaultTheme, or without it the browser preference
+// (prefers-color-scheme: dark -> "dark", otherwise "light").
+//
 // The <html> attribute is written by state/document-sync.ts.
 
 import type { Theme, UiConfig } from "../interfaces/ui-config.ts";
-import { themeSignal, uiConfigSignal } from "../state/signals.ts";
+import { customThemesSignal, themeSignal, uiConfigSignal } from "../state/signals.ts";
 import { AppStorage } from "../utils/app-storage.ts";
 import { THEME } from "../utils/storage-keys.ts";
-import { DEFAULT_DARK_THEMES } from "./dark-themes.ts";
+import { buildDarkThemeNames, buildThemeNames } from "./dark-themes.ts";
 
-/** true when the theme is listed in the config. */
-export function isKnownTheme(config: UiConfig, theme: string): boolean {
-  const isListed = config.themes.includes(theme);
-  return isListed;
+/** The theme names of the switcher: the custom themes first, then config.themes (default: all DaisyUI themes). */
+export function readThemeNames(config: UiConfig): Theme[] {
+  const customThemes = customThemesSignal.value;
+  return buildThemeNames(config.themes, customThemes);
 }
 
-/** Picks the theme to start with: the saved one if it is in the config, else the default. */
+/** true when the theme is offered (config.themes or a custom theme). */
+export function isKnownTheme(config: UiConfig, theme: string): boolean {
+  const themeNames = readThemeNames(config);
+  return themeNames.includes(theme);
+}
+
+const DARK_SCHEME_QUERY = "(prefers-color-scheme: dark)";
+
+/** true when the browser / OS asks for a dark colour scheme. */
+function isBrowserDarkPreferred(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+  const darkQuery = window.matchMedia(DARK_SCHEME_QUERY);
+  return darkQuery.matches;
+}
+
+/** The first-visit theme: config.defaultTheme, else "dark" or "light" from the browser preference. */
+export function readDefaultTheme(config: UiConfig): Theme {
+  if (config.defaultTheme) {
+    return config.defaultTheme;
+  }
+  const isDarkPreferred = isBrowserDarkPreferred();
+  return isDarkPreferred ? "dark" : "light";
+}
+
+/**
+ * Picks the theme to start with: the saved one if it is in the config, else the default.
+ * With config.loadThemes the saved theme is kept while the custom themes load (no flash of the default theme).
+ */
 export function readInitialTheme(config: UiConfig): Theme {
   const storedTheme = AppStorage.getText(THEME);
   if (storedTheme) {
     const isStoredThemeKnown = isKnownTheme(config, storedTheme);
-    if (isStoredThemeKnown) {
+    const isThemeLoading = Boolean(config.loadThemes);
+    if (isStoredThemeKnown || isThemeLoading) {
       return storedTheme;
     }
   }
-  return config.defaultTheme;
+  return readDefaultTheme(config);
+}
+
+/** After config.loadThemes: a theme that is still unknown (not in the loaded list) falls back to the default. */
+export function leaveUnknownTheme(): void {
+  const config = uiConfigSignal.peek();
+  if (!config) {
+    return;
+  }
+  const currentTheme = themeSignal.peek();
+  const isCurrentThemeKnown = isKnownTheme(config, currentTheme);
+  if (!isCurrentThemeKnown) {
+    themeSignal.value = readDefaultTheme(config);
+  }
+}
+
+/** Custom themes can arrive after the start (fetched JSON): switch to the saved theme once it is known. */
+export function applySavedThemeWhenKnown(): void {
+  const config = uiConfigSignal.peek();
+  const storedTheme = AppStorage.getText(THEME);
+  if (!config || !storedTheme || storedTheme === themeSignal.peek()) {
+    return;
+  }
+  const isStoredThemeKnown = isKnownTheme(config, storedTheme);
+  if (isStoredThemeKnown) {
+    themeSignal.value = storedTheme;
+  }
 }
 
 /** Switches the theme. Themes not listed in the config are ignored. */
@@ -48,10 +107,11 @@ export interface ThemeGroups {
   darkThemes: Theme[];
 }
 
-/** The dark theme names: config.darkThemes, else the DaisyUI dark themes. */
+/** The dark theme names: the dark custom themes + (config.darkThemes, else the DaisyUI dark themes). */
 export function readDarkThemeNames(): Theme[] {
   const config = uiConfigSignal.value;
-  return config?.darkThemes ?? DEFAULT_DARK_THEMES;
+  const customThemes = customThemesSignal.value;
+  return buildDarkThemeNames(config?.darkThemes, customThemes);
 }
 
 /** true when the theme has a dark background. */

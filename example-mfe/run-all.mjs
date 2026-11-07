@@ -1,8 +1,8 @@
 // run-all.mjs — runs an npm script in every folder of the microfrontend example (each is its own Vite project).
 //   node run-all.mjs install   npm install in shell, settings, forms, profile
 //   node run-all.mjs build     npm run build in each
-//   node run-all.mjs start     everything with npm run dev: shell 5175, MFEs 5186-5188 (env.mfe.js points there)
-//   node run-all.mjs serve     MFEs built + previewed on 5176-5178 (switch the urls in env.mfe.js), shell dev 5175
+//   node run-all.mjs start     everything with npm run dev: shell 9000, MFEs 5186-5188 (env.mfe.js points there)
+//   node run-all.mjs serve     MFEs built + previewed on 5176-5178 (switch the urls in env.mfe.js), shell dev 9000
 // Stop "start" with Ctrl+C.
 
 import { spawn } from "node:child_process";
@@ -45,7 +45,7 @@ function startAll(mfeScript) {
     void runNpm(folder, ["run", mfeScript]);
   }
   void runNpm("shell", ["run", "dev"]);
-  console.log("\nShell: http://localhost:5175\n");
+  console.log("\nShell: http://localhost:9000\n");
 }
 
 const command = process.argv[2];

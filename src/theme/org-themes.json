@@ -1,0 +1,13 @@
+'''+json_text+'''EOF
+
+'''
+s=s[:start]+new+s[end:]
+s=s.replace('import { DARK_THEMES, THEMES } from "./theme/themes.ts";','import orgThemes from "./theme/org-themes.json";')
+s=s.replace('''  themes: THEMES,
+  darkThemes: DARK_THEMES,''','''  // Themes: the custom org themes (theme/org-themes.json, listed first) + all 35 DaisyUI themes (the default).
+  customThemes: orgThemes,''')
+s=s.replace('''# create-app.sh — creates a new React + Vite app (its own git repo) that uses shared-lib-web, with all themes:
+#   the 2 custom themes (org-light, org-dark) + all 35 DaisyUI 5 themes, AppLayout, side menu, 2 sample pages.''','''# create-app.sh — creates a new React + Vite app (its own git repo) that uses shared-lib-web, with all themes:
+#   the 2 custom themes as JSON (org-light, org-dark) + all 35 DaisyUI 5 themes, AppLayout, side menu, 2 sample pages.''')
+s=s.replace("- Themes: \\`src/theme/\\` (org-light, org-dark + all 35 DaisyUI themes)","- Themes: \\`src/theme/org-themes.json\\` (custom, as JSON) + all 35 DaisyUI themes")
+open(p,'w').write(s)

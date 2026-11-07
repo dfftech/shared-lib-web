@@ -14,6 +14,35 @@ export type Direction = LangDirType;
 export type Theme = string;
 
 /**
+ * A custom DaisyUI theme as plain data, so it can live in a JSON file or come from an API:
+ *   { "name": "org-light", "isDark": false, "variables": { "color-primary": "oklch(55.8% 0.154 249.1)" } }
+ * The library turns it into [data-theme="org-light"] { color-scheme: light; --color-primary: ...; }.
+ */
+export interface CustomTheme {
+  /** data-theme name: lowercase letters, digits and "-", for example "org-light". */
+  name: Theme;
+  /** true for a dark theme (color-scheme: dark, dark logo, dark markdown editor). Default false. */
+  isDark?: boolean;
+  /**
+   * DaisyUI theme variables, with or without "--" (the same names as in a DaisyUI theme):
+   * color-base-100/200/300, color-base-content, color-primary, color-primary-content, color-secondary(-content),
+   * color-accent(-content), color-neutral(-content), color-info/success/warning/error(-content),
+   * radius-selector, radius-field, radius-box, size-selector, size-field, border, depth, noise.
+   */
+  variables: Record<string, string>;
+}
+
+/** What a themes loader may return: the list, or a JSON module with a default export. */
+export type CustomThemesModule = CustomTheme[] | { default: CustomTheme[] };
+
+/**
+ * Loads the custom themes lazily (like loadLocale), from a JSON file or an API:
+ *   function loadThemes(): Promise<CustomThemesModule> { return import("./theme/org-themes.json"); }
+ *   async function loadThemes(): Promise<CustomThemesModule> { const reply = await fetch("/themes.json"); return reply.json(); }
+ */
+export type ThemesLoader = () => Promise<CustomThemesModule>;
+
+/**
  * Translations for one language.
  * Values are text or nested groups: { "nav": { "home": "Home" } } is read with t("nav.home").
  */
@@ -125,7 +154,7 @@ export interface HttpConfig {
   tokenKey?: string;
   /** Extra headers sent with every request. */
   headers?: Record<string, string>;
-  /** URL of the options loader used by AppHttp.Load(id) — the id is added: `${loadUrl}/${id}`. Default: base URL + "/load". */
+  /** URL (or path, added to the base URL) of the options loader used by AppHttp.Load(id) — the id is added: `${loadUrl}/${id}`. Default: "/load". */
   loadUrl?: string;
   /** Show the top progress bar during requests. Default true. */
   showProgress?: boolean;
@@ -152,15 +181,36 @@ export interface UiConfig {
   languages?: LanguageOption[];
   /** Loads locales/{code}.json for any code ("en-US" -> en-US.json). Needed for backend languages. */
   loadLocale?: LocaleCodeLoader;
-  /** Language code used on the first visit and before the backend list arrives. Optional, default "en-US". */
+  /**
+   * Language code used on the first visit (nothing saved; a backend isDefault language still wins).
+   * Optional: without it the browser / system language (navigator.languages matched to the list,
+   * "fr-CA" -> "fr-FR"), else "en-US". Keys missing in a language are shown in defaultLanguage (else "en-US").
+   */
   defaultLanguage?: string;
-  /** Language used when a key is missing in the current language. Default: defaultLanguage ("en-US"). */
-  fallbackLanguage?: string;
-  /** DaisyUI themes offered in the theme switcher. They must also be enabled in your CSS @plugin "daisyui". */
-  themes: Theme[];
-  /** Theme used on the first visit. */
-  defaultTheme: Theme;
-  /** Which of the themes are dark (used for dark logos and the markdown editor). Default: DaisyUI dark themes. */
+  /**
+   * DaisyUI themes offered in the theme switcher. Optional, default: all 35 DaisyUI themes
+   * (enable them in your CSS: @plugin "daisyui" { themes: all; }). The customThemes are always listed first.
+   */
+  themes?: Theme[];
+  /**
+   * Your own themes as data (for example imported from a JSON file); no CSS file needed. Themes that arrive later
+   * (fetched JSON) go through setCustomThemes(json).
+   */
+  customThemes?: CustomTheme[];
+  /**
+   * Loads custom themes lazily when the provider mounts (JSON file or API), like loadLocale. They are added to
+   * customThemes (same name: the loaded one wins). A saved custom theme stays on screen while they load.
+   */
+  loadThemes?: ThemesLoader;
+  /**
+   * Theme used on the first visit (nothing saved yet). Optional: without it the browser preference decides,
+   * "dark" when it prefers a dark colour scheme, otherwise "light".
+   */
+  defaultTheme?: Theme;
+  /**
+   * Which of the themes are dark (used for dark logos and the markdown editor). Default: the DaisyUI dark themes.
+   * Custom themes with isDark: true are always added.
+   */
   darkThemes?: Theme[];
   /**
    * Static navigation items. Optional when the menu comes from the backend:

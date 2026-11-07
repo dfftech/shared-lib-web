@@ -7,9 +7,10 @@
 // langResponse is the backend reply { data: [...], meta } or only the list.
 // Texts load from config.loadLocale(code): locales/en-US.json, locales/ar-SA.json ...
 // When the reply arrives: the current language stays if it is in the list (and the user picked it),
-// otherwise the language marked isDefault (else config.defaultLanguage, else the first) is loaded.
+// otherwise: the language marked isDefault, else config.defaultLanguage, else the browser / system language,
+// else "en-US" (when listed), else the first one.
 
-import { applyLanguage, readDefaultLanguage, readIsLanguageChosen } from "../i18n/locale-service.ts";
+import { applyLanguage, readBrowserLanguage, readFallbackLanguage, readIsLanguageChosen } from "../i18n/locale-service.ts";
 import type { LangSource } from "../interfaces/app-types.ts";
 import { findLanguageOption } from "../i18n/direction.ts";
 import { readDefaultLanguageCode, toLanguageOptions } from "../utils/language-util.ts";
@@ -28,7 +29,10 @@ export function isLanguageListed(languageCode: string | undefined): boolean {
   return Boolean(language);
 }
 
-/** The language to switch to after a new list: backend default, config default, or the first one. */
+/**
+ * The language to switch to after a new list (when the user did not pick one): the backend isDefault,
+ * config.defaultLanguage, the browser / system language, "en-US", or the first one.
+ */
 export function readLanguageAfterUpdate(source: LangSource): string | undefined {
   const languages = languagesSignal.peek();
   const currentCode = localeSignal.peek();
@@ -39,9 +43,10 @@ export function readLanguageAfterUpdate(source: LangSource): string | undefined 
   }
   const backendDefault = readDefaultLanguageCode(source);
   const config = uiConfigSignal.peek();
-  const configDefault = readDefaultLanguage(config);
+  const browserLanguage = readBrowserLanguage();
+  const fallbackLanguage = readFallbackLanguage(config);
   const firstLanguage = languages[0];
-  const candidates = [backendDefault, configDefault, firstLanguage?.code];
+  const candidates = [backendDefault, config?.defaultLanguage, browserLanguage, fallbackLanguage, firstLanguage?.code];
   for (const candidate of candidates) {
     const isListed = isLanguageListed(candidate);
     if (isListed) {

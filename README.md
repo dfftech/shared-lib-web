@@ -50,44 +50,76 @@ npm install @uiw/react-md-editor
 @import "tailwindcss";
 @import "shared-lib-web/styles.css"; /* lets Tailwind find the classes used inside the library */
 @plugin "daisyui" {
-  themes: light --default, dark --prefersdark, corporate, dracula;
+  themes: all;   /* all 35 DaisyUI themes; or list the ones you need */
 }
 ```
 
-Every theme in `config.themes` must also be enabled in `@plugin "daisyui"` (or defined as a custom theme), and the
-dark ones listed in `config.darkThemes` (dark logo, dark markdown editor). Use `themes: all` or list the ones you need.
+`config.themes` is optional: without it the theme switcher offers all 35 DaisyUI themes (enable them with
+`themes: all`, or list the ones you need and pass the same names in `config.themes`). The dark ones (dark logo,
+dark markdown editor) default to the DaisyUI dark themes; `config.darkThemes` replaces that list.
 
-Custom themes use DaisyUI's theme plugin, one file per theme in a `theme/` folder (the example has
-`example/src/theme/org-light.css` and `org-dark.css`, and the theme names in `example/src/theme/themes.ts`):
+### Custom themes as JSON (no CSS file, no rebuild)
 
-```css
-/* src/index.css */
-@import "tailwindcss";
-@import "./theme/org-light.css";
-@import "./theme/org-dark.css";
+Your own themes are plain data: a name, `isDark`, and the DaisyUI theme variables. Pass them with
+`config.loadThemes` (or `config.customThemes`); they are listed first in the switcher, and `isDark: true` adds them to the dark themes.
+The library writes one `<style>` with `[data-theme="org-dark"] { color-scheme: dark; --color-primary: …; }`, which
+DaisyUI's components read like a built-in theme.
+
+```json
+// src/theme/org-themes.json
+[
+  {
+    "name": "org-dark",
+    "isDark": true,
+    "variables": {
+      "color-base-100": "oklch(25.5% 0.04 264.5)",
+      "color-base-content": "oklch(92.9% 0.013 255.5)",
+      "color-primary": "oklch(74.6% 0.16 232.7)",
+      "radius-box": "0.75rem"
+    }
+  }
+]
 ```
 
-```css
-/* src/theme/org-dark.css */
-@plugin "daisyui/theme" {
-  name: "org-dark";
-  default: false;
-  color-scheme: dark;
-  --color-base-100: oklch(22% 0.03 264);
-  --color-base-content: oklch(92% 0.015 264);
-  --color-primary: oklch(70% 0.16 277);
-  /* ... all --color-*, --radius-*, --size-*, --border, --depth, --noise variables */
-}
-```
+Load them lazily with `loadThemes`, the same way as `loadLocale` (its own chunk, loaded when the provider mounts):
 
 ```ts
-// src/theme/themes.ts → config.ts: themes: THEMES, darkThemes: DARK_THEMES
-export const THEMES: Theme[] = ["org-light", "org-dark", "light", "dark", /* ... */];
-export const DARK_THEMES: Theme[] = ["org-dark", "dark", /* ... */];
+// config.ts
+import type { CustomThemesModule, UiConfig } from "shared-lib-web";
+
+function loadThemes(): Promise<CustomThemesModule> {
+  return import("./theme/org-themes.json");
+}
+
+export const config: UiConfig = {
+  appNameKey: "ORG",
+  loadThemes: loadThemes,   // + all 35 DaisyUI themes (themes is optional)
+};
 ```
 
+`loadThemes` can also read from your API or a file deployed next to the app (change the themes without a build):
+
+```ts
+async function loadThemes(): Promise<CustomThemesModule> {
+  const response = await fetch("/themes.json");
+  return response.json();
+}
+```
+
+While they load, a saved custom theme stays on screen (no flash of the default theme); when the load fails or the
+saved theme is not in the result, the default theme is used. Themes you already have in code can go straight into
+`customThemes: orgThemes` (no loading); both together are merged, and a loaded theme replaces one with the same name.
+
+The variable names are the DaisyUI ones, with or without `--`: `color-base-100/200/300`, `color-base-content`,
+`color-primary`, `color-primary-content`, `color-secondary`, `color-accent`, `color-neutral`, `color-info`,
+`color-success`, `color-warning`, `color-error` (each with `-content`), `radius-selector`, `radius-field`,
+`radius-box`, `size-selector`, `size-field`, `border`, `depth`, `noise`. Theme names may use lowercase letters,
+digits and `-`; values with `; { } < > " \` are skipped (safe for JSON from a server).
+
+Any time later (for example after the user signs in) `setCustomThemes(themes)` replaces the custom themes.
+
 The theme dropdown, the ⚙ settings dialog and the example Settings page show **Light themes** and **Dark themes**
-as two groups (split by `config.darkThemes`). In your own UI: `const { lightThemes, darkThemes } = useUi();`
+as two groups (split by the dark themes). In your own UI: `const { lightThemes, darkThemes } = useUi();`
 or `splitThemesByMode(themes)`, `isDarkThemeName(theme)`. Texts: `ui.lightThemes`, `ui.darkThemes`.
 
 ## App bundler (Vite example)
@@ -107,7 +139,7 @@ export default defineConfig({
 ## 1. config.ts
 
 ```ts
-import { readEnvData, toAbsoluteUrl, type LocaleModule, type UiConfig } from "shared-lib-web";
+import { readEnvData, toAbsoluteUrl, type CustomThemesModule, type LocaleModule, type UiConfig } from "shared-lib-web";
 
 const APP_NAME_KEY = "ORG";
 
@@ -130,16 +162,21 @@ function loadLocale(languageCode: string): Promise<LocaleModule> {
   return import(`./locales/${languageCode}.json`);
 }
 
+/** theme/org-themes.json, loaded lazily like the locale files (see "Custom themes as JSON") */
+function loadThemes(): Promise<CustomThemesModule> {
+  return import("./theme/org-themes.json");
+}
+
 export const config: UiConfig = {
   appNameKey: APP_NAME_KEY,                 // key: storage ORG-TOKEN, env REACT_APP_ORG_API_BASE_URL
   appName: "app.name",                      // label: t("app.name") (default: appNameKey)
   logoUrl: "/logo-light.svg",
   logoDarkUrl: "/logo-dark.svg",
-  defaultLanguage: "en-US",                 // shown before the backend list arrives
+  // defaultLanguage: "en-US",             // optional: without it the browser / system language, else en-US
   loadLocale: loadLocale,
-  defaultTheme: "light",
-  themes: ["light", "dark", "corporate", "dracula"],
-  darkThemes: ["dark", "dracula"],
+  // defaultTheme: "light",              // optional: without it the browser preference picks "dark" or "light"
+  loadThemes: loadThemes,                  // optional: your own themes as JSON (see "Custom themes as JSON")
+  // themes: ["light", "dark"],            // optional: default all 35 DaisyUI themes
   layout: { menuMode: "sidebar", isSidebarCollapsible: true },
   http: { baseUrl: API_BASE_URL, logoutUrl: "/login" },
 };
@@ -147,10 +184,12 @@ export const config: UiConfig = {
 
 | Setting | What it does |
 | --- | --- |
-| `defaultLanguage`, `fallbackLanguage` | Optional language codes like `en-US` (default `"en-US"`). The default is shown before the `lang` list arrives (and when a file is missing). Without `defaultLanguage`, `languages`, `loadLocale` and `lang` the app runs in en-US with the library's built-in English texts and no language switcher. |
+| `defaultLanguage` | Optional. Language of the first visit (nothing saved). Without it the **browser / system language** is used: `navigator.languages` matched to the language list (exact code, else the same base language: `fr-CA` → `fr-FR`); without a list each browser code is tried and a missing locale file is skipped. Nothing matches → `"en-US"`. Keys missing in a language are shown in `defaultLanguage` (else en-US). Without `defaultLanguage`, `languages`, `loadLocale` and `lang` the app runs in en-US with the library's built-in English texts and no language switcher. |
 | `loadLocale(code)` | Loads `locales/{code}.json` lazily for any language code. |
 | `languages` | Not needed: the list comes from `lang` (below). Only for apps with a fixed list (`{ code, label, flag?, direction?, load? }`). |
-| `themes`, `darkThemes` | Listed by the theme switcher. Dark themes switch to `logoDarkUrl` and dark markdown. |
+| `themes`, `darkThemes` | Optional. The theme switcher list (default: all 35 DaisyUI themes) and the dark ones (default: the DaisyUI dark themes). Dark themes switch to `logoDarkUrl` and dark markdown. |
+| `customThemes`, `loadThemes` | Optional. Your own themes as data / JSON (`{ name, isDark, variables }`), listed first: `customThemes` directly, or `loadThemes()` lazily like `loadLocale` (JSON file or API). Later ones: `setCustomThemes(json)`. |
+| `defaultTheme` | Optional. Theme of the first visit (nothing saved yet). Without it the browser preference decides: `"dark"` when it prefers a dark colour scheme, otherwise `"light"`. |
 | `layout.headerSettings` | `"inline"` (language + theme switchers in the header) or `"menu"` (one ⚙ button opening a settings dialog with language, theme and navigation style). |
 | `layout.toastPosition`, `layout.showScrollToTop` | Toast corner (`top-end` …) and the scroll-to-top button. |
 | `layout.showMenu` | Menu shown at start (default `true`); switch at runtime with `setMenuVisible()` / `toggleMenuVisible()`. |
@@ -158,7 +197,7 @@ export const config: UiConfig = {
 | `homePath`, `layout.pageParam` | The page shown when `?page` is missing (default `/`) and the name of the page parameter (default `page`). |
 | `http.baseUrl` | API base URL of `AppHttp` (`window.env.REACT_APP_<APPNAMEKEY>_API_BASE_URL` wins when set; a relative `/api` becomes absolute). |
 | `http.logoutUrl` | Where the browser goes after `endSession()` (log out), for example `/login` or an SSO logout URL. `endSession(keepKeys, false)` stays on the page. |
-| `http.tokenKey`, `http.headers`, `http.loadUrl`, `http.showProgress` | Optional: AppStorage key of the token (default `TOKEN`), extra headers, `AppHttp.Load` URL (default base + `/load`), progress bar (default `true`). |
+| `http.tokenKey`, `http.headers`, `http.loadUrl`, `http.showProgress` | Optional: AppStorage key of the token (default `TOKEN`), extra headers, `AppHttp.Load` URL or path (default `/load` on the base URL), progress bar (default `true`). |
 | `appNameKey` | Key of the app (`ENV_BASE_NAME`): prefix of every AppStorage key (`ORG-TOKEN`, `ORG-LANG`) and of the `window.env` names (`REACT_APP_ORG_…`). The key names are fixed constants — no `storage` / `languageKey` / `themeKey` settings. |
 | `appName` | Label shown in header, sidebar and login: `t(config.appName)` (plain text or a translation key). Default: `appNameKey`. |
 
@@ -235,9 +274,11 @@ export async function loadLanguages(): Promise<void> {
 
 - Row fields: `code` (or `langCode` / `languageCode` / `id`), `name` or `label`, `flag`, `direction` or `dir`,
   `isDefault` (or `default`), `active` (false hides it), `priority`. RTL is automatic for `ar`, `he`, `fa`, `ur`.
-- While `lang` is `null`: `defaultLanguage` (or the language the user saved) is shown; the switchers have no list yet.
-- When the list arrives: the user's saved language stays if it is listed; otherwise the row with `isDefault`
-  (else `defaultLanguage`, else the first) is loaded. Only a language the user picks is saved to localStorage.
+- While `lang` is `null`: the saved language, else `defaultLanguage`, else the browser language (when its file
+  loads), else `en-US` is shown; the switchers have no list yet.
+- When the list arrives: the user's saved language stays if it is listed; otherwise the row with `isDefault`,
+  else `defaultLanguage`, else the browser / system language (matched to the list), else `en-US`,
+  else the first is loaded. Only a language the user picks is saved to localStorage.
 - `TypeLang` / `TypeLangMd` fields get one entry per listed language: `{ "en-US": "...", "ar-SA": "..." }`;
   backend `nameLang` with the same codes is shown by `trans()` and the menu.
 - Without the prop: `setLanguages(reply)`. Conversion only: `toLanguageOptions(reply)`, `readDefaultLanguageCode(reply)`.
@@ -258,7 +299,14 @@ AppStorage.envData("API_BASE_URL");               // window.env.REACT_APP_ORG_AP
 
 // MsUrl comes from the project's config.ts (see section 1)
 const rows = await AppHttp.Get(`${MsUrl.main}/profile/search`, params);
+
+// A path works too: it is appended to http.baseUrl (or window.env API_BASE_URL)
+const same = await AppHttp.Get("/app-api/profile/search", params);   // -> https://api.example.com/api/app-api/profile/search
 ```
+
+**URLs in every AppHttp method** (`Get`, `Post`, `Put`, `Delete`, `Patch`, `Load`, `CloudUpload`, `DownloadFile`): a URL that
+starts with `http://` or `https://` is used as it is; anything else is appended to the base URL with one `/` between
+(`"/items"` and `"items"` both become `<baseUrl>/items`). `AppHttp.FullUrl(url)` returns the URL a request would use.
 
 **Which storage:** decided only by the key (no argument).
 
@@ -311,7 +359,7 @@ Code that runs before the provider (for example at module load) calls `setAppCon
 }
 ```
 
-Lookup order: current language → `fallbackLanguage` → library defaults (`ui.*` and dff-util `ConstMessages`) → the key.
+Lookup order: current language → `defaultLanguage` (else en-US) → library defaults (`ui.*` and dff-util `ConstMessages`) → the key.
 Shell texts to translate: `ui.language, theme, openMenu, expandMenu, collapseMenu, home, loading, close, noData,
 selectOption, search, navigation, account, logout, confirm, cancel, translate, permissionDenied,
 permissionDeniedText, pageNotFound, pageNotFoundText, backToHome, goBack, reloadPage, comingSoon, comingSoonText,
@@ -555,7 +603,7 @@ const headActions = (
 | `AppStorage.getData / getText / setData / removeData / clearData / envData`, `TOKEN`, `LANG`, `THEME`, `BRANCH_ID` … `StorageKeys` | Prefixed session/local storage, shared key constants, `window.env` settings |
 | `openPage`, `setQueryParam(s)`, `removeQueryParam`, `readQueryParam(s)`, `useQueryParam`, `useCurrentPage`, `PageLink`, `currentPageSignal`, `queryParamsSignal` | Pages and query parameters (no router) |
 | `setLanguages(reply)`, `toLanguageOptions(reply)`, `languagesSignal`, `LangSource`, `LanguageRowType`, `setMenu(reply)`, `setMenuLoading()`, `clearMenu()`, `toNavigation(reply)`, `toNavItems(menus)`, `unwrapRootMenu(menus, "ADMIN_ROOT")`, `MenuAccessType`, `MenuResponseType`, `MenuSource`, `MenuOptions`, `ScreenAccessType`, `TranslationType`, `AuthUser` | Backend menus and shared app types (menu icons are fixed with `resolveLucideIcon`) |
-| `AppHttp.Get / Post / Put / Patch / Delete / Load / CloudUpload (uploadFile) / DownloadFile`, `AppHttp.BaseUrl()`, `AppHttp.setHeader`, `readEnvData(appNameKey, key)`, `uploadToSignedUrl`, `setAppConfig` / `readAppConfig` | HTTP client on dff-util `Http`: bearer token, session id, branch, extra headers, progress bar |
+| `AppHttp.Get / Post / Put / Patch / Delete / Load / CloudUpload (uploadFile) / DownloadFile`, `AppHttp.BaseUrl()`, `AppHttp.FullUrl(url)`, `AppHttp.setHeader`, `readEnvData(appNameKey, key)`, `uploadToSignedUrl`, `setAppConfig` / `readAppConfig` | HTTP client on dff-util `Http`: bearer token, session id, branch, extra headers, progress bar |
 | `setBranch(id, name)`, `readBranchId()`, `clearBranch()`, `branchIdSignal`, `branchNameSignal` | Selected branch, sent as `x-branch-id` |
 | `startSession(token, user, isRemembered)`, `restoreSession()`, `endSession(keepKeys)`, `authUserSignal`, `isAuthenticatedSignal` | Login state (restored on reload) |
 | `toOptionTypes(rows)`, `readResponseRows(response)` | Backend option rows → `OptionType[]` |
@@ -576,7 +624,7 @@ There are two examples, each its own small Vite app that uses the library source
 | Folder | Port | Shows |
 | --- | --- | --- |
 | `example-basic/` | 5174 | **One language** (en-US, `defaultLanguage` + `loadLocale`, no `lang`) and **no branches** (no `branch`): login, dashboard, users CRUD, settings (theme, menu mode, menu on/off). The smallest real setup to copy. |
-| `example-mfe/` | 5175 | **Microfrontends**: 4 separate Vite projects — `shell` (the only `AppLayout`, login, single-spa routing from `env.mfe.js`, event-based menu after a session) and 3 MFEs `settings`, `forms`, `profile` (page layouts only; theme and language from localStorage, kept in sync between bundles). See `example-mfe/README.md`. |
+| `example-mfe/` | 9000 | **Microfrontends**: 4 separate Vite projects — `shell` (the only `AppLayout`, login, single-spa routing from `env.mfe.js`, event-based menu after a session) and 3 MFEs `settings`, `forms`, `profile` (page layouts only; theme and language from localStorage, kept in sync between bundles). See `example-mfe/README.md`. |
 | `example/` | 5173 | **11 languages** (`lang` from the backend, 4 RTL) and **stores** (`branch` from the backend, `isDefault` / `disabled`), plus every component, 3 layouts and all themes. |
 
 ```bash

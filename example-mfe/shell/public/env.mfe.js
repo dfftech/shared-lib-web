@@ -1,7 +1,7 @@
 // env.mfe.js — the routing config of the shell (no build needed: change it on the server per environment).
 // One entry per microfrontend:
 //   id      single-spa application name
-//   path    the address that shows it: http://localhost:5175/settings -> "/settings" (leave it out: a widget, always on)
+//   path    the address that shows it: http://localhost:9000/settings -> "/settings" (leave it out: a widget, always on)
 //   url     where its code is served
 //   render  id of a FIXED slot in the shell layout; the MFE mounts there. The page MFEs share "mfe-body"
 //           (one at a time); a widget would use its own slot, for example "mfe-header-widget".
