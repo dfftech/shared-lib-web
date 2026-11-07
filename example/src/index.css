@@ -1,21 +1,9 @@
 /* In a real app replace the @source line with:  @import "shared-lib-web/styles.css"; */
 @import "tailwindcss";
 
-/* Custom themes of this project, one file per theme (theme/ folder). */
-@import "./theme/org-light.css";
-@import "./theme/org-dark.css";
-
 @source "../../src";
 
-/*
-  All 35 DaisyUI 5 themes. Every theme listed here (and every custom theme below) must also be
-  in theme/themes.ts (config.themes), and the dark ones in DARK_THEMES (config.darkThemes).
-*/
+/* All 35 DaisyUI 5 themes. The custom org themes come from theme/org-themes.json (config.loadThemes): no CSS. */
 @plugin "daisyui" {
-  themes:
-    light --default,
-    dark --prefersdark,
-    cupcake, bumblebee, emerald, corporate, synthwave, retro, cyberpunk, valentine, halloween, garden,
-    forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn, business,
-    acid, lemonade, night, coffee, winter, dim, nord, sunset, caramellatte, abyss, silk;
+  themes: all;
 }
