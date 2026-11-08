@@ -11,6 +11,7 @@ import {
   AppHttp,
   readContent,
   fillLocaleBundle,
+  readEnvData,
   toAbsoluteUrl,
   type CompanySource,
   type CustomThemesModule,
@@ -26,8 +27,12 @@ export const APP_NAME_KEY = "ORG";
 /** Service name prefix: "ORG" -> /org-api. */
 const APP_API_KEY = APP_NAME_KEY.toLowerCase();
 
-/** "/api" on the page's site: inside the shell the shell's backend, alone this MFE's fake backend (fake-api.ts + fake-api/). */
-const API_BASE_URL = toAbsoluteUrl("/api");
+/**
+ * window.env.REACT_APP_ORG_API_BASE_URL, else "/api" on the page's site. Inside the shell: the shell's env.js (the
+ * shell's backend); alone (npm run dev): this MFE's public/env.js.
+ */
+const envBaseUrl = readEnvData(APP_NAME_KEY, "API_BASE_URL");
+const API_BASE_URL = toAbsoluteUrl(envBaseUrl ?? "/api");
 
 /** Service paths (AppHttp adds the base URL). */
 export const MsUrl = {

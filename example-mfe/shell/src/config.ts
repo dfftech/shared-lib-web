@@ -3,6 +3,7 @@
 // navSignal after sign in (also after a refresh).
 import { signal } from "@preact/signals-react";
 import {
+  readEnvData,
   toAbsoluteUrl,
   type CompanySource,
   type CustomThemesModule,
@@ -18,11 +19,12 @@ export const APP_NAME_KEY = "ORG";
 /** Service name prefix: "ORG" -> /org-api. */
 const APP_API_KEY = APP_NAME_KEY.toLowerCase();
 
-/** API of the shell ("/api" on this site; the fake backend is fake-api.ts + fake-api/). */
-export const API_BASE_URL = toAbsoluteUrl("/api");
+/** window.env.REACT_APP_ORG_API_BASE_URL (public/env.js), else "/api" on this site. */
+const envBaseUrl = readEnvData(APP_NAME_KEY, "API_BASE_URL");
+export const API_BASE_URL = toAbsoluteUrl(envBaseUrl ?? "/api");
 
 /** Service paths (AppHttp adds the base URL): MsUrl.sor + "/company-details" -> /api/org-sor/company-details.
- * Everything comes from sor (company details, languages, locales, themes, menu). Fake backend: fake-api.ts + fake-api/. */
+ * Everything comes from sor (company details, languages, locales, themes, menu). */
 export const MsUrl = {
   main: `/${APP_API_KEY}-api`,
   sor: `/${APP_API_KEY}-sor`,
@@ -60,6 +62,6 @@ export const shellConfig: UiConfig = {
   // <SharedWebUiProvider type="shell">: pages are real paths — /settings, /forms, /profile (not ?page=settings).
   layout: { menuMode: "sidebar", isSidebarCollapsible: true, headerSettings: "menu", toastPosition: "top-end" },
   http: { baseUrl: API_BASE_URL, logoutUrl: "/" },
-  // The menu of the signed-in user as a signal (fake backend: sor /authorization/<persona>?roles=<roles>).
+  // The menu of the signed-in user as a signal (sor /authorization/<persona>?roles=<roles>).
   loadMenuNavigation: navSignal,
 };

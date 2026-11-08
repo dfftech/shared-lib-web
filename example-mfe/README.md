@@ -76,6 +76,13 @@ so `http://localhost:9000/forms` signed out shows the login, and after sign in t
 
 The auth MFE also sets `loadCompanyDetails`, so its login page shows the brand (logo, app name, favicon).
 
+## Runtime settings: `public/env.js`
+
+Like the other examples, every project has `public/env.js` (loaded first by its `index.html`) with `window.env`.
+Set `REACT_APP_ORG_API_BASE_URL` there to point the app at your backend without a rebuild; empty = `/api` on the
+page's site. Inside the shell every MFE runs on the shell's page, so they all use the **shell's** `env.js`; an MFE's
+own `env.js` is only used when it runs alone.
+
 ## Routing: `shell/public/env.mfe.js`
 
 ```js
@@ -115,18 +122,15 @@ build with its own Docker context:
 | File | shell | auth | forms | profile |
 | --- | --- | --- | --- | --- |
 | `src/config.ts` (app key `ORG`, `MsUrl` main / sor / utils, signals: `localeSignal`, `themesSignal`, `supportLangSignal`) | ✓ (+ shell parts, `navSignal`, `companySignal`) | ✓ (+ `companySignal`) | ✓ | ✓ |
-| `fake-api.ts` + `fake-api/` (fake sor backend, Vite plugin) | ✓ | ✓ (alone) | ✓ (alone) | ✓ (alone) |
-| `fake-api/locales/<code>.json` (texts, groups inside) | `app`, `ui`, `root`, `login`, `home` + every MFE group | `ui`, `root`, `login` | `ui`, `root`, `forms` | `ui`, `root`, `profile` |
-| `fake-api/themes.json`, `fake-api/languages.json` | ✓ | ✓ | ✓ | ✓ |
-| `fake-api/company-details.json`, `fake-api/menu-access.json` | ✓ | `company-details.json` (alone) | – | – |
+| `public/env.js` (`window.env`: `REACT_APP_ORG_API_BASE_URL` …, loaded by `index.html`) | ✓ (used by every MFE inside the shell) | ✓ (alone) | ✓ (alone) | ✓ (alone) |
 | `src/mfe-page.tsx`, `src/mfe-lifecycles.ts` | – | ✓ | ✓ | ✓ |
 
-Everything comes from **sor** (`MsUrl.sor` → `/api/org-sor`): `/company-details`, `/load/LANG?active=true`,
+Everything comes from **sor** (`MsUrl.sor` → `/api/org-sor`, the real service — no fake backend): `/company-details`, `/load/LANG?active=true`,
 `/content-load?query=theme`, `/content-load?query=locales.<code>`, `/authorization/<persona>?roles=<roles>` (menu).
-Inside the shell an MFE asks the shell's `/api`, so the shell's fake locale files hold every MFE group too.
+Inside the shell an MFE asks the shell's `/api`, so sor's locale content must hold the shell groups and every MFE group.
 
 Keep the common parts the same in every project: `appNameKey` (`ORG`, so all read the same `ORG-THEME` / `ORG-LANG` /
-`ORG-LAYOUT_CHOICE`) and the sor data (themes, languages).
+`ORG-LAYOUT_CHOICE`).
 
 **Everything loaded is a signal** in every config: `loadLocale: localeSignal` (texts per language, filled with
 `fillLocaleBundle`), `loadThemes: themesSignal` (sor `/content-load?query=theme`, an object keyed by theme name) and
@@ -136,7 +140,7 @@ shell fills them in `session.ts`, each MFE in `startConfigData()` (`config.ts`, 
 
 **Languages** (`supportLangSignal`) come from
 sor `/load/LANG?active=true` (the shell in `session.ts`, each MFE in `startConfigData()`). Inside the shell the MFE asks
-the shell's site (`/api` is relative to the page); alone it uses its own fake backend.
+the shell's site (`/api` is relative to the page); alone it asks its own site's `/api`.
 
 **Layout choice** (app / aside) lives in the library: `layoutChoiceSignal` and `changeLayoutChoice()`. The shell's
 Settings page calls `changeLayoutChoice`, the shell renders `AppLayout` or `AsideLayout` from `layoutChoiceSignal`, and every MFE's

@@ -815,7 +815,7 @@ npm run example-basic:dev   # http://localhost:5174
 It shows login, dashboard, users CRUD (drawer + confirm + permissions), a **Components** section with every control,
 upload, overlay, skeleton and state, and settings for language (10, including 3 RTL and Telugu, Kannada, Tamil), theme (all 35 DaisyUI themes + custom `org-light` / `org-dark`) and navigation style.
 All pages live in one `App` component (`example/src/app.tsx`) and are picked by `?page`; the languages, branches and
-menu are signals in the config (`example/src/app-init/app-init-signals.ts`), filled from fake backend replies by
+menu are signals in the config (`example/src/app-init/app-init-signals.ts`), filled from the sor replies by
 `app-init/app-init.service.ts`. It uses the library source directly, so changes show up without a build.
 
 Everything the example loads comes from the **sor** service (`MsUrl.sor` → `/api/org-sor`):
@@ -830,9 +830,9 @@ Everything the example loads comes from the **sor** service (`MsUrl.sor` → `/a
 | Branches | `GET /load/BRANCHS?profile=<user id>` | `branchSignal` (after sign in, before the menu) |
 
 `readContent(reply, query)` takes the content out of a `content-load` reply (`{ data }` and the query path are
-optional: `readContent(reply, "locales.en-US")`). The fake backend is `example/fake-api.ts`, a Vite plugin (dev
-server and preview) that answers these URLs from `example/fake-api/*.json`; a real app has no such file.
-example-basic and the MFE shell work the same way (no branches); each MFE has its own fake backend for running alone.
+optional: `readContent(reply, "locales.en-US")`). The examples have no fake backend: they call these services at
+`http.baseUrl` (`/api`) or `window.env.REACT_APP_ORG_API_BASE_URL` (`public/env.js`), so point that at your backend.
+example-basic and the MFE shell work the same way (no branches).
 
 ```bash
 npm run example:install

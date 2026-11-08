@@ -21,7 +21,7 @@ const API_BASE_URL = toAbsoluteUrl(envBaseUrl ?? "/api");
  * Service paths of this project. They are paths: AppHttp adds the base URL (http.baseUrl / window.env API_BASE_URL),
  * so MsUrl.sor + "/company-details" -> https://<site>/api/org-sor/company-details.
  * Everything comes from sor: company details, languages (/load/LANG), locales and themes (/content-load),
- * menu (/authorization/<persona>), branches (/load/BRANCHS). Fake backend: fake-api.ts (Vite plugin) + fake-api/.
+ * menu (/authorization/<persona>), branches (/load/BRANCHS).
  */
 export const MsUrl = {
   api: `/${APP_API_KEY}-api`,

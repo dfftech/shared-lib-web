@@ -9,24 +9,29 @@
 import { signal } from "@preact/signals-react";
 import {
   AppHttp,
-  readContent,
   fillLocaleBundle,
+  readContent,
+  readEnvData,
   toAbsoluteUrl,
   type CustomThemesModule,
   type LangSource,
-  type LocaleModule,
   type LocaleBundle,
+  type LocaleModule,
   type UiConfig,
-} from "shared-lib-web";
+} from 'shared-lib-web';
 
 /** Key / base name, the same in the shell and every MFE: ORG-THEME, ORG-LANG ... */
-export const APP_NAME_KEY = "ORG";
+export const APP_NAME_KEY = 'BOTNBOLT';
 
 /** Service name prefix: "ORG" -> /org-api. */
 const APP_API_KEY = APP_NAME_KEY.toLowerCase();
 
-/** "/api" on the page's site: inside the shell the shell's backend, alone this MFE's fake backend (fake-api.ts + fake-api/). */
-const API_BASE_URL = toAbsoluteUrl("/api");
+/**
+ * window.env.REACT_APP_ORG_API_BASE_URL, else "/api" on the page's site. Inside the shell: the shell's env.js (the
+ * shell's backend); alone (npm run dev): this MFE's public/env.js.
+ */
+const envBaseUrl = readEnvData(APP_NAME_KEY, "API_BASE_URL");
+const API_BASE_URL = toAbsoluteUrl(envBaseUrl ?? "/api");
 
 /** Service paths (AppHttp adds the base URL). */
 export const MsUrl = {

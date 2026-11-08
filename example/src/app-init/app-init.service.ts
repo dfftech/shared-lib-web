@@ -4,7 +4,7 @@
 //   on start              -> supportLangSignal, companySignal (sor /company-details)
 //   signed in (or restored after a refresh) -> branchSignal, then navSignal (the menu request sends x-branch-id)
 //   signed out            -> branchSignal and navSignal back to null
-// The provider shows every new value at once. The "backend" of the example is fake-api.ts (Vite plugin) with the files in fake-api/.
+// The provider shows every new value at once. The requests go to the real services (http.baseUrl / window.env API_BASE_URL).
 import { effect } from "@preact/signals-react";
 import { AppHttp, authUserSignal, readContent, fillLocaleBundle, isAuthenticatedSignal, readJwtToken, type BranchSource, type CompanySource, type CustomThemesModule, type LangSource, type LocaleModule, type MenuSource } from "shared-lib-web";
 import { MsUrl } from "../config.ts";

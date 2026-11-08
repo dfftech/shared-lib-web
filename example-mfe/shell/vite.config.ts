@@ -6,7 +6,6 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
-import { fakeApi } from "./fake-api.ts";
 
 const projectRootUrl = new URL(".", import.meta.url);
 const projectRoot = fileURLToPath(projectRootUrl);
@@ -19,8 +18,6 @@ const layoutEntry = fileURLToPath(layoutEntryUrl);
 
 const reactPlugin = react();
 const tailwindPlugin = tailwindcss();
-// The fake backend (fake-api/*.json) for the sor URLs — dev server and preview only.
-const fakeApiPlugin = fakeApi();
 
 const aliasOptions = [
   { find: /^shared-lib-web\/layout$/, replacement: layoutEntry },
@@ -33,7 +30,7 @@ const dedupePackages = ["react", "react-dom", "@preact/signals-react", "react-ho
 export default defineConfig({
   root: projectRoot,
   define: { global: "globalThis" },
-  plugins: [fakeApiPlugin, reactPlugin, tailwindPlugin],
+  plugins: [reactPlugin, tailwindPlugin],
   resolve: { alias: aliasOptions, dedupe: dedupePackages },
   server: { fs: { allow: [repoRoot] } },
 });

@@ -64,13 +64,11 @@ VITE_CONFIG = """// vite.config.ts — the MFE shell (a normal app).
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import { fakeApi } from "./fake-api.ts";
 
 export default defineConfig({
   // dff-util expects Node's "global" object.
   define: { global: "globalThis" },
-  // fakeApi(): the fake sor backend (fake-api/*.json) — remove it when the real services are there.
-  plugins: [fakeApi(), react(), tailwindcss()],
+  plugins: [react(), tailwindcss()],
 });
 """
 
@@ -117,11 +115,11 @@ npm run build    # -> dist/
 ```
 
 - `public/env.mfe.js` — the MFEs: `{ id, path, url, render }` (change per environment, no build needed)
-- `src/config.ts` — shell config (app key, languages, themes, logo, layout, http, menu); texts, themes, languages, company details and menu from sor (fake: `fake-api.ts` + `fake-api/`)
+- `src/config.ts` — shell config (app key, languages, themes, logo, layout, http, menu); texts, themes, languages, company details and menu from sor
 - `src/shell.tsx` — provider, AppLayout / AsideLayout, home + `SHELL_PAGES`; MFEs mount in `<div id="mfe-body">`
 - `src/settings.page.tsx` — the Settings page (a shell page)
 - `src/mfe.ts` — single-spa registration; `src/session.ts` — sign out and the menu
-- No login in the shell: signed out it shows the auth MFE (`env.mfe.js` entry with `isAuth: true`, run it on 5186); the menu comes from sor `/authorization/<persona>` (fake: `fake-api/menu-access.json`)
+- No login in the shell: signed out it shows the auth MFE (`env.mfe.js` entry with `isAuth: true`, run it on 5186); the menu comes from sor `/authorization/<persona>`
 """
 
 generated: dict[str, str] = {}
