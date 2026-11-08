@@ -1,6 +1,7 @@
 // settings-menu.tsx
 // One settings button that opens a dialog with the language list (from config.languages),
-// the theme list (from config.themes) and the navigation style. The branches (when the app passes them)
+// the theme list (from config.themes), the layout (App / Aside, when config.layout.showLayoutChoice) and the navigation
+// style. The branches (when the app passes them)
 // come first, titled with config.branchLabel.
 // Used by the header when config.layout.headerSettings is "menu"; can also be placed anywhere.
 // isInSidebar: a full-width "Settings" row for the sidebar (icon only on the collapsed rail, with a rail tooltip).
@@ -10,6 +11,7 @@ import type { MouseEvent, ReactElement } from "react";
 import { useUi } from "../context/use-ui.ts";
 import { changeLanguage } from "../i18n/locale-service.ts";
 import type { LanguageOption, NavigationMode, Theme } from "../interfaces/ui-config.ts";
+import { changeLayoutChoice, layoutChoiceSignal, toLayoutChoice } from "../state/layout-choice-service.ts";
 import { changeNavigationMode } from "../state/navigation-service.ts";
 import {
   isAsideLayoutSignal,
@@ -33,6 +35,8 @@ export interface SettingsMenuProps {
   showNavigationMode?: boolean;
   /** Sidebar look: full-width row with the label; icon only on the collapsed rail. Default false. */
   isInSidebar?: boolean;
+  /** Show the App layout / Aside layout choice. Default config.layout.showLayoutChoice (false). */
+  showLayoutChoice?: boolean;
 }
 
 export function openSettings(): void {
@@ -59,6 +63,13 @@ export function handleSettingsThemeSelect(event: MouseEvent<HTMLButtonElement>):
 export function handleSettingsNavigationSelect(event: MouseEvent<HTMLButtonElement>): void {
   const mode = readDataValue(event) as NavigationMode;
   changeNavigationMode(mode);
+}
+
+/** Layout buttons carry "app" or "aside" in data-value. Saved as LAYOUT_CHOICE; the app switches its layout. */
+export function handleSettingsLayoutSelect(event: MouseEvent<HTMLButtonElement>): void {
+  const value = readDataValue(event);
+  const choice = toLayoutChoice(value);
+  changeLayoutChoice(choice);
 }
 
 /** Builds one choice button. */
@@ -155,6 +166,12 @@ export function SettingsMenu(props: SettingsMenuProps) {
   const darkTitle = t("ui.darkThemes");
   const sidebarText = t("ui.sidebar");
   const megaMenuText = t("ui.megaMenu");
+  const showLayoutChoice = props.showLayoutChoice ?? config.layout?.showLayoutChoice ?? false;
+  const layoutChoice = layoutChoiceSignal.value;
+  const appLayoutText = t("ui.appLayout");
+  const asideLayoutText = t("ui.asideLayout");
+  const appLayoutChoice = buildChoice("app", appLayoutText, layoutChoice === "app", handleSettingsLayoutSelect);
+  const asideLayoutChoice = buildChoice("aside", asideLayoutText, layoutChoice === "aside", handleSettingsLayoutSelect);
   const sidebarChoice = buildChoice("sidebar", sidebarText, navigationMode === "sidebar", handleSettingsNavigationSelect);
   const megaMenuChoice = buildChoice("megamenu", megaMenuText, navigationMode === "megamenu", handleSettingsNavigationSelect);
 
@@ -208,6 +225,15 @@ export function SettingsMenu(props: SettingsMenuProps) {
               ) : null}
             </div>
           </section>
+          {showLayoutChoice ? (
+            <section>
+              <h4 className="mb-2 text-sm font-semibold opacity-70">{t("ui.layout")}</h4>
+              <div className="flex flex-wrap gap-2">
+                {appLayoutChoice}
+                {asideLayoutChoice}
+              </div>
+            </section>
+          ) : null}
           {showNavigationMode ? (
             <section>
               <h4 className="mb-2 text-sm font-semibold opacity-70">{t("ui.navigationMode")}</h4>

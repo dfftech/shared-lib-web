@@ -14,7 +14,7 @@ import {
 } from 'shared-lib-web';
 
 /** Key / base name, the same in the shell and every MFE: ORG-THEME, ORG-LANG ... */
-export const APP_NAME_KEY = "ORG";
+export const APP_NAME_KEY = "BOTNBOLT";
 
 /** Service name prefix: "ORG" -> /org-api. */
 const APP_API_KEY = APP_NAME_KEY.toLowerCase();
@@ -61,7 +61,8 @@ export const shellConfig: UiConfig = {
   homePath: '/dashboard',
   // The shell owns the header (settings dialog for language / theme, user menu) and the side menu.
   // <SharedWebUiProvider type="shell">: pages are real paths — /settings, /forms, /profile (not ?page=settings).
-  layout: { menuMode: 'sidebar', isSidebarCollapsible: true, headerSettings: 'menu', toastPosition: 'top-end' },
+  // showLayoutChoice: the settings dialog also offers App layout / Aside layout (shell.tsx renders AppLayout or AsideLayout).
+  layout: { menuMode: 'sidebar', isSidebarCollapsible: true, headerSettings: 'menu', toastPosition: 'top-end', showLayoutChoice: true },
   http: { baseUrl: API_BASE_URL, logoutUrl: '/' },
   // The menu of the signed-in user as a signal (util /authorization/<persona>?roles=<roles>).
   loadMenuNavigation: navSignal,

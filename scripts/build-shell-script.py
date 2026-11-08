@@ -132,7 +132,9 @@ generated["tsconfig.json"] = TSCONFIG
 generated[".gitignore"] = GITIGNORE
 generated["README.md"] = README
 
-leftover = [p for p, t in generated.items() if "../../" in t and p.endswith((".ts", ".tsx", ".css"))]
+# Paths that leave the shell project (the library source, ../../../src): imports inside src/ (../../mfe.ts) are fine.
+MONOREPO_PATH = re.compile(r"(\.\./){3,}|\.\./\.\./src\b")
+leftover = [p for p, t in generated.items() if MONOREPO_PATH.search(t) and p.endswith((".ts", ".tsx", ".css"))]
 if leftover:
     sys.exit(f"Monorepo paths left in: {leftover}")
 

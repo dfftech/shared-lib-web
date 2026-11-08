@@ -4,5 +4,5 @@
 // Used when this MFE runs alone (npm run dev). Inside the shell the shell's env.js is used.
 window.env = {
   // REACT_APP_ORG_API_BASE_URL: "https://api-np.example.com/api",
-  REACT_APP_ORG_API_BASE_URL: 'https://api-np.deeptechfoundry.ca/api',
+  REACT_APP_BOTNBOLT_API_BASE_URL: 'https://api-np.deeptechfoundry.ca/api',
 };

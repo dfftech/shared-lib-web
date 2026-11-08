@@ -257,6 +257,7 @@ export const config: UiConfig = {
 | `customThemes`, `loadThemes` | Optional. Your own themes as data / JSON — an object keyed by theme name (`{ "org-dark": { isDark, name, variables }, ... }`) or a list — listed first: `customThemes` directly, or `loadThemes()` lazily like `loadLocale` (JSON file or API). Later ones: `setCustomThemes(json)`. |
 | `defaultTheme` | Optional. Theme of the first visit (nothing saved yet). Without it the browser preference decides: `"dark"` when it prefers a dark colour scheme, otherwise `"light"`. |
 | `layout.headerSettings` | `"inline"` (language + theme switchers in the header) or `"menu"` (one ⚙ button opening a settings dialog with language, theme and navigation style). |
+| `layout.showLayoutChoice` | Optional (default `false`). Adds **Layout** (App layout / Aside layout) to the ⚙ settings dialog — for a shell that renders `AppLayout` or `AsideLayout` from `layoutChoiceSignal`. Saved as `LAYOUT_CHOICE`; `<SettingsMenu showLayoutChoice />` does the same for one menu. |
 | `layout.toastPosition`, `layout.showScrollToTop` | Toast corner (`top-end` …) and the scroll-to-top button. |
 | `layout.showMenu` | Menu shown at start (default `true`); switch at runtime with `setMenuVisible()` / `toggleMenuVisible()`. |
 | `layout.menuMode` | `"sidebar"` (drawer + collapsible icon rail) or `"megamenu"` (top bar + full-width panels). Users can switch with `changeNavigationMode()`; the choice is saved. |
@@ -436,6 +437,16 @@ const same = await AppHttp.Get("/org-api/profile/search", params);   // -> https
 **URLs in every AppHttp method** (`Get`, `Post`, `Put`, `Delete`, `Patch`, `Load`, `Media`, `CloudUpload`, `DownloadFile`): a URL that
 starts with `http://` or `https://` is used as it is; anything else is appended to the base URL with one `/` between
 (`"/items"` and `"items"` both become `<baseUrl>/items`). `AppHttp.FullUrl(url)` returns the URL a request would use.
+
+**Shared requests (shell + microfrontends):** `AppHttp.GetShared(url, params?)` is a GET that runs **once per page**
+for every copy of the library: the shell and each MFE bundle their own copy, and the same URL + params (running or
+answered) gives the same promise, so the languages, themes, texts and company details are not loaded again by each MFE.
+An MFE that runs alone still loads them itself. Only for data that is the same for everyone (not the menu or branches);
+a failed request is not kept; `clearSharedGetCache()` empties it.
+
+```ts
+const reply = await AppHttp.GetShared(`${MsUrl.sor}/load/LANG`, { active: true });
+```
 
 **Binary files:** `AppHttp.Media(url, params?)` is a GET that returns the body as a `Blob` (images, video, audio, any
 file), with the same headers (token, `x-session-id`, `x-branch-id`, no `Content-Type`) and no progress bar:
@@ -778,7 +789,7 @@ const headActions = (
 | `AppStorage.getData / getText / setData / removeData / clearData / envData`, `TOKEN`, `LANG`, `THEME`, `BRANCH_ID` … `StorageKeys` | Prefixed session/local storage, shared key constants, `window.env` settings |
 | `openPage`, `setQueryParam(s)`, `removeQueryParam`, `readQueryParam(s)`, `useQueryParam`, `useCurrentPage`, `PageLink`, `currentPageSignal`, `queryParamsSignal` | Pages and query parameters (no router) |
 | `setLanguages(reply)`, `toLanguageOptions(reply)`, `languagesSignal`, `LangSource`, `LanguageRowType`, `setMenu(reply)`, `setMenuLoading()`, `clearMenu()`, `toNavigation(reply)`, `toNavItems(menus)`, `unwrapRootMenu(menus, "ADMIN_ROOT")`, `MenuAccessType`, `MenuResponseType`, `MenuSource`, `MenuOptions`, `ScreenAccessType`, `TranslationType`, `AuthUser` | Backend menus and shared app types (menu icons are fixed with `resolveLucideIcon`) |
-| `AppHttp.Get / Post / Put / Patch / Delete / Load / Media / CloudUpload (uploadFile) / DownloadFile`, `AppHttp.BaseUrl()`, `AppHttp.FullUrl(url)`, `AppHttp.setHeader`, `readEnvData(appNameKey, key)`, `uploadToSignedUrl`, `setAppConfig` / `readAppConfig` | HTTP client on dff-util `Http`: bearer token, session id, branch, extra headers, progress bar |
+| `AppHttp.Get / GetShared / Post / Put / Patch / Delete / Load / Media / CloudUpload (uploadFile) / DownloadFile`, `clearSharedGetCache()`, `AppHttp.BaseUrl()`, `AppHttp.FullUrl(url)`, `AppHttp.setHeader`, `readEnvData(appNameKey, key)`, `uploadToSignedUrl`, `setAppConfig` / `readAppConfig` | HTTP client on dff-util `Http`: bearer token, session id, branch, extra headers, progress bar |
 | `setCompanyDetails(reply)`, `companyDetailsSignal`, `readCompanyDetails(reply)`, `readAppNameLabel(config, details)`, `readLogoUrl(config, isDark, details)`, `CompanyDetails`, `CompanySource` | Company / brand details (app name, company name, favicon, logos) |
 | `setCustomThemes(themes)`, `toCustomThemeList(themes)`, `customThemesSignal`, `CustomThemeMap`, `CustomThemes` | Custom themes as data (object keyed by theme name, or a list) |
 | `setBranch(id, name)`, `readBranchId()`, `clearBranch()`, `branchIdSignal`, `branchNameSignal` | Selected branch, sent as `x-branch-id` |

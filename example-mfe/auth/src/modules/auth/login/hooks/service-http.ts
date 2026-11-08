@@ -1,22 +1,19 @@
-// auth.service.ts — sign in with sor:
+// Login HTTP call (and its loading signal):
 //
 //   POST sor/auth-signin   { "userid": "super@admin.com", "password": "QWRtaW4xMjM0", "provider": "password" }
-//                          (password = base64 of the typed password, dff-util EncodeBase64("Admin1234") -> "QWRtaW4xMjM0")
+//                          (password = dff-util EncodeBase64 of the typed password: "Admin1234" -> "QWRtaW4xMjM0")
 //
 // Reply: { data: { token, id, email, name, mobile, pic, persona, roles: ["SUPER_ADMIN", "ADMIN_ADMIN"], ... }, meta }
-// -> token = data.token, user = data without the token. startSession(token, user) saves them, and the library fires
-// SESSION_EVENT, so the shell (its own library copy) is signed in at once and loads the menu
-// (util /authorization/<persona>?roles=<roles>).
+//   -> token = data.token, user = data without the token.
+// Errors: { message } or { error: { message } } -> a toast with the backend's message (readErrorMessage).
 
+import { signal } from "@preact/signals-react";
 import { EncodeBase64 } from "dff-util";
-import { AppHttp, startSession, type AuthUser } from "shared-lib-web";
-import { MsUrl } from "./config.ts";
+import { AppHttp, ShowToast, readErrorMessage, translate, type AuthUser } from "shared-lib-web";
+import { MsUrl } from "../../../../config.ts";
+import type { LoginSessionType, LoginType } from "./types.ts";
 
-/** What the login form sends. */
-export interface SignInValues {
-  email: string;
-  password: string;
-}
+export const loginIsLoading = signal(false);
 
 /** The sign-in provider of a user id + password login. */
 const PASSWORD_PROVIDER = "password";
@@ -66,10 +63,7 @@ function withoutTokenFields(source: Record<string, unknown>): Record<string, unk
   return fields;
 }
 
-/**
- * The signed-in user: a nested user object when the reply has one, else the reply fields themselves (sor:
- * id, email, name, mobile, pic, persona, roles ...) without the token. id / email default to the typed user id.
- */
+/** The signed-in user: a nested user object, else the reply fields themselves without the token. */
 function readReplyUser(source: Record<string, unknown>, userId: string): AuthUser {
   for (const fieldName of USER_FIELDS) {
     const value = source[fieldName];
@@ -82,23 +76,36 @@ function readReplyUser(source: Record<string, unknown>, userId: string): AuthUse
 }
 
 /** The request body: the user id, the base64 password and the provider. */
-export function buildSignInBody(values: SignInValues): Record<string, string> {
+export function buildLoginBody(values: LoginType): Record<string, string> {
   const encodedPassword = EncodeBase64(values.password);
   return { userid: values.email, password: encodedPassword, provider: PASSWORD_PROVIDER };
 }
 
-/**
- * POST sor/auth-signin, then startSession(token, user). Throws when the request fails or the reply has no token
- * (the login form shows the error).
- */
-export async function signIn(values: SignInValues): Promise<void> {
-  const body = buildSignInBody(values);
-  const reply = await AppHttp.Post(`${MsUrl.sor}/auth-signin`, body);
-  const source = unwrapReply(reply);
-  const token = readTextField(source, TOKEN_FIELDS);
-  if (!token) {
-    throw new Error("The sign-in reply has no token.");
+/** A failed sign in: the backend's message, else login.failed. */
+function showLoginError(error: unknown): void {
+  const failedText = translate("login.failed");
+  const message = readErrorMessage(error, failedText);
+  ShowToast(message, "error");
+}
+
+/** POST sor/auth-signin. Returns the token + user, or undefined after showing the error. */
+export async function loginCall(values: LoginType): Promise<LoginSessionType | undefined> {
+  try {
+    loginIsLoading.value = true;
+    const body = buildLoginBody(values);
+    const reply = await AppHttp.Post(`${MsUrl.sor}/auth-signin`, body);
+    const source = unwrapReply(reply);
+    const token = readTextField(source, TOKEN_FIELDS);
+    if (!token) {
+      showLoginError(null);
+      return undefined;
+    }
+    const user = readReplyUser(source, values.email);
+    return { token: token, user: user };
+  } catch (error) {
+    showLoginError(error);
+    return undefined;
+  } finally {
+    loginIsLoading.value = false;
   }
-  const user = readReplyUser(source, values.email);
-  startSession(token, user);
 }

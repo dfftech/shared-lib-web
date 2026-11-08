@@ -1,4 +1,4 @@
-// shell.tsx — the shell UI in one file: provider, layout, login and home page.
+// shell.tsx — the shell UI: provider, layout, the signed-out screen and SHELL_PAGES (pages: modules/*).
 //   signed out -> the auth MFE (env.mfe.js isAuth: true) in <div id="mfe-body" /> — the shell has NO login of its own
 //   signed in  -> AppLayout (header, menu, user) or AsideLayout (menu only; picked on the Settings page), and in <main>:
 //                   a page of the shell itself (SHELL_PAGES: "/dashboard" home, "/settings" settings),
@@ -7,24 +7,21 @@
 import { useSignals } from "@preact/signals-react/runtime";
 import {
   ComingSoon,
-  ContentLayout,
-  HeadLayout,
-  PageLink,
   SharedWebUiProvider,
   UserMenu,
   authUserSignal,
   isAuthenticatedSignal,
   isDesktopSidebarSignal,
   useCurrentPage,
-  useUi,
   layoutChoiceSignal,
 } from "shared-lib-web";
 import { AppLayout, AsideLayout } from "shared-lib-web/layout";
 import { useEffect, type ComponentType, type ReactElement } from "react";
 import { shellConfig } from "./config.ts";
-import { attachMfeBody, findAuthRoute, findMfeRoute, mfeErrorSignal, readMfeRoutes, syncMfes, type MfeRoute } from "./mfe.ts";
+import { attachMfeBody, findAuthRoute, findMfeRoute, mfeErrorSignal, syncMfes, type MfeRoute } from "./mfe.ts";
 import { signOut, startAppInit } from "./session.ts";
-import { SettingsPage } from "./settings.page.tsx";
+import { DashboardPage } from "./modules/dashboard/dashboard.page.tsx";
+import { SettingsPage } from "./modules/settings/settings.page.tsx";
 
 const RUN_ONCE: never[] = [];
 
@@ -56,32 +53,6 @@ function SignedOutShell() {
   );
 }
 
-// ---- Home ("/dashboard"): a page of the shell itself, with links to the MFEs ----
-
-function HomePage() {
-  const { t } = useUi();
-  const cards: ReactElement[] = [];
-  for (const route of readMfeRoutes()) {
-    if (route.path && !route.isAuth) {
-      cards.push(
-        <PageLink key={route.id} page={route.path} className="rounded-box border border-base-300 p-4 hover:bg-base-200">
-          <span className="font-semibold">{route.id}</span>
-          <span className="block truncate text-xs opacity-60" dir="ltr">{route.url}</span>
-        </PageLink>,
-      );
-    }
-  }
-  return (
-    <>
-      <HeadLayout title={t("home.title")} />
-      <ContentLayout>
-        <p className="mb-4 opacity-70">{t("home.text")}</p>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{cards}</div>
-      </ContentLayout>
-    </>
-  );
-}
-
 // ---- The pages of the shell itself (not microfrontends) ----
 
 /**
@@ -90,7 +61,7 @@ function HomePage() {
  */
 const SHELL_PAGES: Record<string, ComponentType> = {
   // With a token "/" goes to /dashboard (session.ts). Only a fallback: a dashboard MFE in env.mfe.js wins.
-  "/dashboard": HomePage,
+  "/dashboard": DashboardPage,
   "/settings": SettingsPage,
 };
 

@@ -11,7 +11,7 @@ import { supportLangSignal, navSignal, localeSignal, themesSignal, companySignal
 /** The texts of one language: sor /content-load?query=locales.<code> (the groups inside: { "ui": {...}, "nav": {...} }). */
 async function loadTexts(languageCode: string): Promise<LocaleModule> {
   const query = `locales.${languageCode}`;
-  const reply = await AppHttp.Get(`${MsUrl.sor}/content-load`, { query: query });
+  const reply = await AppHttp.GetShared(`${MsUrl.sor}/content-load`, { query: query });
   const messages = readContent(reply, query);
   return messages as LocaleModule;
 }
@@ -26,7 +26,7 @@ async function loadThemeFile(): Promise<void> {
   }
   isThemeRequested = true;
   try {
-    const reply = await AppHttp.Get(`${MsUrl.sor}/content-load`, { query: "theme" });
+    const reply = await AppHttp.GetShared(`${MsUrl.sor}/content-load`, { query: "theme" });
     const themes = readContent(reply, "theme");
     themesSignal.value = themes as CustomThemesModule;
   } catch {
@@ -54,7 +54,7 @@ async function loadCompany(): Promise<void> {
   }
   isCompanyRequested = true;
   try {
-    const reply = await AppHttp.Get(`${MsUrl.sor}/company-details`);
+    const reply = await AppHttp.GetShared(`${MsUrl.sor}/company-details`);
     companySignal.value = reply as CompanySource;
   } catch {
     companySignal.value = {};
@@ -71,7 +71,7 @@ async function loadLanguages(): Promise<void> {
   }
   isLanguageRequested = true;
   try {
-    const reply = await AppHttp.Get(`${MsUrl.sor}/load/LANG`, { active: true });
+    const reply = await AppHttp.GetShared(`${MsUrl.sor}/load/LANG`, { active: true });
     supportLangSignal.value = reply as LangSource;
   } catch {
     supportLangSignal.value = null;

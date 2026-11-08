@@ -2,7 +2,7 @@
 // The shell loads it from env.mfe.js: the dev server (npm run dev: http://localhost:PORT/src/main.tsx)
 // or the build (npm run serve: forms.js).
 import { createMfeLifecycles } from "./mfe-lifecycles.ts";
-import { FormsMfe } from "./forms.page.tsx";
+import { FormsMfe } from "./app-forms.tsx";
 import "./index.css";
 
 /** Build: forms.css sits next to forms.js. Dev server: Vite adds the CSS itself ("" = no <link>). */

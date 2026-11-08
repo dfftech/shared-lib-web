@@ -2,7 +2,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { MFE_CONTAINER_ID } from "./mfe-lifecycles.ts";
-import { ProfileMfe } from "./profile.page.tsx";
+import { ProfileMfe } from "./app-profile.tsx";
 import "./index.css";
 
 const container = document.getElementById(MFE_CONTAINER_ID);

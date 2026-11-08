@@ -3,4 +3,5 @@
 // Empty here, so AppHttp uses config.http.baseUrl ("/api").
 window.env = {
   // REACT_APP_ORG_API_BASE_URL: "https://api-np.example.com/api",
+  REACT_APP_BOTNBOLT_API_BASE_URL: "https://api-np.deeptechfoundry.ca/api",
 };

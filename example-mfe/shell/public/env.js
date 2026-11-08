@@ -4,5 +4,5 @@
 // The shell loads it first (index.html), so every MFE inside the shell reads these same values.
 window.env = {
   // REACT_APP_ORG_API_BASE_URL: "https://api-np.example.com/api",
-  REACT_APP_ORG_API_BASE_URL: 'https://api-np.deeptechfoundry.ca/api',
+  REACT_APP_BOTNBOLT_API_BASE_URL: 'https://api-np.deeptechfoundry.ca/api',
 };

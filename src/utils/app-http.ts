@@ -64,6 +64,50 @@ function isProgressEnabled(): boolean {
 }
 
 /** JWT from AppStorage (config.http.tokenKey, default TOKEN, sessionStorage). "" when missing. */
+/**
+ * Requests shared by every copy of the library on the page (a shell and its microfrontends each bundle their own
+ * copy): the key is global (Symbol.for), so the cache lives on window once for all copies.
+ */
+const SHARED_GET_KEY = Symbol.for("shared-lib-web:shared-get");
+
+type SharedGetCache = Map<string, Promise<unknown>>;
+
+/** The page-wide cache of GetShared (created by the first copy that needs it). */
+function readSharedGetCache(): SharedGetCache {
+  const holder = globalThis as unknown as Record<symbol, SharedGetCache | undefined>;
+  let cache = holder[SHARED_GET_KEY];
+  if (!cache) {
+    cache = new Map();
+    holder[SHARED_GET_KEY] = cache;
+  }
+  return cache;
+}
+
+/** Cache key of a request: the full URL + the params sorted by name. */
+export function buildSharedGetKey(fullUrl: string, params: HttpParams): string {
+  const names = Object.keys(params);
+  names.sort();
+  const parts: string[] = [];
+  for (const name of names) {
+    const value = params[name];
+    parts.push(`${name}=${String(value)}`);
+  }
+  const paramText = parts.join("&");
+  return `${fullUrl}?${paramText}`;
+}
+
+/** A failed shared request is removed, so the next call tries again. */
+function forgetSharedGet(key: string): void {
+  const cache = readSharedGetCache();
+  cache.delete(key);
+}
+
+/** Empties the shared request cache (for example after the texts or themes changed on the server, or in tests). */
+export function clearSharedGetCache(): void {
+  const cache = readSharedGetCache();
+  cache.clear();
+}
+
 export function readJwtToken(): string {
   const config = readAppConfig();
   const tokenKey = config?.http?.tokenKey ?? TOKEN;
@@ -170,6 +214,27 @@ export class AppHttp {
     const fullUrl = AppHttp.FullUrl(url);
     const request = Http.Get(fullUrl, params, headers);
     return AppHttp.withProgress(request);
+  }
+
+  /**
+   * GET once per page, shared by every copy of the library (shell + microfrontends): the same URL + params while a
+   * request is running or after it answered gives the same promise — no second call. For data that is the same for
+   * everyone on the page (languages, themes, texts, company details), not for user data. A failed request is not kept.
+   *   const reply = await AppHttp.GetShared(`${MsUrl.sor}/load/LANG`, { active: true });
+   */
+  static GetShared(url: string, params: HttpParams = {}): Promise<unknown> {
+    const fullUrl = AppHttp.FullUrl(url);
+    const key = buildSharedGetKey(fullUrl, params);
+    const cache = readSharedGetCache();
+    const cached = cache.get(key);
+    if (cached) {
+      return cached;
+    }
+    const request = AppHttp.Get(url, params);
+    cache.set(key, request);
+    const forget = forgetSharedGet.bind(null, key);
+    request.catch(forget);
+    return request;
   }
 
   /** POST a JSON body. */

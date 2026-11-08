@@ -6,6 +6,8 @@ import type { ChangeEvent, FormEvent } from "react";
 import {
   SettingsMenu,
   SharedWebUiProvider,
+  changeLayoutChoice,
+  layoutChoiceSignal,
   ShowProgress,
   TypeFilter,
   TypeSearch,
@@ -131,8 +133,28 @@ async function testSettingsMenu(): Promise<void> {
   fireEvent.click(darkButton);
   expect(themeSignal.value).toBe("dark");
   expect(within(dialog).getByRole("button", { name: "Mega menu" })).toBeTruthy();
+  expect(within(dialog).queryByRole("button", { name: "Aside layout" })).toBeNull();
   fireEvent.keyDown(dialog, { key: "Escape" });
   expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull();
+}
+
+/** showLayoutChoice: App layout / Aside layout in the dialog, saved with changeLayoutChoice. */
+async function testSettingsLayoutChoice(): Promise<void> {
+  await renderInProvider(<SettingsMenu showLayoutChoice />, "layout-ready");
+  const settingsButton = screen.getByRole("button", { name: "Settings" });
+  fireEvent.click(settingsButton);
+  const dialog = screen.getByRole("dialog", { name: "Settings" });
+  const asideButton = within(dialog).getByRole("button", { name: "Aside layout" });
+  fireEvent.click(asideButton);
+  expect(layoutChoiceSignal.value).toBe("aside");
+  const appButton = within(dialog).getByRole("button", { name: "App layout" });
+  fireEvent.click(appButton);
+  expect(layoutChoiceSignal.value).toBe("app");
+  act(resetLayoutChoice);
+}
+
+function resetLayoutChoice(): void {
+  changeLayoutChoice("app");
 }
 
 async function testMarkdownViewer(): Promise<void> {
@@ -148,5 +170,6 @@ describe("extras", function describeExtras() {
   it("TypeFilter and TypeSearch report values", testFilterAndSearch);
   it("ShowProgress counts parallel requests", testProgress);
   it("SettingsMenu switches theme and closes on Escape", testSettingsMenu);
+  it("SettingsMenu offers App layout / Aside layout with showLayoutChoice", testSettingsLayoutChoice);
   it("TypeMdv renders markdown", testMarkdownViewer);
 });

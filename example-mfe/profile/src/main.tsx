@@ -2,7 +2,7 @@
 // The shell loads it from env.mfe.js: the dev server (npm run dev: http://localhost:PORT/src/main.tsx)
 // or the build (npm run serve: profile.js).
 import { createMfeLifecycles } from "./mfe-lifecycles.ts";
-import { ProfileMfe } from "./profile.page.tsx";
+import { ProfileMfe } from "./app-profile.tsx";
 import "./index.css";
 
 /** Build: profile.css sits next to profile.js. Dev server: Vite adds the CSS itself ("" = no <link>). */

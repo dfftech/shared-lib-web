@@ -211,6 +211,7 @@ export {
   readJwtToken,
   toAbsoluteUrl,
   uploadToSignedUrl,
+  clearSharedGetCache,
   type HttpHeaders,
   type HttpParams,
 } from "./utils/app-http.ts";

@@ -28,15 +28,47 @@ Each folder also runs on its own:
 `env.mfe.js` points at the dev servers (`http://localhost:5187/src/main.tsx` …). For the built files use the
 `.js` urls (listed at the bottom of `env.mfe.js`); in production, the URLs of the deployed `dist/` files.
 
-## The shell in 6 files (`shell/src/`)
+## Project layout (`.agent/skills/react-web-skill.md`)
+
+Every project follows the react-web skill: startup files at the top of `src/`, one folder per module, logic (`.ts`) and
+markup (`.tsx`) in files with the same name, props for the `Type*` controls built in the `.ts` file and spread in the
+`.tsx` (`<TypeInput {...model.emailProps} />`), named exports only.
+
+```
+src/
+├── main.tsx · dev.tsx · config.ts · mfe-page.tsx · mfe-lifecycles.ts   start-up (MFEs) / shell.tsx · mfe.ts · session.ts (shell)
+├── app-{module}.tsx                MFE root: MfePage + Suspense + RequireAccess (auth: no access check)
+└── modules/{module}/
+    ├── {module}.page.tsx           the page (loads the option lists)
+    ├── components/
+    │   ├── {module}.form.ts/.tsx   form: useForm + build...Props() / view only
+    │   └── {module}.view.ts/.tsx   read-only view
+    └── hooks/
+        ├── types.ts                types only
+        ├── data.ts                 default values (…InitValues, getDefault…())
+        ├── validation.ts           rules: dff-util ConstKeys messages, RegExp patterns
+        ├── service.ts              state (signals, drawer open, session) — no HTTP
+        ├── service-http.ts         every HTTP call + its loading signal (auth: POST sor/auth-signin)
+        └── service-load.ts         option lists + their loading signals (roles)
+```
+
+| Project | Modules |
+| --- | --- |
+| `auth/` | `modules/auth/login` (login form, signed-in view when alone) — `app-auth.tsx` |
+| `forms/` | `modules/forms` (contact form) — `app-forms.tsx` |
+| `profile/` | `modules/profile` (profile view + edit form in a drawer) — `app-profile.tsx` |
+| `shell/` | `modules/dashboard` (Home, `/dashboard` fallback), `modules/settings` (Settings) — `shell.tsx` |
+
+## The shell (`shell/src/`)
 
 | File | What |
 | --- | --- |
 | `config.ts` | App key, languages, themes, texts + the shell parts (company details = app name / logos / favicon, header settings, API URL, menu) |
-| `session.ts` | Sign out and `navSignal` (the menu, filled after sign in) — signing in is the auth MFE's job |
+| `session.ts` | Start-up loading, the menu (`navSignal`, after sign in), sign out, and the address following the session — signing in is the auth MFE's job |
 | `mfe.ts` | Everything single-spa: reads `env.mfe.js`, registers the MFEs, `syncMfes()` |
-| `shell.tsx` | The UI: provider, `AppLayout` with a plain `<div id="mfe-body" />`, home page, `SHELL_PAGES` (the shell's own pages); signed out = only `#mfe-body` with the auth MFE |
-| `settings.page.tsx` | The Settings page (a shell page, not an MFE): layout, menu navigation, language, theme |
+| `shell.tsx` | The UI: provider, `AppLayout` / `AsideLayout` with a plain `<div id="mfe-body" />`, `SHELL_PAGES`; signed out = only `#mfe-body` with the auth MFE |
+| `modules/settings/settings.page.ts/.tsx` | The Settings page (a shell page, not an MFE): layout, menu navigation, language, theme |
+| `modules/dashboard/dashboard.page.ts/.tsx` | The shell's Home page (fallback for `/dashboard`): a card per page MFE |
 | `main.tsx` | Start: render |
 
 ## Addresses
@@ -53,13 +85,13 @@ The shell uses `layout.pageMode: "path"`, so every page is a real address:
 ## Shell pages vs MFEs
 
 `/settings` (Settings) and `/dashboard` (the shell's Home page) are pages of the shell itself — clicking Settings in
-the menu stays in the shell and shows `settings.page.tsx`. They are registered in `SHELL_PAGES` (`shell.tsx`).
+the menu stays in the shell and shows `modules/settings/settings.page.tsx`. They are registered in `SHELL_PAGES` (`shell.tsx`).
 An MFE of `env.mfe.js` with the same path **wins** (single-spa mounts it anyway), so the shell's `/dashboard` page is
 only a fallback until a dashboard MFE is configured. Every other path is an MFE of `env.mfe.js` (or ComingSoon):
 
 ```tsx
 const SHELL_PAGES: Record<string, ComponentType> = {
-  "/dashboard": HomePage,   // fallback: a "/dashboard" MFE in env.mfe.js wins
+  "/dashboard": DashboardPage,   // fallback: a "/dashboard" MFE in env.mfe.js wins
   "/settings": SettingsPage,
 };
 ```
@@ -67,13 +99,31 @@ const SHELL_PAGES: Record<string, ComponentType> = {
 **Home:** without a token home is `/auth?page=login` (the auth MFE); with a token home is `/dashboard`
 (`SIGNED_IN_HOME` in `session.ts`, `homePath` in `config.ts`). A bare `/` while signed in goes to `/dashboard`.
 
+## Redirecting from code
+
+Use the library — in the shell and in every MFE (each MFE config sets `layout.pageMode: "path"`, like the shell):
+
+```ts
+import { openPage, PageLink, readQueryParam, setQueryParam } from "shared-lib-web";
+
+openPage("/profiles");                                   // push: /profiles (single-spa mounts the profile MFE)
+openPage("/auth", { page: "login" }, { isReplace: true }); // replace (Back skips it): /auth?page=login
+openPage("/app-settings", { tab: "notes" });             // with query values: /app-settings?tab=notes
+setQueryParam("tab", "notes");                           // only a query value on the current page
+const tab = readQueryParam("tab");                       // read it (undefined when missing)
+
+<PageLink page="/profiles">Profile</PageLink>            // a link (Ctrl+click opens a new tab)
+```
+
+Use the paths of `env.mfe.js` (or a shell page). Never `window.location.href = ...` — that reloads the whole shell.
+
 ## Signed out: the auth MFE
 
 The shell has no login page. The `env.mfe.js` entry with `isAuth: true` is active while nobody is signed in (its `path`,
 for example `/auth`, is the address shown then: `/auth?page=login`),
 so `http://localhost:9000/forms` signed out shows the login, and after sign in the same address shows the forms MFE.
 
-1. `auth/src/auth.page.tsx` signs in with the library: `startSession(token, user)`.
+1. The auth MFE (`modules/auth/login`) posts `sor/auth-signin` (`hooks/service-http.ts`) and signs in with the library: `startSession(token, user)` (`hooks/service.ts`).
 2. The library fires `SESSION_EVENT`; the shell's own library copy reads the token and user from sessionStorage
    (same page, same `ORG-` keys) — `isAuthenticatedSignal` turns true in the shell.
 3. The shell renders its layout, loads the menu, and single-spa unmounts the auth MFE and mounts the page MFE.
@@ -153,12 +203,16 @@ Keep the common parts the same in every project: `appNameKey` (`ORG`, so all rea
 logos in its config; MFEs do not load it). The
 shell fills them in `session.ts`, each MFE in `startConfigData()` (`config.ts`, started by `mfe-page.tsx`).
 
+**No double loading:** the shell and every MFE load the languages, themes, texts and company details with
+`AppHttp.GetShared(...)`. It shares one request per URL + params between all library copies on the page, so when the
+shell already loaded (or is loading) them, an MFE uses that reply instead of calling again; alone it calls itself.
+
 **Languages** (`supportLangSignal`) come from
 sor `/load/LANG?active=true` (the shell in `session.ts`, each MFE in `startConfigData()`). Inside the shell the MFE asks
 the shell's site (`/api` is relative to the page); alone it asks its own site's `/api`.
 
 **Layout choice** (app / aside) lives in the library: `layoutChoiceSignal` and `changeLayoutChoice()`. The shell's
-Settings page calls `changeLayoutChoice`, the shell renders `AppLayout` or `AsideLayout` from `layoutChoiceSignal`, and every MFE's
+Settings page and the ⚙ settings dialog (`layout.showLayoutChoice: true` in `shell/src/config.ts`) call `changeLayoutChoice`, the shell renders `AppLayout` or `AsideLayout` from `layoutChoiceSignal`, and every MFE's
 `mfe-page.tsx` copies it into `isAsideLayoutSignal` (HeadLayout below the header, or at the very top). No
 layout-choice file in the projects.
 

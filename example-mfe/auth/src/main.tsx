@@ -2,7 +2,7 @@
 // The shell loads it from env.mfe.js: the dev server (npm run dev: http://localhost:PORT/src/main.tsx)
 // or the build (npm run serve: auth.js).
 import { createMfeLifecycles } from "./mfe-lifecycles.ts";
-import { AuthMfe } from "./auth.page.tsx";
+import { AuthMfe } from "./app-auth.tsx";
 import "./index.css";
 
 /** Build: auth.css sits next to auth.js. Dev server: Vite adds the CSS itself ("" = no <link>). */

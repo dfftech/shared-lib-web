@@ -164,6 +164,11 @@ export interface LayoutConfig {
   isSidebarCollapsible?: boolean;
   /** "inline": language and theme switchers in the header. "menu": one settings button that opens them. Default "inline". */
   headerSettings?: "inline" | "menu";
+  /**
+   * Show the layout choice (App layout / Aside layout) in the settings dialog — for apps that render AppLayout or
+   * AsideLayout from layoutChoiceSignal (a shell). Saved as LAYOUT_CHOICE. Default false.
+   */
+  showLayoutChoice?: boolean;
   /** Where toasts appear. Default "top-end". */
   toastPosition?: ToastPosition;
   /** Show a "scroll to top" button on long pages. Default true. */

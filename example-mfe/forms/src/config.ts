@@ -21,7 +21,7 @@ import {
 } from 'shared-lib-web';
 
 /** Key / base name, the same in the shell and every MFE: ORG-THEME, ORG-LANG ... */
-export const APP_NAME_KEY = "ORG";
+export const APP_NAME_KEY = "BOTNBOLT";
 
 /** Service name prefix: "ORG" -> /org-api. */
 const APP_API_KEY = APP_NAME_KEY.toLowerCase();
@@ -59,7 +59,7 @@ async function loadLanguages(): Promise<void> {
   }
   isLanguageRequested = true;
   try {
-    const reply = await AppHttp.Get(`${MsUrl.sor}/load/LANG`, { active: true });
+    const reply = await AppHttp.GetShared(`${MsUrl.sor}/load/LANG`, { active: true });
     supportLangSignal.value = reply as LangSource;
   } catch {
     supportLangSignal.value = null;
@@ -69,7 +69,7 @@ async function loadLanguages(): Promise<void> {
 /** The texts of one language: sor /content-load?query=locales.<code> (the groups inside: { "ui": {...}, "nav": {...} }). */
 async function loadTexts(languageCode: string): Promise<LocaleModule> {
   const query = `locales.${languageCode}`;
-  const reply = await AppHttp.Get(`${MsUrl.sor}/content-load`, { query: query });
+  const reply = await AppHttp.GetShared(`${MsUrl.sor}/content-load`, { query: query });
   const messages = readContent(reply, query);
   return messages as LocaleModule;
 }
@@ -84,7 +84,7 @@ async function loadThemeFile(): Promise<void> {
   }
   isThemeRequested = true;
   try {
-    const reply = await AppHttp.Get(`${MsUrl.sor}/content-load`, { query: "theme" });
+    const reply = await AppHttp.GetShared(`${MsUrl.sor}/content-load`, { query: "theme" });
     const themes = readContent(reply, "theme");
     themesSignal.value = themes as CustomThemesModule;
   } catch {
@@ -117,6 +117,8 @@ export const config: UiConfig = {
   // Themes as a signal: the custom org themes (sor /content-load?query=theme, listed first) + all 35 DaisyUI themes.
   loadThemes: themesSignal,
   // The MFEs have no app header: no settings button, no menu.
-  layout: { showMenu: false, showScrollToTop: true, toastPosition: "top-end" },
+  // pageMode "path" like the shell: openPage("/profiles") / PageLink here change the path (/profiles), so single-spa
+  // in the shell mounts that MFE (without it an MFE would write ?page=profiles).
+  layout: { showMenu: false, showScrollToTop: true, toastPosition: "top-end", pageMode: "path" },
   http: { baseUrl: API_BASE_URL },
 };
