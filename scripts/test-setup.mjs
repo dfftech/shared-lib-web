@@ -14,8 +14,23 @@ const pageOptions = { url: "http://localhost/", pretendToBeVisual: true };
 const page = new JSDOM("<!doctype html><html><body></body></html>", pageOptions);
 const browserWindow = page.window;
 
-/** DOM classes that must come from jsdom even when Node has its own version. */
-const ALWAYS_FROM_JSDOM = ["Event", "EventTarget", "CustomEvent", "KeyboardEvent", "MouseEvent", "FormData", "File", "FileList", "Blob"];
+/**
+ * Globals that must come from jsdom even when Node has its own version. localStorage / sessionStorage: Node 25+
+ * defines its own (undefined, or file-backed, without --localstorage-file), which would hide jsdom's page storage.
+ */
+const ALWAYS_FROM_JSDOM = [
+  "Event",
+  "EventTarget",
+  "CustomEvent",
+  "KeyboardEvent",
+  "MouseEvent",
+  "FormData",
+  "File",
+  "FileList",
+  "Blob",
+  "localStorage",
+  "sessionStorage",
+];
 
 function copyWindowProperty(propertyName) {
   const isMissing = !(propertyName in globalThis);
