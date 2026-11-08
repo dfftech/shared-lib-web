@@ -5,10 +5,16 @@
 // loadMenuNavigation = navSignal (after sign in). No branches.
 
 import { readEnvData, toAbsoluteUrl, type UiConfig } from "shared-lib-web";
-import { supportLangSignal, navSignal, localeSignal, themesSignal, companySignal } from "./app-init/app-init-signals.ts";
+import {
+  companySignal,
+  localeSignal,
+  navSignal,
+  supportLangSignal,
+  themesSignal,
+} from './app-init/app-init-signals.ts';
 
 /** Key / base name (ENV_BASE_NAME): AppStorage keys ORG-TOKEN, ORG-LANG ...; window.env REACT_APP_ORG_... */
-const APP_NAME_KEY = "BOTNBOLT";
+const APP_NAME_KEY = 'ORGAPP';
 
 /** Service name prefix: "ORG" -> "org" -> /org-api, /org-sor ... */
 const APP_API_KEY = APP_NAME_KEY.toLowerCase();

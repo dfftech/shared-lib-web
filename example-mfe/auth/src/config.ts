@@ -22,7 +22,7 @@ import {
 } from 'shared-lib-web';
 
 /** Key / base name, the same in the shell and every MFE: ORG-THEME, ORG-LANG ... */
-export const APP_NAME_KEY = "BOTNBOLT";
+export const APP_NAME_KEY = 'ORGAPP';
 
 /** Service name prefix: "ORG" -> /org-api. */
 const APP_API_KEY = APP_NAME_KEY.toLowerCase();
