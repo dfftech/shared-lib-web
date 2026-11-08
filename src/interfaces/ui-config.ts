@@ -256,7 +256,8 @@ export interface UiConfig {
   /**
    * Loads the company details ({ appName, companyName, faviconUrl, logoUrl, logoDarkUrl }): called once when the provider mounts,
    * like loadSupportLanguages. Its values win over appName / logoUrl / logoDarkUrl; faviconUrl sets the tab icon.
-   * Not called for type "mfe" (the shell owns the brand). By hand: setCompanyDetails(reply).
+   * Type "mfe": usually not set (the shell owns the brand); an MFE that shows the brand (an auth MFE) may set it.
+   * By hand: setCompanyDetails(reply).
    */
   loadCompanyDetails?: ApiSource;
   /** Label shown in the header, sidebar and login: t(appName), so plain text or a translation key. Default: appNameKey. */

@@ -4,7 +4,7 @@
 //   In the shell: the shell's layout <main> already has the padding, so the page is rendered as it is.
 //   Alone (npm run dev): a page box with the same padding (p-4 lg:p-6), so HeadLayout looks the same.
 //   HeadLayout sticks below the shell header (top-16) in the app layout, and at the very top (top-0) when there is
-//   no header: in the aside layout (layoutChoiceSignal "aside", picked in the settings MFE), or when the MFE runs alone.
+//   no header: in the aside layout (layoutChoiceSignal "aside", picked on the shell's Settings page), or when the MFE runs alone.
 
 import { effect } from "@preact/signals-react";
 import { SharedWebUiProvider, isAsideLayoutSignal, layoutChoiceSignal } from "shared-lib-web";

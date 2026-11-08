@@ -7,7 +7,6 @@
 // startAppInit() is started once in shell.tsx (after the provider saved the config, which AppHttp reads).
 
 import { effect } from "@preact/signals-react";
-import { AppUUID4 } from "dff-util";
 import {
   AppHttp,
   authUserSignal,
@@ -16,7 +15,6 @@ import {
   fillLocaleBundle,
   isAuthenticatedSignal,
   readJwtToken,
-  startSession,
   type CompanySource,
   type CustomThemesModule,
   type LangSource,
@@ -137,12 +135,6 @@ export function startAppInit(): () => void {
   const stopTexts = fillLocaleBundle(localeSignal, loadTexts);
   const stopSession = effect(followSession);
   return stopAll.bind(null, [stopTexts, stopSession]);
-}
-
-/** Fake sign in: any email. A real shell saves the token from its login API. */
-export function signIn(email: string): void {
-  const token = AppUUID4();
-  startSession(token, { id: email, email: email, name: email, persona: "admin", roles: ["ADMIN_ADMIN"] });
 }
 
 export function signOut(): void {

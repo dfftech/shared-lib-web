@@ -6,13 +6,16 @@
 //   isAuthenticatedSignal.value             // true / false
 //   endSession();                           // log out (LANG, THEME ... are kept)
 //   endSession([BRANCH_ID]);                // log out, also keeps the listed AppStorage keys
+//
+// Microfrontends: each one bundles its own copy of the library. startSession / endSession fire SESSION_EVENT, and
+// every other copy (startSessionSync, started by the provider) applies it: an auth MFE signs in -> the shell is signed in.
 
 import { computed, signal } from "@preact/signals-react";
 import { ConstValue } from "dff-util";
 import type { AuthUser } from "../interfaces/app-types.ts";
 import { AppStorage } from "../utils/app-storage.ts";
 import { resetSessionId } from "../utils/session-id.ts";
-import { AUTH_USER, BRANCH_ID, REMEMBER_ME, TOKEN } from "../utils/storage-keys.ts";
+import { AUTH_USER, BRANCH_ID, REMEMBER_ME, SESSION_EVENT, TOKEN } from "../utils/storage-keys.ts";
 import { clearBranch, forgetAppliedBranches, restoreBranch } from "./branch-service.ts";
 import { uiConfigSignal } from "./signals.ts";
 
@@ -32,6 +35,29 @@ function readIsAuthenticated(): boolean {
 
 /** true when a token is present. */
 export const isAuthenticatedSignal = computed(readIsAuthenticated);
+
+/** Id of this copy of the library: its own session events are not applied again. */
+const randomNumber = Math.random();
+const LIBRARY_COPY_ID = String(randomNumber);
+
+/** What SESSION_EVENT carries. */
+interface SessionEventDetail {
+  isSignedIn?: boolean;
+  copyId?: string;
+}
+
+let isSessionSyncStarted = false;
+
+/** Tells every other library copy on the page that the session started or ended. */
+function notifySessionChanged(isSignedIn: boolean): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const detail: SessionEventDetail = { isSignedIn: isSignedIn, copyId: LIBRARY_COPY_ID };
+  const eventInit = { detail: detail };
+  const sessionEvent = new CustomEvent(SESSION_EVENT, eventInit);
+  window.dispatchEvent(sessionEvent);
+}
 
 /** AppStorage key of the token (config.http.tokenKey, default "TOKEN"). */
 export function readTokenKey(): string {
@@ -58,6 +84,7 @@ export function startSession(token: string, user: AuthUser | null, isRemembered:
   // The user first: whatever runs on sign in (branches, menu) already reads the user.
   authUserSignal.value = user;
   sessionTokenSignal.value = token;
+  notifySessionChanged(true);
 }
 
 /** Reads a saved session (sessionStorage). Called by SharedWebUiProvider. */
@@ -99,7 +126,34 @@ export function endSession(keepKeys: string[] = [], isRedirect: boolean = true):
   sessionTokenSignal.value = ConstValue.EMPTY;
   authUserSignal.value = null;
   resetSessionId();
+  notifySessionChanged(false);
   if (isRedirect) {
     redirectToLogoutUrl();
   }
+}
+
+/** Another library copy started or ended the session: read it from AppStorage (sign in) or clear it here (sign out). */
+export function handleSessionEvent(event: Event): void {
+  const detail = (event as CustomEvent<SessionEventDetail>).detail;
+  const isOwnEvent = detail?.copyId === LIBRARY_COPY_ID;
+  if (!detail || isOwnEvent) {
+    return;
+  }
+  if (detail.isSignedIn) {
+    restoreSession();
+    return;
+  }
+  forgetAppliedBranches();
+  sessionTokenSignal.value = ConstValue.EMPTY;
+  authUserSignal.value = null;
+}
+
+/** Starts following the session events of the other library copies (once; called by SharedWebUiProvider). */
+export function startSessionSync(): void {
+  const hasWindow = typeof window !== "undefined";
+  if (!hasWindow || isSessionSyncStarted) {
+    return;
+  }
+  isSessionSyncStarted = true;
+  window.addEventListener(SESSION_EVENT, handleSessionEvent);
 }

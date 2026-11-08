@@ -1,6 +1,6 @@
-// vite.config.ts — the "settings" MFE: its own Vite project.
+// vite.config.ts — the "auth" MFE: its own Vite project.
 //   npm run dev     -> http://localhost:5186   the MFE alone (index.html + src/dev.tsx), with hot reload
-//   npm run serve   -> http://localhost:5176/settings.js   built as ONE ES module + settings.css for the single-spa root
+//   npm run serve   -> http://localhost:5176/auth.js   built as ONE ES module + auth.css for the single-spa root
 // It uses the library source (../../src) through an alias.
 
 import tailwindcss from "@tailwindcss/vite";
@@ -33,9 +33,9 @@ const aliasOptions = [
 // The library source lives outside this folder: resolve these packages from THIS project.
 const dedupePackages = ["react", "react-dom", "@preact/signals-react", "react-hook-form", "lucide-react", "dff-util", "single-spa", "single-spa-react"];
 
-// Library build: one ES module (settings.js) + its CSS (settings.css). React and shared-lib-web are bundled in,
+// Library build: one ES module (auth.js) + its CSS (auth.css). React and shared-lib-web are bundled in,
 // so the MFE runs on its own; the root only needs its URL.
-const libraryOptions = { entry: mfeEntry, formats: ["es" as const], fileName: "settings", cssFileName: "settings" };
+const libraryOptions = { entry: mfeEntry, formats: ["es" as const], fileName: "auth", cssFileName: "auth" };
 
 // "vite build" (npm run build / serve) = production React; "vite" (npm run dev) = development React.
 const isBuild = process.argv.includes("build");
@@ -49,7 +49,7 @@ export default defineConfig({
   resolve: { alias: aliasOptions, dedupe: dedupePackages },
   // The shell (another port) imports this dev server's modules; their asset URLs must point back here.
   server: { fs: { allow: [repoRoot] }, cors: true, origin: "http://localhost:5186" },
-  // The root (another port) loads settings.js from here.
+  // The root (another port) loads auth.js from here.
   preview: { cors: true },
   build: { lib: libraryOptions, outDir: "dist", emptyOutDir: true },
 });

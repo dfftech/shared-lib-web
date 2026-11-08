@@ -73,6 +73,12 @@ export const LOCAL_STORAGE_KEYS: string[] = [LANG, THEME, LAYOUT_CHOICE, MENU_MO
  */
 export const PREFERENCE_EVENT = "shared-lib-web:preference";
 
+/**
+ * Window event fired by startSession / endSession (detail = { isSignedIn, copyId }). Every OTHER copy of the library
+ * on the page applies it (auth-service.ts) — so a sign in inside an auth microfrontend signs the shell in too.
+ */
+export const SESSION_EVENT = "shared-lib-web:session";
+
 /** AppStorage prefix when config.appNameKey is missing. */
 export const DEFAULT_APP_STORAGE_PREFIX = "UI";
 

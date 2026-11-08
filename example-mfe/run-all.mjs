@@ -1,5 +1,5 @@
 // run-all.mjs — runs an npm script in every folder of the microfrontend example (each is its own Vite project).
-//   node run-all.mjs install   npm install in shell, settings, forms, profile
+//   node run-all.mjs install   npm install in shell, auth, forms, profile
 //   node run-all.mjs build     npm run build in each
 //   node run-all.mjs start     everything with npm run dev: shell 9000, MFEs 5186-5188 (env.mfe.js points there)
 //   node run-all.mjs serve     MFEs built + previewed on 5176-5178 (switch the urls in env.mfe.js), shell dev 9000
@@ -8,8 +8,8 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const FOLDERS = ["shell", "settings", "forms", "profile"];
-const MFE_FOLDERS = ["settings", "forms", "profile"];
+const FOLDERS = ["shell", "auth", "forms", "profile"];
+const MFE_FOLDERS = ["auth", "forms", "profile"];
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
 
 function folderPath(folder) {

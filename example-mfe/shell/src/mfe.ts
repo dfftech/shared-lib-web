@@ -2,7 +2,8 @@
 //
 // 1. env.mfe.js (public/) sets window.envMfe = [{ id, path, url, render }, ...]
 // 2. registerMfes() tells single-spa about each entry:
-//      it is active when the user is signed in and the address is its path, /forms (no path = a widget, always on)
+//      it is active when the user is signed in and the address is its path, /forms (no path = a widget, always on);
+//      the auth MFE (isAuth: true) is active while nobody is signed in — the shell has no login of its own
 //      its code is imported from its url the first time
 //      it mounts into the element with id = render
 // 3. shell.tsx puts the MFE place into its layout with <div ref={attachMfeBody} /> and calls syncMfes() after it
@@ -23,6 +24,7 @@ import {
 /** One entry of env.mfe.js. */
 export interface MfeRoute {
   id: string; // single-spa name
+  isAuth?: boolean; // true = the auth MFE: shown while nobody is signed in, whatever the address (no path)
   path?: string; // page that shows it ("/forms" = ?page=forms); missing = widget, always on
   url: string; // the MFE build (exports bootstrap / mount / unmount)
   render: string; // id of the fixed slot in the shell layout
@@ -67,6 +69,17 @@ export function readMfeRoutes(): MfeRoute[] {
   return windowWithMfe.envMfe ?? [];
 }
 
+/** The auth MFE (isAuth: true in env.mfe.js): the login, shown while nobody is signed in. */
+export function findAuthRoute(): MfeRoute | undefined {
+  const routes = readMfeRoutes();
+  for (const route of routes) {
+    if (route.isAuth) {
+      return route;
+    }
+  }
+  return undefined;
+}
+
 /** The MFE of a page, or undefined when the shell shows that page itself. */
 export function findMfeRoute(page: string): MfeRoute | undefined {
   const routes = readMfeRoutes();
@@ -87,6 +100,11 @@ function loadMfe(url: string): Promise<LifeCycles> {
   loadAttempts.set(url, attempt + 1);
   const moduleUrl = attempt === 0 ? url : `${url}?retry=${attempt}`;
   return import(/* @vite-ignore */ moduleUrl);
+}
+
+/** single-spa "activeWhen" of the auth MFE: while nobody is signed in. */
+function isAuthMfeActive(): boolean {
+  return !isAuthenticatedSignal.peek();
 }
 
 /** single-spa "activeWhen": signed in, and the page (/forms) is the MFE's path ("" = always). */
@@ -114,7 +132,7 @@ export function syncMfes(): void {
   for (const route of routes) {
     const app = loadMfe.bind(null, route.url);
     const routePath = route.path ?? "";
-    const activeWhen = isMfeActive.bind(null, routePath);
+    const activeWhen = route.isAuth ? isAuthMfeActive : isMfeActive.bind(null, routePath);
     const customProps = { domElementId: route.render };
     registerApplication({ name: route.id, app: app, activeWhen: activeWhen, customProps: customProps });
   }

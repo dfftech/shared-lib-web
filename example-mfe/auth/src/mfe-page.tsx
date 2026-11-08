@@ -1,10 +1,10 @@
-// mfe-page.tsx
+// mfe-page.tsx (auth MFE: the AuthLayout fills the screen, so no page padding)
 // What every MFE renders: the provider (type "mfe": theme, language, menu mode and layout choice from localStorage;
 // no menu, no branch calls) and its page — NO AppLayout.
 //   In the shell: the shell's layout <main> already has the padding, so the page is rendered as it is.
 //   Alone (npm run dev): a page box with the same padding (p-4 lg:p-6), so HeadLayout looks the same.
 //   HeadLayout sticks below the shell header (top-16) in the app layout, and at the very top (top-0) when there is
-//   no header: in the aside layout (layoutChoiceSignal "aside", picked in the settings MFE), or when the MFE runs alone.
+//   no header: in the aside layout (layoutChoiceSignal "aside", picked on the shell's Settings page), or when the MFE runs alone.
 
 import { effect } from "@preact/signals-react";
 import { SharedWebUiProvider, isAsideLayoutSignal, layoutChoiceSignal } from "shared-lib-web";
@@ -38,7 +38,8 @@ export function MfePage(props: MfePageProps) {
   const applyLayout = props.isInShell ? followShellLayout : markNoHeader;
   useLayoutEffect(applyLayout, RUN_ONCE);
   useEffect(startConfigData, RUN_ONCE);
-  const pageClassName = props.isInShell ? "flex flex-col gap-4" : "flex min-h-screen flex-col gap-4 bg-base-200 p-4 lg:p-6";
+  // The auth page is a whole screen (AuthLayout): no page padding, in the shell or alone.
+  const pageClassName = "min-h-screen";
   return (
     <SharedWebUiProvider type="mfe" config={config}>
       <div className={pageClassName}>{props.children}</div>

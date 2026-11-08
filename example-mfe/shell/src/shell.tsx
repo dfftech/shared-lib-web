@@ -1,18 +1,16 @@
 // shell.tsx — the shell UI in one file: provider, layout, login and home page.
-//   signed out -> login page
-//   signed in  -> AppLayout (header, menu, user) or AsideLayout (menu only; picked in the settings MFE), and in <main>:
-//                   the shell's home page ("/"), or the MFE of the current page in <div id="mfe-body" />
+//   signed out -> the auth MFE (env.mfe.js isAuth: true) in <div id="mfe-body" /> — the shell has NO login of its own
+//   signed in  -> AppLayout (header, menu, user) or AsideLayout (menu only; picked on the Settings page), and in <main>:
+//                   a page of the shell itself (SHELL_PAGES: "/" home, "/settings" settings),
+//                   or the MFE of the current page (env.mfe.js) in <div id="mfe-body" />
 
 import { useSignals } from "@preact/signals-react/runtime";
-import { ConstKeys, RegExp } from "dff-util";
 import {
   ComingSoon,
   ContentLayout,
   HeadLayout,
   PageLink,
   SharedWebUiProvider,
-  TypeButton,
-  TypeInput,
   UserMenu,
   authUserSignal,
   isAuthenticatedSignal,
@@ -21,43 +19,40 @@ import {
   useUi,
   layoutChoiceSignal,
 } from "shared-lib-web";
-import { AppLayout, AsideLayout, AuthLayout } from "shared-lib-web/layout";
-import { useEffect, type ReactElement } from "react";
-import { useForm } from "react-hook-form";
+import { AppLayout, AsideLayout } from "shared-lib-web/layout";
+import { useEffect, type ComponentType, type ReactElement } from "react";
 import { shellConfig } from "./config.ts";
-import { attachMfeBody, findMfeRoute, mfeErrorSignal, readMfeRoutes, syncMfes } from "./mfe.ts";
-import { signIn, signOut, startAppInit } from "./session.ts";
-
-/** Login email: required + a valid address (dff-util messages, translated in root.json). */
-const emailRules = {
-  required: { value: true, message: ConstKeys.REQUIRED },
-  pattern: { value: RegExp.EMAIL, message: ConstKeys.INVALID_EMAIL },
-};
+import { attachMfeBody, findAuthRoute, findMfeRoute, mfeErrorSignal, readMfeRoutes, syncMfes, type MfeRoute } from "./mfe.ts";
+import { signOut, startAppInit } from "./session.ts";
+import { SettingsPage } from "./settings.page.tsx";
 
 const RUN_ONCE: never[] = [];
 
-// ---- Login ----
-
-interface LoginFormType {
-  email: string;
-}
-
-function handleLoginSubmit(values: LoginFormType): void {
-  signIn(values.email);
-}
-
-function LoginPage() {
-  const { t } = useUi();
-  const formOptions = { defaultValues: { email: "" } };
-  const form = useForm<LoginFormType>(formOptions);
-  const onSubmit = form.handleSubmit(handleLoginSubmit);
+/** The error box of an MFE that could not load (its server is not running, or the url in env.mfe.js is wrong). */
+function MfeLoadError(props: { route: MfeRoute }) {
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2">
-      <h1 className="text-2xl font-bold text-primary">{t("login.title")}</h1>
-      <p className="mb-2 text-sm opacity-70">{t("login.hint")}</p>
-      <TypeInput control={form.control} name="email" type="email" label={t("login.email")} rules={emailRules} />
-      <TypeButton type="submit" icon="LogIn" label={t("login.submit")} isBlock />
-    </form>
+    <div role="alert" className="alert alert-error m-4 flex-col items-start">
+      <b>{props.route.id} could not be loaded from {props.route.url}</b>
+      <span className="text-sm">Is it running at that url (see shell/public/env.mfe.js)? Start it, then reload.</span>
+    </div>
+  );
+}
+
+// ---- Signed out: the auth MFE ----
+
+/** Signed out: the whole screen is the auth MFE (it renders its own AuthLayout + login form). */
+function SignedOutShell() {
+  useSignals();
+  const authRoute = findAuthRoute();
+  const mfeError = mfeErrorSignal.value;
+  const showError = Boolean(authRoute) && mfeError?.id === authRoute?.id;
+  return (
+    <>
+      {authRoute ? null : <p className="alert alert-warning m-4">No auth MFE in env.mfe.js (an entry with isAuth: true).</p>}
+      {showError && authRoute ? <MfeLoadError route={authRoute} /> : null}
+      {/* The auth MFE (render: "mfe-body") mounts here while nobody is signed in. */}
+      <div ref={attachMfeBody} />
+    </>
   );
 }
 
@@ -87,6 +82,23 @@ function HomePage() {
   );
 }
 
+// ---- The pages of the shell itself (not microfrontends) ----
+
+/**
+ * Pages the shell renders itself, by path (the menu hrefs). Everything else is an MFE of env.mfe.js, or ComingSoon.
+ * Register a new shell page here: { "/reports": ReportsPage }.
+ */
+const SHELL_PAGES: Record<string, ComponentType> = {
+  "/": HomePage,
+  "/settings": SettingsPage,
+};
+
+/** The shell page of a path: its component, or ComingSoon when the shell has none. */
+function renderShellPage(page: string): ReactElement {
+  const ShellPage = SHELL_PAGES[page];
+  return ShellPage ? <ShellPage /> : <ComingSoon />;
+}
+
 // ---- Layout ----
 
 function Shell() {
@@ -97,15 +109,13 @@ function Shell() {
   const signedInState = [isSignedIn];
   useEffect(syncMfes, signedInState);
   if (!isSignedIn) {
-    return (
-      <AuthLayout>
-        <LoginPage />
-      </AuthLayout>
-    );
+    return <SignedOutShell />;
   }
   const email = authUserSignal.value?.email ?? "";
-  const mfeRoute = findMfeRoute(page);
-  const shellPage = page === "/" ? <HomePage /> : <ComingSoon />;
+  // A shell page wins over an MFE with the same path.
+  const isShellPage = page in SHELL_PAGES;
+  const mfeRoute = isShellPage ? undefined : findMfeRoute(page);
+  const shellPage = renderShellPage(page);
   // Desktop with the side menu: the user sits at the bottom of the menu, so the header copy is hidden there.
   const headerUserClassName = isDesktopSidebarSignal.value ? "lg:hidden" : undefined;
   const headerEnd = (
@@ -120,18 +130,13 @@ function Shell() {
   const pageContent = (
     <>
       {mfeRoute ? null : shellPage}
-      {showMfeError ? (
-        <div role="alert" className="alert alert-error flex-col items-start">
-          <b>{mfeRoute?.id} could not be loaded from {mfeRoute?.url}</b>
-          <span className="text-sm">Is it running at that url (see shell/public/env.mfe.js)? Start it, then click the menu again.</span>
-        </div>
-      ) : null}
+      {showMfeError && mfeRoute ? <MfeLoadError route={mfeRoute} /> : null}
       {/* Every page MFE of env.mfe.js (render: "mfe-body") mounts here, one at a time. */}
       <div ref={attachMfeBody} />
     </>
   );
 
-  // The layout picked in the settings MFE (ORG-LAYOUT_CHOICE): aside = menu only, no header, no mega menu.
+  // The layout picked on the Settings page (ORG-LAYOUT_CHOICE): aside = menu only, no header, no mega menu.
   if (layoutChoiceSignal.value === "aside") {
     return <AsideLayout sidebarUser={sidebarUser}>{pageContent}</AsideLayout>;
   }

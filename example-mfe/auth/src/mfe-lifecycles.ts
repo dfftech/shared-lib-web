@@ -3,7 +3,7 @@
 // The shell passes the element id of each MFE (env.mfe.js "render") as customProps.domElementId;
 // alone (npm run dev) an MFE uses #mfe-container of its own index.html.
 // Each MFE is its own build (its own React and shared-lib-web copy), so it also loads its own CSS file
-// (settings.css next to settings.js) before the first mount.
+// (auth.css next to auth.js) before the first mount.
 
 import type { FunctionComponent } from "react";
 import { createElement } from "react";
@@ -62,7 +62,7 @@ export function loadMfeStylesheet(cssUrl: string): Promise<unknown> {
 
 /**
  * single-spa lifecycles for one MFE.
- *   cssUrl: the MFE's built CSS file, for example new URL("settings.css", import.meta.url).href
+ *   cssUrl: the MFE's built CSS file, for example new URL("auth.css", import.meta.url).href
  */
 export function createMfeLifecycles(rootComponent: FunctionComponent<MfeProps>, cssUrl: string): LifeCycles<MfeProps> {
   const options = {

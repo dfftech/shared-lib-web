@@ -1,10 +1,10 @@
-// config.ts — the config of this MFE (each MFE has its own copy; keep the common parts the same in every project).
+// config.ts — the config of the auth MFE (the login page; each MFE has its own copy of the common parts).
 // Same appNameKey ("ORG") in the shell and every MFE, so they all read the same localStorage keys:
 //   ORG-THEME  the theme the user picked     ORG-LANG  the language     ORG-LAYOUT_CHOICE  the shell layout
 // <SharedWebUiProvider type="mfe" config={config}> applies the saved theme and language on mount.
-// No menu, no branches, no logos, no appName (type "mfe": the shell owns them); the MFE has page layouts only.
+// No menu, no branches (type "mfe"). Unlike the other MFEs it loads the company details: the login shows the brand.
 // Everything loaded is a signal, like in the shell: loadLocale: localeSignal, loadThemes: themesSignal,
-// loadSupportLanguages: supportLangSignal — filled by startConfigData() (mfe-page.tsx).
+// loadSupportLanguages: supportLangSignal, loadCompanyDetails: companySignal — filled by startConfigData() (mfe-page.tsx).
 
 import { signal } from "@preact/signals-react";
 import {
@@ -12,6 +12,7 @@ import {
   readContent,
   fillLocaleBundle,
   toAbsoluteUrl,
+  type CompanySource,
   type CustomThemesModule,
   type LangSource,
   type LocaleModule,
@@ -43,6 +44,26 @@ export const localeSignal = signal<LocaleBundle | null>(null);
 
 /** The custom themes (sor /content-load?query=theme): null until loaded. */
 export const themesSignal = signal<CustomThemesModule | null>(null);
+
+/** The company details (sor /company-details: app name, company name, favicon, logos): null until it arrives. */
+export const companySignal = signal<CompanySource | null>(null);
+
+/** true once the company details were requested (one request, also with StrictMode). */
+let isCompanyRequested = false;
+
+/** GET the company details once (sor /company-details). On an error: {} (the app key is shown). */
+async function loadCompany(): Promise<void> {
+  if (isCompanyRequested) {
+    return;
+  }
+  isCompanyRequested = true;
+  try {
+    const reply = await AppHttp.Get(`${MsUrl.sor}/company-details`);
+    companySignal.value = reply as CompanySource;
+  } catch {
+    companySignal.value = {};
+  }
+}
 
 /** true once the languages were requested (one request, also with StrictMode). */
 let isLanguageRequested = false;
@@ -94,9 +115,10 @@ function stopAll(stoppers: Array<() => void>): void {
   }
 }
 
-/** For useEffect in mfe-page.tsx: languages, themes and texts of this MFE. Returns the cleanup. */
+/** For useEffect in mfe-page.tsx: languages, company details, themes and texts of this MFE. Returns the cleanup. */
 export function startConfigData(): () => void {
   void loadLanguages();
+  void loadCompany();
   void loadThemeFile();
   const stopTexts = fillLocaleBundle(localeSignal, loadTexts);
   return stopAll.bind(null, [stopTexts]);
@@ -111,6 +133,8 @@ export const config: UiConfig = {
   loadSupportLanguages: supportLangSignal,
   // Themes as a signal: the custom org themes (sor /content-load?query=theme, listed first) + all 35 DaisyUI themes.
   loadThemes: themesSignal,
+  // The brand on the login page (AuthLayout -> AppBrand): logo, app name, favicon.
+  loadCompanyDetails: companySignal,
   // The MFEs have no app header: no settings button, no menu.
   layout: { showMenu: false, showScrollToTop: true, toastPosition: "top-end" },
   http: { baseUrl: API_BASE_URL },

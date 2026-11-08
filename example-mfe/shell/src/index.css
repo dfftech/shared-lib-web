@@ -1,4 +1,4 @@
-/* index.css — styles of the shell (AppLayout, login, home page).
+/* index.css — styles of the shell (AppLayout, home and settings pages).
    In a real app replace the library @source line with:  @import "shared-lib-web/styles.css";  */
 @import "tailwindcss";
 

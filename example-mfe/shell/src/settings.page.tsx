@@ -1,4 +1,6 @@
-// settings.page.tsx — page layout only (HeadLayout + ContentLayout), no AppLayout.
+// settings.page.tsx — a page of the shell itself (not a microfrontend): /settings, registered in SHELL_PAGES (shell.tsx).
+// Layout (app / aside), menu navigation (sidebar / mega menu), language and theme — saved as ORG-LAYOUT_CHOICE,
+// ORG-MENU_MODE, ORG-LANG, ORG-THEME, so the shell switches at once and every MFE follows.
 import {
   AppStorage,
   changeLanguage,
@@ -21,9 +23,6 @@ import {
   type Theme,
 } from "shared-lib-web";
 import type { MouseEvent, ReactElement } from "react";
-import type { MfeProps } from "./mfe-lifecycles.ts";
-import { MfePage } from "./mfe-page.tsx";
-
 
 /** Language buttons carry the code in data-value. Saved as ORG-LANG. */
 function handleLanguageClick(event: MouseEvent<HTMLButtonElement>): void {
@@ -31,7 +30,7 @@ function handleLanguageClick(event: MouseEvent<HTMLButtonElement>): void {
   void changeLanguage(code);
 }
 
-/** Layout buttons carry "app" or "aside". Saved as ORG-LAYOUT_CHOICE; the shell switches its layout. */
+/** Layout buttons carry "app" or "aside". Saved as ORG-LAYOUT_CHOICE; the shell switches its layout at once. */
 function handleLayoutClick(event: MouseEvent<HTMLButtonElement>): void {
   const value = readDataValue(event);
   const choice = toLayoutChoice(value);
@@ -97,12 +96,13 @@ function buildThemeButtons(themes: Theme[], activeTheme: Theme): ReactElement[] 
   return buttons;
 }
 
-function SettingsPage() {
+/** The shell's settings page. */
+export function SettingsPage() {
   const { t, languages, locale, theme, lightThemes, darkThemes } = useUi();
   const languageButtons = buildLanguageButtons(languages, locale);
   const lightButtons = buildThemeButtons(lightThemes, theme);
   const darkButtons = buildThemeButtons(darkThemes, theme);
-  // What the other MFEs will read (empty until the user picks something).
+  // What the MFEs will read (empty until the user picks something).
   const savedLanguage = AppStorage.getText(LANG) || "-";
   const savedTheme = AppStorage.getText(THEME) || "-";
   const savedParams = { lang: savedLanguage, theme: savedTheme };
@@ -185,15 +185,5 @@ function SettingsPage() {
         <p className="badge badge-ghost font-mono" dir="ltr">{t("settings.saved", savedParams)}</p>
       </ContentLayout>
     </>
-  );
-}
-
-/** Root component of the settings MFE. */
-export function SettingsMfe(props: MfeProps) {
-  const isInShell = Boolean(props.singleSpa);
-  return (
-    <MfePage isInShell={isInShell}>
-      <SettingsPage />
-    </MfePage>
   );
 }

@@ -365,7 +365,7 @@ loadCompanyDetails: `${MsUrl.sor}/company-details`,
 apps have none in their config). Until it arrives no app name and no logo are shown (the app key does not flash);
 on an error the app key is shown. Every field is optional: a missing one keeps the config value, when the config
 has one. Loaded once when the provider mounts; on an error the
-config values stay. Not called for type `"mfe"` (the shell owns the brand). By hand: `setCompanyDetails(reply)`.
+config values stay. For type `"mfe"` only when the MFE sets it (the shell owns the brand; an auth MFE with the brand on its login sets it). By hand: `setCompanyDetails(reply)`.
 Helpers: `readLogoUrl(config, isDarkTheme, details)`, `readAppNameLabel(config, details)`, `readCompanyDetails(reply)`.
 The example apps load sor `/company-details` into `companySignal` on start.
 
@@ -382,7 +382,7 @@ it to know whether the shell shows a header (`isAsideLayoutSignal`).
 | --- | --- | --- |
 | `"spa"` (default) | a normal app | layouts, menu, login; pages in `?page=...` |
 | `"shell"` | the root app that hosts microfrontends | like `spa`, but pages are paths by default (`/settings`) |
-| `"mfe"` | a microfrontend inside a shell | page layouts only: no menu (no skeleton), `loadMenuNavigation` / `loadBranches` / `loadCompanyDetails` not called (the shell owns them); `appName`, `logoUrl`, `logoDarkUrl`, `homePath`, `branchLabel` are not used. `loadSupportLanguages` still works. |
+| `"mfe"` | a microfrontend inside a shell | page layouts only: no menu (no skeleton), `loadMenuNavigation` / `loadBranches` not called (the shell owns them; `loadCompanyDetails` only when the MFE sets it); `appName`, `logoUrl`, `logoDarkUrl`, `homePath`, `branchLabel` are not used. `loadSupportLanguages` still works. |
 
 `layout.pageMode` set in the config always wins over the type.
 
@@ -455,6 +455,9 @@ const objectUrl = URL.createObjectURL(blob);   // <img src={objectUrl} />; URL.r
 On start the provider removes old app values from localStorage that are not preferences (`AppStorage.cleanLocalStorage()`).
 Saving a preference (`THEME`, `LANG` …) also fires the window event `PREFERENCE_EVENT`; every copy of the library on the
 page (microfrontends) and every other tab applies the new theme / language at once.
+`startSession` / `endSession` fire `SESSION_EVENT` the same way: every other library copy on the page reads the session
+from AppStorage (sign in) or clears it (sign out). So an **auth microfrontend** can sign in and the shell (its own
+library copy) is signed in at once — the shell needs no login of its own (see `example-mfe/auth`).
 
 Key constants (also as `StorageKeys.*`): `TOKEN`, `AUTH_USER`, `SESSION_INFO`, `SCREEN_ACCESS`, `SCREEN_ACTION`, `NAV`,
 `REMEMBER_ME`, `TRANS`, `DIR`, `LANG`, `THEME`, `LAYOUT_CHOICE`, `MENU_MODE`, `SIDEBAR_COLLAPSED`, `OTP_ID`, `BRANCH_ID`, `BRANCH_NAME`,

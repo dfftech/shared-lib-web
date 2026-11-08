@@ -1,9 +1,9 @@
 {
-  "name": "@org-mfe/settings",
+  "name": "@org-mfe/auth",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Microfrontend 'settings' for the shared-lib-web single-spa example. Theme and language picker (saves ORG-THEME / ORG-LANG).",
+  "description": "Microfrontend 'auth' for the shared-lib-web single-spa example: the login page, shown by the shell while nobody is signed in.",
   "scripts": {
     "dev": "vite --port 5186",
     "build": "vite build",

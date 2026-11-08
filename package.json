@@ -53,7 +53,7 @@
     "clean": "node scripts/clean.mjs dist",
     "build": "npm run clean && tsc -p tsconfig.build.json && node scripts/fix-declaration-imports.mjs && node scripts/copy-styles.mjs",
     "typecheck": "tsc -p tsconfig.json",
-    "check:style": "node scripts/check-code-style.mjs src example/src example-basic/src example-mfe/shared example-mfe/shell/src example-mfe/settings/src example-mfe/forms/src example-mfe/profile/src",
+    "check:style": "node scripts/check-code-style.mjs src example/src example-basic/src example-mfe/shared example-mfe/shell/src example-mfe/auth/src example-mfe/forms/src example-mfe/profile/src",
     "test": "node scripts/clean.mjs build-test && tsc -p tsconfig.test.json && node --import ./scripts/test-setup.mjs --test --test-reporter=spec \"build-test/tests/**/*.test.js\"",
     "verify": "npm run typecheck && npm run check:style && npm run test && npm run build",
     "example:install": "npm --prefix example install",

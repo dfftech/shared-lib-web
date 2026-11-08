@@ -33,9 +33,9 @@ def fix_text(path: str, text: str) -> str:
     """Rewrites the monorepo paths so the project stands alone."""
     if path == "src/index.css":
         text = text.replace(
-            '/* index.css — styles of the shell (AppLayout, login, home page).\n'
+            '/* index.css — styles of the shell (AppLayout, home and settings pages).\n'
             '   In a real app replace the library @source line with:  @import "shared-lib-web/styles.css";  */',
-            "/* index.css — styles of the shell (AppLayout, login, home page). */",
+            "/* index.css — styles of the shell (AppLayout, home and settings pages). */",
         )
         text = text.replace('@import "tailwindcss";', '@import "tailwindcss";\n@import "shared-lib-web/styles.css";', 1)
         text = re.sub(r'@source "\.\./\.\./\.\./src";\n', "", text)
@@ -49,7 +49,7 @@ PACKAGE_JSON = """{
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "MFE shell: AppLayout / AsideLayout (header, menu, user), login, single-spa routing from public/env.mfe.js.",
+  "description": "MFE shell: AppLayout / AsideLayout (header, menu, user), Settings page, single-spa routing from public/env.mfe.js (login = the auth MFE).",
   "scripts": {
     "dev": "vite --port 9000 --strictPort",
     "build": "tsc -p tsconfig.json && vite build",
@@ -118,9 +118,10 @@ npm run build    # -> dist/
 
 - `public/env.mfe.js` — the MFEs: `{ id, path, url, render }` (change per environment, no build needed)
 - `src/config.ts` — shell config (app key, languages, themes, logo, layout, http, menu); texts, themes, languages, company details and menu from sor (fake: `fake-api.ts` + `fake-api/`)
-- `src/shell.tsx` — provider, AppLayout / AsideLayout, login, home; MFEs mount in `<div id="mfe-body">`
-- `src/mfe.ts` — single-spa registration; `src/session.ts` — sign in / out and the menu
-- Sign in with any email; the menu comes from sor `/authorization/<persona>` (fake: `fake-api/menu-access.json`)
+- `src/shell.tsx` — provider, AppLayout / AsideLayout, home + `SHELL_PAGES`; MFEs mount in `<div id="mfe-body">`
+- `src/settings.page.tsx` — the Settings page (a shell page)
+- `src/mfe.ts` — single-spa registration; `src/session.ts` — sign out and the menu
+- No login in the shell: signed out it shows the auth MFE (`env.mfe.js` entry with `isAuth: true`, run it on 5186); the menu comes from sor `/authorization/<persona>` (fake: `fake-api/menu-access.json`)
 """
 
 generated: dict[str, str] = {}

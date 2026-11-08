@@ -2,7 +2,7 @@
 // The backend sources of the config, used by the provider itself (like loadThemes):
 //
 //   loadSupportLanguages  once, when the provider mounts                         -> setLanguages(reply)
-//   loadCompanyDetails    once, when the provider mounts (not for "mfe")         -> setCompanyDetails(reply)
+//   loadCompanyDetails    once, when the provider mounts (an "mfe" only when it sets it) -> setCompanyDetails(reply)
 //   loadBranches          when a user is signed in (sign in, or restored session) -> setBranches(reply)
 //                         (before the menu: the menu request already sends x-branch-id)
 //   loadMenuNavigation    when a user is signed in                                -> skeleton, then setMenu(reply)
@@ -11,7 +11,7 @@
 // A source is your function, a URL / path (AppHttp.Get), or a SIGNAL you fill yourself:
 //   loadMenuNavigation: navSignal      // null = skeleton, a reply = the menu; every new value is shown at once
 // A signal is followed as it is (no call, no sign-in rule): your code decides when it changes.
-// Type "mfe" uses only loadSupportLanguages (the shell owns the rest, company details too) and shows no menu.
+// Type "mfe" uses only loadSupportLanguages and, when set, loadCompanyDetails (the shell owns the rest); no menu.
 
 import { effect } from "@preact/signals-react";
 import type { BranchSource, LangSource, MenuSource } from "../interfaces/app-types.ts";
@@ -181,7 +181,7 @@ function stopAll(stoppers: Array<(() => void) | undefined>): void {
 
 /**
  * Starts the config sources. Called once by SharedWebUiProvider (layout effect); returns the cleanup.
- * Type "mfe": only loadSupportLanguages (no company details), and an empty menu (no skeleton; the shell shows the menu).
+ * Type "mfe": only loadSupportLanguages (+ loadCompanyDetails when set), and an empty menu (no skeleton; the shell shows the menu).
  */
 export function startApiLoading(): () => void {
   const config = uiConfigSignal.peek();
@@ -190,13 +190,14 @@ export function startApiLoading(): () => void {
   }
   void loadConfigLanguages(config);
   const stopLanguages = followSignalSource(config.loadSupportLanguages, registerLanguages);
+  // Company details also for an MFE that sets loadCompanyDetails (for example an auth MFE with the brand on its login).
+  void loadConfigCompany(config);
+  const stopCompany = followSignalSource(config.loadCompanyDetails, setCompanyDetails);
   const appType = appTypeSignal.peek();
   if (appType === "mfe") {
     setMenu([]);
-    return stopAll.bind(null, [stopLanguages]);
+    return stopAll.bind(null, [stopLanguages, stopCompany]);
   }
-  void loadConfigCompany(config);
-  const stopCompany = followSignalSource(config.loadCompanyDetails, setCompanyDetails);
   const stopBranches = followSignalSource(config.loadBranches, registerBranches);
   const stopMenu = followSignalSource(config.loadMenuNavigation, registerMenu);
   const stopSession = effect(followSession);

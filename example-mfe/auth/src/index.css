@@ -1,4 +1,4 @@
-/* index.css — styles of the "settings" MFE (built into settings.css, loaded by the MFE before its first mount).
+/* index.css — styles of the "auth" MFE (built into auth.css, loaded by the MFE before its first mount).
    In a real app replace the library @source line with:  @import "shared-lib-web/styles.css";  */
 @import "tailwindcss";
 

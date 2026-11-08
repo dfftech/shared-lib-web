@@ -24,6 +24,7 @@ import { startQueryParamSync } from "../query/query-param.ts";
 import { startApiLoading } from "../state/api-loader.ts";
 import { applySavedLayoutChoice } from "../state/layout-choice-service.ts";
 import { startPreferenceSync } from "../state/preference-sync.ts";
+import { startSessionSync } from "../state/auth-service.ts";
 import { appTypeSignal } from "../state/signals.ts";
 import { startEscapeListener } from "../utils/event-util.ts";
 import { RUN_ONCE } from "./provider-effects.ts";
@@ -60,6 +61,7 @@ export function SharedWebUiProvider(props: SharedWebUiProviderProps) {
   useLayoutEffect(startEscapeListener, RUN_ONCE);
   useLayoutEffect(startScrollListener, RUN_ONCE);
   useLayoutEffect(startPreferenceSync, RUN_ONCE);
+  useLayoutEffect(startSessionSync, RUN_ONCE);
   useLayoutEffect(applySavedLayoutChoice, RUN_ONCE);
   useLayoutEffect(startApiLoading, RUN_ONCE);
   const contextState = readContextState(config);
