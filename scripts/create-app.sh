@@ -129,78 +129,87 @@ cat > src/index.css <<'EOF'
 }
 EOF
 
-# Custom themes as data: { name, isDark, variables } (the DaisyUI theme variables). Listed first in the switcher.
+# Custom themes as data: an object keyed by theme name, each { isDark, name, variables } (the DaisyUI theme variables).
+# Listed first in the switcher.
 cat > src/theme/org-themes.json <<'EOF'
-[
-  {
-    "name": "org-light",
-    "isDark": false,
-    "variables": {
-      "color-base-100": "oklch(100% 0 0)",
-      "color-base-200": "oklch(96.8% 0.007 247.9)",
-      "color-base-300": "oklch(92.9% 0.013 255.5)",
-      "color-base-content": "oklch(20.8% 0.042 265.8)",
-      "color-primary": "oklch(55.8% 0.154 249.1)",
-      "color-primary-content": "oklch(98.5% 0.01 240)",
-      "color-secondary": "oklch(76.9% 0.188 70.1)",
-      "color-secondary-content": "oklch(27.9% 0.077 45.6)",
-      "color-accent": "oklch(55.4% 0.046 257.4)",
-      "color-accent-content": "oklch(98.4% 0.003 247.9)",
-      "color-neutral": "oklch(27.9% 0.041 260)",
-      "color-neutral-content": "oklch(98.4% 0.003 247.9)",
-      "color-info": "oklch(71.5% 0.143 215.2)",
-      "color-info-content": "oklch(30.2% 0.056 229.7)",
-      "color-success": "oklch(52.7% 0.154 150.1)",
-      "color-success-content": "oklch(98.2% 0.018 155.8)",
-      "color-warning": "oklch(75% 0.183 55.9)",
-      "color-warning-content": "oklch(26.6% 0.079 36.3)",
-      "color-error": "oklch(55% 0.23 27.3)",
-      "color-error-content": "oklch(97.1% 0.013 17.4)",
-      "radius-selector": "1rem",
-      "radius-field": "0.5rem",
-      "radius-box": "0.75rem",
-      "size-selector": "0.25rem",
-      "size-field": "0.25rem",
-      "border": "1px",
-      "depth": "1",
-      "noise": "0"
-    }
-  },
-  {
-    "name": "org-dark",
+{
+  "org-dark": {
     "isDark": true,
+    "name": "org-dark",
     "variables": {
+      "border": "1px",
+      "color-accent": "oklch(70.4% 0.04 256.8)",
+      "color-accent-content": "oklch(12.9% 0.042 264.7)",
       "color-base-100": "oklch(25.5% 0.04 264.5)",
       "color-base-200": "oklch(20.8% 0.042 265.8)",
       "color-base-300": "oklch(32% 0.04 262)",
       "color-base-content": "oklch(92.9% 0.013 255.5)",
+      "color-error": "oklch(70.4% 0.191 22.2)",
+      "color-error-content": "oklch(25.8% 0.092 26)",
+      "color-info": "oklch(78.9% 0.154 211.5)",
+      "color-info-content": "oklch(30.2% 0.056 229.7)",
+      "color-neutral": "oklch(37.2% 0.044 257.3)",
+      "color-neutral-content": "oklch(96.8% 0.007 247.9)",
       "color-primary": "oklch(74.6% 0.16 232.7)",
       "color-primary-content": "oklch(29.3% 0.066 243.2)",
       "color-secondary": "oklch(82.8% 0.189 84.4)",
       "color-secondary-content": "oklch(27.9% 0.077 45.6)",
-      "color-accent": "oklch(70.4% 0.04 256.8)",
-      "color-accent-content": "oklch(12.9% 0.042 264.7)",
-      "color-neutral": "oklch(37.2% 0.044 257.3)",
-      "color-neutral-content": "oklch(96.8% 0.007 247.9)",
-      "color-info": "oklch(78.9% 0.154 211.5)",
-      "color-info-content": "oklch(30.2% 0.056 229.7)",
       "color-success": "oklch(79.2% 0.209 151.7)",
       "color-success-content": "oklch(26.6% 0.065 152.9)",
       "color-warning": "oklch(75% 0.183 55.9)",
       "color-warning-content": "oklch(26.6% 0.079 36.3)",
-      "color-error": "oklch(70.4% 0.191 22.2)",
-      "color-error-content": "oklch(25.8% 0.092 26)",
-      "radius-selector": "1rem",
-      "radius-field": "0.5rem",
-      "radius-box": "0.75rem",
-      "size-selector": "0.25rem",
-      "size-field": "0.25rem",
-      "border": "1px",
       "depth": "1",
-      "noise": "0"
+      "noise": "0",
+      "radius-box": "0.75rem",
+      "radius-field": "0.5rem",
+      "radius-selector": "1rem",
+      "size-field": "0.25rem",
+      "size-selector": "0.25rem"
+    }
+  },
+  "org-light": {
+    "isDark": false,
+    "name": "org-light",
+    "variables": {
+      "border": "1px",
+      "color-accent": "oklch(55.4% 0.046 257.4)",
+      "color-accent-content": "oklch(98.4% 0.003 247.9)",
+      "color-base-100": "oklch(100% 0 0)",
+      "color-base-200": "oklch(96.8% 0.007 247.9)",
+      "color-base-300": "oklch(92.9% 0.013 255.5)",
+      "color-base-content": "oklch(20.8% 0.042 265.8)",
+      "color-error": "oklch(55% 0.23 27.3)",
+      "color-error-content": "oklch(97.1% 0.013 17.4)",
+      "color-info": "oklch(71.5% 0.143 215.2)",
+      "color-info-content": "oklch(30.2% 0.056 229.7)",
+      "color-neutral": "oklch(27.9% 0.041 260)",
+      "color-neutral-content": "oklch(98.4% 0.003 247.9)",
+      "color-primary": "oklch(55.8% 0.154 249.1)",
+      "color-primary-content": "oklch(98.5% 0.01 240)",
+      "color-secondary": "oklch(76.9% 0.188 70.1)",
+      "color-secondary-content": "oklch(27.9% 0.077 45.6)",
+      "color-success": "oklch(52.7% 0.154 150.1)",
+      "color-success-content": "oklch(98.2% 0.018 155.8)",
+      "color-warning": "oklch(75% 0.183 55.9)",
+      "color-warning-content": "oklch(26.6% 0.079 36.3)",
+      "depth": "1",
+      "noise": "0",
+      "radius-box": "0.75rem",
+      "radius-field": "0.5rem",
+      "radius-selector": "1rem",
+      "size-field": "0.25rem",
+      "size-selector": "0.25rem"
     }
   }
-]
+}
+EOF
+
+# Company details (brand): config.loadCompanyDetails reads this file. Add "logoUrl", "logoDarkUrl", "faviconUrl" when you have them.
+cat > public/company-details.json <<EOF
+{
+  "appName": "$APP_NAME",
+  "companyName": "$APP_NAME"
+}
 EOF
 
 # ---------------------------------------------------------------- app code
@@ -217,9 +226,16 @@ function loadThemes(): Promise<CustomThemesModule> {
   return import("./theme/org-themes.json");
 }
 
+/** The company details (app name, company name, favicon, logos): public/company-details.json — replace with your API. */
+async function loadCompanyDetails(): Promise<unknown> {
+  const response = await fetch("/company-details.json");
+  return response.json();
+}
+
 export const config: UiConfig = {
   appNameKey: "$APP_KEY", // storage keys: $APP_KEY-THEME, $APP_KEY-LANG ...
-  appName: "$APP_NAME",
+  // The brand (appName, logoUrl, logoDarkUrl, faviconUrl, companyName) comes from the company details, not this config.
+  loadCompanyDetails: loadCompanyDetails,
   // Themes: the custom org themes (loadThemes -> theme/org-themes.json, listed first) + all 35 DaisyUI themes.
   loadThemes: loadThemes,
   homePath: "/",

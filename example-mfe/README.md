@@ -32,7 +32,7 @@ Each folder also runs on its own:
 
 | File | What |
 | --- | --- |
-| `config.ts` | App key, languages, themes, texts + the shell parts (logo, header settings, API URL, menu) |
+| `config.ts` | App key, languages, themes, texts + the shell parts (company details = app name / logos / favicon, header settings, API URL, menu) |
 | `session.ts` | Sign in / out and `navSignal` (the menu, filled after sign in) |
 | `mfe.ts` | Everything single-spa: reads `env.mfe.js`, registers the MFEs, `syncMfes()` |
 | `shell.tsx` | The UI: provider, `AppLayout` with a plain `<div id="mfe-body" />`, login page, home page |
@@ -85,35 +85,48 @@ every new value at once (`null` = menu skeleton). `startMenuSync()` (started in 
 The shell and each MFE have their own copies of what they need, so each one can live in its own repository and
 build with its own Docker context:
 
-| File (in `src/`) | shell | settings | forms | profile |
+| File | shell | settings | forms | profile |
 | --- | --- | --- | --- | --- |
-| `config.ts` (app key `ORG`, `MsUrl`, signals: `localeSignal`, `themesSignal`, `supportLangSignal`) | ✓ (+ shell parts, `navSignal`) | ✓ | ✓ | ✓ |
-| `locales/<code>/` | `app`, `ui`, `root`, `login`, `home` | `ui`, `root`, `settings` | `ui`, `root`, `forms` | `ui`, `root`, `profile` |
-| `theme/org-themes.json` | ✓ | ✓ | ✓ | ✓ |
-| `public/api/org-api/languages.json` | ✓ | ✓ (alone) | ✓ (alone) | ✓ (alone) |
-| `mfe-page.tsx`, `mfe-lifecycles.ts` | – | ✓ | ✓ | ✓ |
+| `src/config.ts` (app key `ORG`, `MsUrl` main / sor / utils, signals: `localeSignal`, `themesSignal`, `supportLangSignal`) | ✓ (+ shell parts, `navSignal`, `companySignal`) | ✓ | ✓ | ✓ |
+| `fake-api.ts` + `fake-api/` (fake sor backend, Vite plugin) | ✓ | ✓ (alone) | ✓ (alone) | ✓ (alone) |
+| `fake-api/locales/<code>.json` (texts, groups inside) | `app`, `ui`, `root`, `login`, `home` + every MFE group | `ui`, `root`, `settings` | `ui`, `root`, `forms` | `ui`, `root`, `profile` |
+| `fake-api/themes.json`, `fake-api/languages.json` | ✓ | ✓ | ✓ | ✓ |
+| `fake-api/company-details.json`, `fake-api/menu-access.json` | ✓ | – | – | – |
+| `src/mfe-page.tsx`, `src/mfe-lifecycles.ts` | – | ✓ | ✓ | ✓ |
+
+Everything comes from **sor** (`MsUrl.sor` → `/api/org-sor`): `/company-details`, `/load/LANG?active=true`,
+`/content-load?query=theme`, `/content-load?query=locales.<code>`, `/authorization/<persona>?roles=<roles>` (menu).
+Inside the shell an MFE asks the shell's `/api`, so the shell's fake locale files hold every MFE group too.
 
 Keep the common parts the same in every project: `appNameKey` (`ORG`, so all read the same `ORG-THEME` / `ORG-LANG` /
-`ORG-LAYOUT_CHOICE`) and the theme file.
+`ORG-LAYOUT_CHOICE`) and the sor data (themes, languages).
 
 **Everything loaded is a signal** in every config: `loadLocale: localeSignal` (texts per language, filled with
-`fillLocaleBundle`), `loadThemes: themesSignal` (`theme/org-themes.json`) and `loadSupportLanguages: supportLangSignal`. The
+`fillLocaleBundle`), `loadThemes: themesSignal` (sor `/content-load?query=theme`, an object keyed by theme name) and
+`loadSupportLanguages: supportLangSignal`; the shell also `loadCompanyDetails: companySignal` (the brand — no appName /
+logos in its config; MFEs do not load it). The
 shell fills them in `session.ts`, each MFE in `startConfigData()` (`config.ts`, started by `mfe-page.tsx`).
 
 **Languages** (`supportLangSignal`) come from
-`/api/org-api/languages.json` (the shell in `session.ts`, each MFE in `startConfigData()`). Inside the shell the MFE asks
-the shell's site (`/api` is relative to the page); alone it uses its own `public/api`.
+sor `/load/LANG?active=true` (the shell in `session.ts`, each MFE in `startConfigData()`). Inside the shell the MFE asks
+the shell's site (`/api` is relative to the page); alone it uses its own fake backend.
 
 **Layout choice** (app / aside) lives in the library: `layoutChoiceSignal` and `changeLayoutChoice()`. The settings MFE
 calls `changeLayoutChoice`, the shell renders `AppLayout` or `AsideLayout` from `layoutChoiceSignal`, and every MFE's
 `mfe-page.tsx` copies it into `isAsideLayoutSignal` (HeadLayout below the header, or at the very top). No
 layout-choice file in the projects.
 
-Texts are one file per group, loaded lazily per language:
+Texts come from sor `/content-load?query=locales.<code>` (the groups inside: `{ "ui": {...}, "settings": {...} }`),
+only for the languages the library asks for:
 
 ```ts
-const localeFiles = import.meta.glob("./locales/*/*.json");
-loadLocale: loadLocaleGroups.bind(null, localeFiles),
+async function loadTexts(languageCode: string): Promise<LocaleModule> {
+  const query = `locales.${languageCode}`;
+  const reply = await AppHttp.Get(`${MsUrl.sor}/content-load`, { query: query });
+  const messages = readContent(reply, query);
+  return messages as LocaleModule;
+}
+fillLocaleBundle(localeSignal, loadTexts);
 ```
 
 ## Theme and language

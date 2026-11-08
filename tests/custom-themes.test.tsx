@@ -15,7 +15,10 @@ import {
   themeSignal,
   uiConfigSignal,
   mergeCustomThemes,
+  toCustomThemeList,
+  unwrapThemesModule,
   type CustomTheme,
+  type CustomThemeMap,
   type CustomThemesModule,
   type UiConfig,
 } from "../src/index.ts";
@@ -24,6 +27,12 @@ const orgThemes: CustomTheme[] = [
   { name: "org-light", variables: { "color-primary": "oklch(55.8% 0.154 249.1)", "--radius-box": "0.75rem" } },
   { name: "org-dark", isDark: true, variables: { "color-primary": "oklch(74.6% 0.16 232.7)" } },
 ];
+
+/** The JSON format: an object keyed by theme name. */
+const orgThemeMap: CustomThemeMap = {
+  "org-dark": { isDark: true, name: "org-dark", variables: { "color-primary": "oklch(74.6% 0.16 232.7)" } },
+  "org-light": { isDark: false, name: "org-light", variables: { "color-primary": "oklch(55.8% 0.154 249.1)" } },
+};
 
 const config: UiConfig = { appNameKey: "CUSTOM", customThemes: orgThemes };
 
@@ -110,6 +119,38 @@ describe("custom themes", () => {
     });
     console.error = originalError;
     expect(themeSignal.value).toBe("light");
+  });
+
+  it("themes as an object keyed by theme name: listed in key order, dark ones marked", () => {
+    const mapConfig: UiConfig = { appNameKey: "CUSTOM", customThemes: orgThemeMap };
+    render(<SharedWebUiProvider config={mapConfig}><p>page</p></SharedWebUiProvider>);
+    const themeNames = readThemeNames(mapConfig);
+    expect(themeNames[0]).toBe("org-dark");
+    expect(themeNames[1]).toBe("org-light");
+    expect(readDarkThemeNames().includes("org-dark")).toBe(true);
+    expect(readStyleText()).toContain('[data-theme="org-light"]');
+  });
+
+  it("toCustomThemeList / unwrapThemesModule: the key is the name when \"name\" is missing, JSON modules unwrap", () => {
+    const list = toCustomThemeList({ "brand-blue": { variables: { "color-primary": "blue" } } });
+    expect(list[0].name).toBe("brand-blue");
+    const fromModule = unwrapThemesModule({ default: orgThemeMap });
+    expect(fromModule.length).toBe(2);
+    const fromMap = unwrapThemesModule(orgThemeMap);
+    expect(fromMap[1].name).toBe("org-light");
+    const withDefaultTheme = unwrapThemesModule({ default: { isDark: false, variables: { "color-primary": "red" } } });
+    expect(withDefaultTheme[0].name).toBe("default");
+    expect(toCustomThemeList(null).length).toBe(0);
+  });
+
+  it("setCustomThemes accepts the object keyed by theme name (fetched JSON)", () => {
+    AppStorage.setData(THEME, "org-dark");
+    const lateConfig: UiConfig = { appNameKey: "CUSTOM" };
+    render(<SharedWebUiProvider config={lateConfig}><p>page</p></SharedWebUiProvider>);
+    const json = JSON.parse(JSON.stringify(orgThemeMap)) as CustomThemeMap;
+    setCustomThemes(json);
+    expect(themeSignal.value).toBe("org-dark");
+    expect(isDarkThemeSignal.value).toBe(true);
   });
 
   it("mergeCustomThemes: a loaded theme with the same name replaces the static one", () => {

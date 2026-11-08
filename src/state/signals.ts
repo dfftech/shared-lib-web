@@ -16,6 +16,7 @@ import { toPagePath } from "../query/page-path.ts";
 import { resolveDirection } from "../i18n/direction.ts";
 import type {
   AppType,
+  CompanyDetails,
   CustomTheme,
   Direction,
   LanguageOption,
@@ -42,6 +43,9 @@ export const themeSignal = signal<Theme>(ConstValue.LIGHT);
 
 /** The custom themes (config.customThemes or setCustomThemes), listed first in the theme switcher. */
 export const customThemesSignal = signal<CustomTheme[]>([]);
+
+/** The company details (config.loadCompanyDetails or setCompanyDetails); null = not here yet (config values are used). */
+export const companyDetailsSignal = signal<CompanyDetails | null>(null);
 
 /** Messages of the current language. */
 export const translationSignal = signal<LocaleMessages>({});

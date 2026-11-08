@@ -1,9 +1,11 @@
 // app-brand.tsx
 // Logo (light or dark version) and app name. Used by the header, sidebar and auth layout.
+// Company details (config.loadCompanyDetails / setCompanyDetails) win: their logoUrl, appName and companyName (alt).
 
 import { useUi } from "../context/use-ui.ts";
 import { PageLink } from "../query/page-link.tsx";
-import { isDarkThemeSignal } from "../state/signals.ts";
+import { readAppNameLabel } from "../state/company-service.ts";
+import { companyDetailsSignal, isDarkThemeSignal } from "../state/signals.ts";
 import { readLogoUrl } from "../theme/logo.ts";
 import { joinClassNames } from "../types/class-names.ts";
 
@@ -19,9 +21,11 @@ export function AppBrand(props: AppBrandProps) {
   const { isNameHidden = false, nameClassName, className } = props;
   const { config, t } = useUi();
   const isDarkTheme = isDarkThemeSignal.value;
-  const logoUrl = readLogoUrl(config, isDarkTheme);
-  const appNameLabel = config.appName ?? config.appNameKey;
-  const appName = t(appNameLabel);
+  const companyDetails = companyDetailsSignal.value;
+  const logoUrl = readLogoUrl(config, isDarkTheme, companyDetails);
+  const logoAlt = companyDetails?.companyName ?? "";
+  const appNameLabel = readAppNameLabel(config, companyDetails);
+  const appName = appNameLabel ? t(appNameLabel) : "";
   const homePath = config.homePath ?? "/";
   const linkClassList = ["flex min-w-0 items-center gap-2", className];
   const linkClassName = joinClassNames(linkClassList);
@@ -30,7 +34,7 @@ export function AppBrand(props: AppBrandProps) {
 
   return (
     <PageLink page={homePath} className={linkClassName} label={appName}>
-      {logoUrl ? <img src={logoUrl} alt="" className="h-8 w-auto shrink-0" /> : null}
+      {logoUrl ? <img src={logoUrl} alt={logoAlt} className="h-8 w-auto shrink-0" /> : null}
       {isNameHidden ? null : <span className={nameClass}>{appName}</span>}
     </PageLink>
   );

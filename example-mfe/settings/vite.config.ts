@@ -7,6 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+import { fakeApi } from "./fake-api.ts";
 
 const projectRootUrl = new URL(".", import.meta.url);
 const projectRoot = fileURLToPath(projectRootUrl);
@@ -21,6 +22,8 @@ const mfeEntry = fileURLToPath(mfeEntryUrl);
 
 const reactPlugin = react();
 const tailwindPlugin = tailwindcss();
+// The fake backend (fake-api/*.json) for the sor URLs — dev server and preview only.
+const fakeApiPlugin = fakeApi();
 
 const aliasOptions = [
   { find: /^shared-lib-web\/layout$/, replacement: layoutEntry },
@@ -42,7 +45,7 @@ export default defineConfig({
   root: projectRoot,
   // dff-util expects Node's "global"; a library build does not replace process.env.NODE_ENV by itself.
   define: { global: "globalThis", "process.env.NODE_ENV": nodeEnvText },
-  plugins: [reactPlugin, tailwindPlugin],
+  plugins: [fakeApiPlugin, reactPlugin, tailwindPlugin],
   resolve: { alias: aliasOptions, dedupe: dedupePackages },
   // The shell (another port) imports this dev server's modules; their asset URLs must point back here.
   server: { fs: { allow: [repoRoot] }, cors: true, origin: "http://localhost:5186" },

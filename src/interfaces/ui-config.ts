@@ -17,6 +17,7 @@ export type Theme = string;
  * A custom DaisyUI theme as plain data, so it can live in a JSON file or come from an API:
  *   { "name": "org-light", "isDark": false, "variables": { "color-primary": "oklch(55.8% 0.154 249.1)" } }
  * The library turns it into [data-theme="org-light"] { color-scheme: light; --color-primary: ...; }.
+ * Several themes are an object keyed by theme name (see CustomThemeMap).
  */
 export interface CustomTheme {
   /** data-theme name: lowercase letters, digits and "-", for example "org-light". */
@@ -35,8 +36,21 @@ export interface CustomTheme {
 /** Texts per language code for a loadLocale signal: { "en-US": {...}, "fr-FR": {...} }; null = no texts. */
 export type LocaleBundle = Record<string, LocaleMessages | null>;
 
-/** What a themes loader may return: the list, or a JSON module with a default export. */
-export type CustomThemesModule = CustomTheme[] | { default: CustomTheme[] };
+/** One entry of a CustomThemeMap: "name" may be left out (the key is the name). */
+export type CustomThemeEntry = Omit<CustomTheme, "name"> & { name?: Theme };
+
+/**
+ * The custom themes as an object keyed by theme name (the JSON format of a themes file / API reply):
+ *   { "org-dark": { "isDark": true, "name": "org-dark", "variables": { ... } },
+ *     "org-light": { "isDark": false, "name": "org-light", "variables": { ... } } }
+ */
+export type CustomThemeMap = Record<Theme, CustomThemeEntry>;
+
+/** Custom themes: the object keyed by theme name (CustomThemeMap), or a plain list. */
+export type CustomThemes = CustomThemeMap | CustomTheme[];
+
+/** What a themes loader may return: the themes (object or list), or a JSON module with a default export. */
+export type CustomThemesModule = CustomThemes | { default: CustomThemes };
 
 /**
  * Loads the custom themes lazily (like loadLocale), from a JSON file or an API:
@@ -44,6 +58,29 @@ export type CustomThemesModule = CustomTheme[] | { default: CustomTheme[] };
  *   async function loadThemes(): Promise<CustomThemesModule> { const reply = await fetch("/themes.json"); return reply.json(); }
  */
 export type ThemesLoader = () => Promise<CustomThemesModule>;
+
+/**
+ * Company / brand details from the backend (config.loadCompanyDetails or setCompanyDetails):
+ *   { "appName": "YourAppName", "companyName": "YourBrandName",
+ *     "faviconUrl": "https://www.w3.org/favicon.ico", "logoUrl": "https://www.w3.org/Icons/w3c_home.png",
+ *     "logoDarkUrl": "https://www.w3.org/Icons/w3c_home.png" }
+ * Every field is optional; a missing field keeps the config value (appName, logoUrl / logoDarkUrl).
+ */
+export interface CompanyDetails {
+  /** App label in the header, sidebar and login, and the browser tab title. Wins over config.appName. */
+  appName?: string;
+  /** Company / brand name: alt text of the logo; read it with companyDetailsSignal (for example in a footer). */
+  companyName?: string;
+  /** Browser tab icon: written to <link rel="icon">. */
+  faviconUrl?: string;
+  /** Logo image URL (light themes; also dark themes without logoDarkUrl). Wins over config.logoUrl / config.logoDarkUrl. */
+  logoUrl?: string;
+  /** Logo image URL on dark themes. Default: logoUrl. Wins over config.logoDarkUrl. */
+  logoDarkUrl?: string;
+}
+
+/** What a company details reply may be: the details, or { data: details }; null = not here yet. */
+export type CompanySource = CompanyDetails | { data: CompanyDetails } | null;
 
 /**
  * Translations for one language.
@@ -216,6 +253,12 @@ export interface UiConfig {
    * Without it the menu is config.navigation. By hand: setMenuLoading() -> setMenu(reply).
    */
   loadMenuNavigation?: ApiSource;
+  /**
+   * Loads the company details ({ appName, companyName, faviconUrl, logoUrl, logoDarkUrl }): called once when the provider mounts,
+   * like loadSupportLanguages. Its values win over appName / logoUrl / logoDarkUrl; faviconUrl sets the tab icon.
+   * Not called for type "mfe" (the shell owns the brand). By hand: setCompanyDetails(reply).
+   */
+  loadCompanyDetails?: ApiSource;
   /** Label shown in the header, sidebar and login: t(appName), so plain text or a translation key. Default: appNameKey. */
   appName?: string;
   /** Optional logo image URL (light themes). */
@@ -245,10 +288,11 @@ export interface UiConfig {
    */
   themes?: Theme[];
   /**
-   * Your own themes as data (for example imported from a JSON file); no CSS file needed. Themes that arrive later
+   * Your own themes as data (for example imported from a JSON file), an object keyed by theme name
+   * ({ "org-light": {...}, "org-dark": {...} }) or a list; no CSS file needed. Themes that arrive later
    * (fetched JSON) go through setCustomThemes(json).
    */
-  customThemes?: CustomTheme[];
+  customThemes?: CustomThemes;
   /**
    * Custom themes loaded when the provider mounts (JSON file or API), like loadLocale — or a SIGNAL with the themes
    * (null = not here yet; every new value replaces them). They are added to customThemes (same name: the loaded one

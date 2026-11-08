@@ -26,7 +26,7 @@ import { useEffect, type ReactElement } from "react";
 import { useForm } from "react-hook-form";
 import { shellConfig } from "./config.ts";
 import { attachMfeBody, findMfeRoute, mfeErrorSignal, readMfeRoutes, syncMfes } from "./mfe.ts";
-import { signIn, signOut, startBackendData } from "./session.ts";
+import { signIn, signOut, startAppInit } from "./session.ts";
 
 /** Login email: required + a valid address (dff-util messages, translated in root.json). */
 const emailRules = {
@@ -144,7 +144,7 @@ function Shell() {
 
 /** The provider around the shell (type "shell": pages are paths; languages and menu are signals, see config.ts / session.ts). */
 export function Root() {
-  useEffect(startBackendData, RUN_ONCE);
+  useEffect(startAppInit, RUN_ONCE);
   return (
     <SharedWebUiProvider type="shell" config={shellConfig}>
       <Shell />

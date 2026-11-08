@@ -4,7 +4,7 @@
 //   { path: "/reports", element: <ComingSoon /> }
 
 import { useUi } from "../context/use-ui.ts";
-import { isDarkThemeSignal } from "../state/signals.ts";
+import { companyDetailsSignal, isDarkThemeSignal } from "../state/signals.ts";
 import { readLogoUrl } from "../theme/logo.ts";
 import { TypeIcon } from "../types/type.icon.ts";
 
@@ -17,7 +17,8 @@ export function ComingSoon(props: ComingSoonProps) {
   const { titleKey = "ui.comingSoon" } = props;
   const { config, t } = useUi();
   const isDarkTheme = isDarkThemeSignal.value;
-  const logoUrl = readLogoUrl(config, isDarkTheme);
+  const companyDetails = companyDetailsSignal.value;
+  const logoUrl = readLogoUrl(config, isDarkTheme, companyDetails);
   const titleText = t(titleKey);
   const bodyText = t("ui.comingSoonText");
 

@@ -9,11 +9,12 @@
 import { signal } from "@preact/signals-react";
 import {
   AppHttp,
+  readContent,
   fillLocaleBundle,
-  loadLocaleGroups,
   toAbsoluteUrl,
   type CustomThemesModule,
   type LangSource,
+  type LocaleModule,
   type LocaleBundle,
   type UiConfig,
 } from "shared-lib-web";
@@ -24,12 +25,14 @@ export const APP_NAME_KEY = "ORG";
 /** Service name prefix: "ORG" -> /org-api. */
 const APP_API_KEY = APP_NAME_KEY.toLowerCase();
 
-/** "/api" on the page's site: inside the shell the shell's backend, alone this MFE's public/api. */
+/** "/api" on the page's site: inside the shell the shell's backend, alone this MFE's fake backend (fake-api.ts + fake-api/). */
 const API_BASE_URL = toAbsoluteUrl("/api");
 
 /** Service paths (AppHttp adds the base URL). */
 export const MsUrl = {
   main: `/${APP_API_KEY}-api`,
+  sor: `/${APP_API_KEY}-sor`,
+  utils: `/${APP_API_KEY}-util`,
 };
 
 /** The supported languages (backend reply): null until it arrives. */
@@ -38,42 +41,47 @@ export const supportLangSignal = signal<LangSource | null>(null);
 /** The texts per language ({ "en-US": {...} }): the library asks for codes, startConfigData() loads them. */
 export const localeSignal = signal<LocaleBundle | null>(null);
 
-/** The custom themes (theme/org-themes.json): null until loaded. */
+/** The custom themes (sor /content-load?query=theme): null until loaded. */
 export const themesSignal = signal<CustomThemesModule | null>(null);
 
 /** true once the languages were requested (one request, also with StrictMode). */
 let isLanguageRequested = false;
 
-/** GET the languages once (public/api/org-api/languages.json). On an error the default language stays. */
+/** GET the languages once (sor /load/LANG?active=true). On an error the default language stays. */
 async function loadLanguages(): Promise<void> {
   if (isLanguageRequested) {
     return;
   }
   isLanguageRequested = true;
   try {
-    const reply = await AppHttp.Get(`${MsUrl.main}/languages.json`);
+    const reply = await AppHttp.Get(`${MsUrl.sor}/load/LANG`, { active: true });
     supportLangSignal.value = reply as LangSource;
   } catch {
     supportLangSignal.value = null;
   }
 }
 
-/** The texts: ./locales/<code>/<group>.json — lazy, only the languages the library asks for are loaded. */
-const localeFiles = import.meta.glob("./locales/*/*.json");
-const loadTexts = loadLocaleGroups.bind(null, localeFiles);
+/** The texts of one language: sor /content-load?query=locales.<code> (the groups inside: { "ui": {...}, "nav": {...} }). */
+async function loadTexts(languageCode: string): Promise<LocaleModule> {
+  const query = `locales.${languageCode}`;
+  const reply = await AppHttp.Get(`${MsUrl.sor}/content-load`, { query: query });
+  const messages = readContent(reply, query);
+  return messages as LocaleModule;
+}
 
-/** true once the theme file was requested (one request, also with StrictMode). */
+/** true once the themes were requested (one request, also with StrictMode). */
 let isThemeRequested = false;
 
-/** Loads the custom org themes (./theme/org-themes.json) into themesSignal. */
+/** GET the custom org themes (sor /content-load?query=theme: an object keyed by theme name) into themesSignal. */
 async function loadThemeFile(): Promise<void> {
   if (isThemeRequested) {
     return;
   }
   isThemeRequested = true;
   try {
-    const themeModule = await import("./theme/org-themes.json");
-    themesSignal.value = themeModule as CustomThemesModule;
+    const reply = await AppHttp.Get(`${MsUrl.sor}/content-load`, { query: "theme" });
+    const themes = readContent(reply, "theme");
+    themesSignal.value = themes as CustomThemesModule;
   } catch {
     themesSignal.value = [];
   }
@@ -101,7 +109,7 @@ export const config: UiConfig = {
   loadLocale: localeSignal,
   // The languages as a signal: every new value is shown at once (null = no list yet).
   loadSupportLanguages: supportLangSignal,
-  // Themes as a signal: the custom org themes (theme/org-themes.json, listed first) + all 35 DaisyUI themes.
+  // Themes as a signal: the custom org themes (sor /content-load?query=theme, listed first) + all 35 DaisyUI themes.
   loadThemes: themesSignal,
   // The MFEs have no app header: no settings button, no menu.
   layout: { showMenu: false, showScrollToTop: true, toastPosition: "top-end" },

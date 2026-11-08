@@ -1,7 +1,7 @@
 // Session state of the example (who is logged in). Uses the library session:
 //   startSession(token, user, isRemembered)  -> sessionStorage ORG-TOKEN + ORG-AUTH_USER, localStorage ORG-REMEMBER_ME
 //   restoreSession()                         -> done by SharedWebUiProvider on start (a refresh keeps you signed in)
-//   Branches and menu: backend/backend.service.ts loads them after sign in, removed on sign out.
+//   Branches and menu: app-init/app-init.service.ts loads them after sign in, removed on sign out.
 //   endSession()                             -> clears AppStorage but keeps LANG, THEME, MENU_MODE ...
 import { computed } from "@preact/signals-react";
 import {
@@ -26,7 +26,8 @@ export const isLoggedIn = isAuthenticatedSignal;
 /** Fake login: any email works. A real app saves the token from the login API. */
 export function startSession(email: string, remember: boolean): void {
   const fakeToken = AppUUID4();
-  const user = { id: email, email: email };
+  // persona + roles: the menu request (sor /authorization/<persona>?roles=...); id: the branches (/load/BRANCHS?profile=).
+  const user = { id: email, email: email, persona: "admin", roles: ["ADMIN_ADMIN"] };
   startSharedSession(fakeToken, user, remember);
 }
 

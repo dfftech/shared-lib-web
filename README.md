@@ -59,25 +59,84 @@ dark markdown editor) default to the DaisyUI dark themes; `config.darkThemes` re
 
 ### Custom themes as JSON (no CSS file, no rebuild)
 
-Your own themes are plain data: a name, `isDark`, and the DaisyUI theme variables. Pass them with
+Your own themes are plain data: an **object keyed by theme name**, each with `isDark`, `name` and the DaisyUI theme
+variables (`name` may be left out — the key is the name; a plain list `[{ name, ... }]` still works). Pass them with
 `config.loadThemes` (or `config.customThemes`); they are listed first in the switcher, and `isDark: true` adds them to the dark themes.
 The library writes one `<style>` with `[data-theme="org-dark"] { color-scheme: dark; --color-primary: …; }`, which
 DaisyUI's components read like a built-in theme.
 
 ```json
 // src/theme/org-themes.json
-[
-  {
-    "name": "org-dark",
+{
+  "org-dark": {
     "isDark": true,
+    "name": "org-dark",
     "variables": {
+      "border": "1px",
+      "color-accent": "oklch(70.4% 0.04 256.8)",
+      "color-accent-content": "oklch(12.9% 0.042 264.7)",
       "color-base-100": "oklch(25.5% 0.04 264.5)",
+      "color-base-200": "oklch(20.8% 0.042 265.8)",
+      "color-base-300": "oklch(32% 0.04 262)",
       "color-base-content": "oklch(92.9% 0.013 255.5)",
+      "color-error": "oklch(70.4% 0.191 22.2)",
+      "color-error-content": "oklch(25.8% 0.092 26)",
+      "color-info": "oklch(78.9% 0.154 211.5)",
+      "color-info-content": "oklch(30.2% 0.056 229.7)",
+      "color-neutral": "oklch(37.2% 0.044 257.3)",
+      "color-neutral-content": "oklch(96.8% 0.007 247.9)",
       "color-primary": "oklch(74.6% 0.16 232.7)",
-      "radius-box": "0.75rem"
+      "color-primary-content": "oklch(29.3% 0.066 243.2)",
+      "color-secondary": "oklch(82.8% 0.189 84.4)",
+      "color-secondary-content": "oklch(27.9% 0.077 45.6)",
+      "color-success": "oklch(79.2% 0.209 151.7)",
+      "color-success-content": "oklch(26.6% 0.065 152.9)",
+      "color-warning": "oklch(75% 0.183 55.9)",
+      "color-warning-content": "oklch(26.6% 0.079 36.3)",
+      "depth": "1",
+      "noise": "0",
+      "radius-box": "0.75rem",
+      "radius-field": "0.5rem",
+      "radius-selector": "1rem",
+      "size-field": "0.25rem",
+      "size-selector": "0.25rem"
+    }
+  },
+  "org-light": {
+    "isDark": false,
+    "name": "org-light",
+    "variables": {
+      "border": "1px",
+      "color-accent": "oklch(55.4% 0.046 257.4)",
+      "color-accent-content": "oklch(98.4% 0.003 247.9)",
+      "color-base-100": "oklch(100% 0 0)",
+      "color-base-200": "oklch(96.8% 0.007 247.9)",
+      "color-base-300": "oklch(92.9% 0.013 255.5)",
+      "color-base-content": "oklch(20.8% 0.042 265.8)",
+      "color-error": "oklch(55% 0.23 27.3)",
+      "color-error-content": "oklch(97.1% 0.013 17.4)",
+      "color-info": "oklch(71.5% 0.143 215.2)",
+      "color-info-content": "oklch(30.2% 0.056 229.7)",
+      "color-neutral": "oklch(27.9% 0.041 260)",
+      "color-neutral-content": "oklch(98.4% 0.003 247.9)",
+      "color-primary": "oklch(55.8% 0.154 249.1)",
+      "color-primary-content": "oklch(98.5% 0.01 240)",
+      "color-secondary": "oklch(76.9% 0.188 70.1)",
+      "color-secondary-content": "oklch(27.9% 0.077 45.6)",
+      "color-success": "oklch(52.7% 0.154 150.1)",
+      "color-success-content": "oklch(98.2% 0.018 155.8)",
+      "color-warning": "oklch(75% 0.183 55.9)",
+      "color-warning-content": "oklch(26.6% 0.079 36.3)",
+      "depth": "1",
+      "noise": "0",
+      "radius-box": "0.75rem",
+      "radius-field": "0.5rem",
+      "radius-selector": "1rem",
+      "size-field": "0.25rem",
+      "size-selector": "0.25rem"
     }
   }
-]
+}
 ```
 
 Load them lazily with `loadThemes`, the same way as `loadLocale` (its own chunk, loaded when the provider mounts):
@@ -107,7 +166,7 @@ async function loadThemes(): Promise<CustomThemesModule> {
 
 While they load, a saved custom theme stays on screen (no flash of the default theme); when the load fails or the
 saved theme is not in the result, the default theme is used. Themes you already have in code can go straight into
-`customThemes: orgThemes` (no loading); both together are merged, and a loaded theme replaces one with the same name.
+`customThemes: orgThemes` (no loading; the object keyed by name, or a list); both together are merged, and a loaded theme replaces one with the same name.
 
 The variable names are the DaisyUI ones, with or without `--`: `color-base-100/200/300`, `color-base-content`,
 `color-primary`, `color-primary-content`, `color-secondary`, `color-accent`, `color-neutral`, `color-info`,
@@ -123,7 +182,8 @@ const themeModule = await import("./theme/org-themes.json");
 themesSignal.value = themeModule;
 ```
 
-Any time later (for example after the user signs in) `setCustomThemes(themes)` replaces the custom themes.
+Any time later (for example after the user signs in) `setCustomThemes(themes)` replaces the custom themes (the object
+keyed by name or a list). `toCustomThemeList(themes)` turns the object into a list (`CustomTheme[]`, key order).
 
 The theme dropdown, the ⚙ settings dialog and the example Settings page show **Light themes** and **Dark themes**
 as two groups (split by the dark themes). In your own UI: `const { lightThemes, darkThemes } = useUi();`
@@ -176,9 +236,8 @@ function loadThemes(): Promise<CustomThemesModule> {
 
 export const config: UiConfig = {
   appNameKey: APP_NAME_KEY,                 // key: storage ORG-TOKEN, env REACT_APP_ORG_API_BASE_URL
-  appName: "app.name",                      // label: t("app.name") (default: appNameKey)
-  logoUrl: "/logo-light.svg",
-  logoDarkUrl: "/logo-dark.svg",
+  loadCompanyDetails: `${MsUrl.sor}/company-details`,   // app name, logos, favicon from the backend (see "Company details")
+  // appName / logoUrl / logoDarkUrl: only for apps WITHOUT company details (static brand)
   // defaultLanguage: "en-US",             // optional: without it the browser / system language, else en-US
   loadLocale: loadLocaleGroups.bind(null, localeFiles),
   // defaultTheme: "light",              // optional: without it the browser preference picks "dark" or "light"
@@ -195,7 +254,7 @@ export const config: UiConfig = {
 | `loadLocale(code)` | Loads the texts of a language lazily (dynamic `import()` / `import.meta.glob`): `loadLocaleGroups.bind(null, localeFiles)` for `locales/<code>/<group>.json`, or your own function returning one JSON. |
 | `languages` | Not needed: the list comes from `loadSupportLanguages` (below). Only for apps with a fixed list (`{ code, label, flag?, direction?, load? }`). |
 | `themes`, `darkThemes` | Optional. The theme switcher list (default: all 35 DaisyUI themes) and the dark ones (default: the DaisyUI dark themes). Dark themes switch to `logoDarkUrl` and dark markdown. |
-| `customThemes`, `loadThemes` | Optional. Your own themes as data / JSON (`{ name, isDark, variables }`), listed first: `customThemes` directly, or `loadThemes()` lazily like `loadLocale` (JSON file or API). Later ones: `setCustomThemes(json)`. |
+| `customThemes`, `loadThemes` | Optional. Your own themes as data / JSON — an object keyed by theme name (`{ "org-dark": { isDark, name, variables }, ... }`) or a list — listed first: `customThemes` directly, or `loadThemes()` lazily like `loadLocale` (JSON file or API). Later ones: `setCustomThemes(json)`. |
 | `defaultTheme` | Optional. Theme of the first visit (nothing saved yet). Without it the browser preference decides: `"dark"` when it prefers a dark colour scheme, otherwise `"light"`. |
 | `layout.headerSettings` | `"inline"` (language + theme switchers in the header) or `"menu"` (one ⚙ button opening a settings dialog with language, theme and navigation style). |
 | `layout.toastPosition`, `layout.showScrollToTop` | Toast corner (`top-end` …) and the scroll-to-top button. |
@@ -206,8 +265,8 @@ export const config: UiConfig = {
 | `http.logoutUrl` | Where the browser goes after `endSession()` (log out), for example `/login` or an SSO logout URL. `endSession(keepKeys, false)` stays on the page. |
 | `http.tokenKey`, `http.headers`, `http.loadUrl`, `http.showProgress` | Optional: AppStorage key of the token (default `TOKEN`), extra headers, `AppHttp.Load` URL or path (default `/load` on the base URL), progress bar (default `true`). |
 | `appNameKey` | Key of the app (`ENV_BASE_NAME`): prefix of every AppStorage key (`ORG-TOKEN`, `ORG-LANG`) and of the `window.env` names (`REACT_APP_ORG_…`). The key names are fixed constants — no `storage` / `languageKey` / `themeKey` settings. |
-| `appName` | Label shown in header, sidebar and login: `t(config.appName)` (plain text or a translation key). Default: `appNameKey`. |
-
+| `appName`, `logoUrl`, `logoDarkUrl` | Optional static brand, for apps without `loadCompanyDetails`: label in header, sidebar and login (`t(config.appName)`, default `appNameKey`) and the logos. Not needed when the company details come from the backend. |
+| `loadCompanyDetails` | Optional. Company / brand details from the backend (`{ appName, companyName, faviconUrl, logoUrl, logoDarkUrl }`), loaded once on start; they win over `appName`, `logoUrl`, `logoDarkUrl`. See "Company details" below. |
 | `loadSupportLanguages`, `loadBranches`, `loadMenuNavigation` | Backend loaders the provider calls (like `loadThemes`): languages on start, branches then menu after sign in. See "Backend data" below. |
 | `navigation` | Not needed: the menu comes from `loadMenuNavigation` (below). Only for apps with a fixed menu and no backend (`NavItem[]`). |
 | `navOptions` | How the backend menu is converted: `rootMenuIds` (default: groups named "Root" or ids ending in `_ROOT`), `isRootFlattened` (default `true`). |
@@ -273,6 +332,43 @@ Functions, URLs and signals can be mixed (for example languages as a function, t
 Without `loadMenuNavigation` the menu is `config.navigation` (static). By hand, without loaders: `setLanguages(reply)`,
 `setBranches(reply)`, `setMenuLoading()` → `setMenu(reply)`, `clearMenu()`.
 
+### Company details: `loadCompanyDetails`
+
+The app name, company name, favicon and logos can come from the backend:
+
+```json
+// GET /org-api/company-details  (or { "data": { ... } })
+{
+  "appName": "YourAppName",
+  "companyName": "YourBrandName",
+  "faviconUrl": "https://www.w3.org/favicon.ico",
+  "logoUrl": "https://www.w3.org/Icons/w3c_home.png",
+  "logoDarkUrl": "https://www.w3.org/Icons/w3c_home.png"
+}
+```
+
+```ts
+// config.ts — a function, a URL / path (AppHttp.Get) or a signal, like the other loaders
+loadCompanyDetails: `${MsUrl.sor}/company-details`,
+// or: loadCompanyDetails: companySignal,   // signal<CompanySource | null>(null); null = config values for now
+```
+
+| Field | Used for |
+| --- | --- |
+| `appName` | Label in the header, sidebar and login (wins over `config.appName`) and the browser tab title |
+| `companyName` | Alt text of the logo; read `companyDetailsSignal.value?.companyName` to show it anywhere (footer, login) |
+| `faviconUrl` | `<link rel="icon">` (created when the page has none) |
+| `logoUrl` | Logo on light themes, and on dark themes without `logoDarkUrl` (wins over `config.logoUrl` / `logoDarkUrl`) |
+| `logoDarkUrl` | Logo on dark themes (wins over `config.logoDarkUrl`) |
+
+**No `appName`, `logoUrl` or `logoDarkUrl` in the config is needed** — the brand comes from this reply (the example
+apps have none in their config). Until it arrives no app name and no logo are shown (the app key does not flash);
+on an error the app key is shown. Every field is optional: a missing one keeps the config value, when the config
+has one. Loaded once when the provider mounts; on an error the
+config values stay. Not called for type `"mfe"` (the shell owns the brand). By hand: `setCompanyDetails(reply)`.
+Helpers: `readLogoUrl(config, isDarkTheme, details)`, `readAppNameLabel(config, details)`, `readCompanyDetails(reply)`.
+The example apps load sor `/company-details` into `companySignal` on start.
+
 ### Layout choice (shell with microfrontends)
 
 `layoutChoiceSignal` (`"app"` | `"aside"`) and `changeLayoutChoice(choice)` keep the picked app layout in
@@ -286,7 +382,7 @@ it to know whether the shell shows a header (`isAsideLayoutSignal`).
 | --- | --- | --- |
 | `"spa"` (default) | a normal app | layouts, menu, login; pages in `?page=...` |
 | `"shell"` | the root app that hosts microfrontends | like `spa`, but pages are paths by default (`/settings`) |
-| `"mfe"` | a microfrontend inside a shell | page layouts only: no menu (no skeleton), `loadMenuNavigation` / `loadBranches` not called (the shell owns them); `appName`, `logoUrl`, `logoDarkUrl`, `homePath`, `branchLabel` are not used. `loadSupportLanguages` still works. |
+| `"mfe"` | a microfrontend inside a shell | page layouts only: no menu (no skeleton), `loadMenuNavigation` / `loadBranches` / `loadCompanyDetails` not called (the shell owns them); `appName`, `logoUrl`, `logoDarkUrl`, `homePath`, `branchLabel` are not used. `loadSupportLanguages` still works. |
 
 `layout.pageMode` set in the config always wins over the type.
 
@@ -337,9 +433,17 @@ const rows = await AppHttp.Get(`${MsUrl.main}/profile/search`, params);
 const same = await AppHttp.Get("/org-api/profile/search", params);   // -> https://api.example.com/api/org-api/profile/search
 ```
 
-**URLs in every AppHttp method** (`Get`, `Post`, `Put`, `Delete`, `Patch`, `Load`, `CloudUpload`, `DownloadFile`): a URL that
+**URLs in every AppHttp method** (`Get`, `Post`, `Put`, `Delete`, `Patch`, `Load`, `Media`, `CloudUpload`, `DownloadFile`): a URL that
 starts with `http://` or `https://` is used as it is; anything else is appended to the base URL with one `/` between
 (`"/items"` and `"items"` both become `<baseUrl>/items`). `AppHttp.FullUrl(url)` returns the URL a request would use.
+
+**Binary files:** `AppHttp.Media(url, params?)` is a GET that returns the body as a `Blob` (images, video, audio, any
+file), with the same headers (token, `x-session-id`, `x-branch-id`, no `Content-Type`) and no progress bar:
+
+```ts
+const blob = await AppHttp.Media(`${MsUrl.utils}/files/${fileId}`);
+const objectUrl = URL.createObjectURL(blob);   // <img src={objectUrl} />; URL.revokeObjectURL(objectUrl) when done
+```
 
 **Which storage:** decided only by the key (no argument).
 
@@ -671,7 +775,9 @@ const headActions = (
 | `AppStorage.getData / getText / setData / removeData / clearData / envData`, `TOKEN`, `LANG`, `THEME`, `BRANCH_ID` … `StorageKeys` | Prefixed session/local storage, shared key constants, `window.env` settings |
 | `openPage`, `setQueryParam(s)`, `removeQueryParam`, `readQueryParam(s)`, `useQueryParam`, `useCurrentPage`, `PageLink`, `currentPageSignal`, `queryParamsSignal` | Pages and query parameters (no router) |
 | `setLanguages(reply)`, `toLanguageOptions(reply)`, `languagesSignal`, `LangSource`, `LanguageRowType`, `setMenu(reply)`, `setMenuLoading()`, `clearMenu()`, `toNavigation(reply)`, `toNavItems(menus)`, `unwrapRootMenu(menus, "ADMIN_ROOT")`, `MenuAccessType`, `MenuResponseType`, `MenuSource`, `MenuOptions`, `ScreenAccessType`, `TranslationType`, `AuthUser` | Backend menus and shared app types (menu icons are fixed with `resolveLucideIcon`) |
-| `AppHttp.Get / Post / Put / Patch / Delete / Load / CloudUpload (uploadFile) / DownloadFile`, `AppHttp.BaseUrl()`, `AppHttp.FullUrl(url)`, `AppHttp.setHeader`, `readEnvData(appNameKey, key)`, `uploadToSignedUrl`, `setAppConfig` / `readAppConfig` | HTTP client on dff-util `Http`: bearer token, session id, branch, extra headers, progress bar |
+| `AppHttp.Get / Post / Put / Patch / Delete / Load / Media / CloudUpload (uploadFile) / DownloadFile`, `AppHttp.BaseUrl()`, `AppHttp.FullUrl(url)`, `AppHttp.setHeader`, `readEnvData(appNameKey, key)`, `uploadToSignedUrl`, `setAppConfig` / `readAppConfig` | HTTP client on dff-util `Http`: bearer token, session id, branch, extra headers, progress bar |
+| `setCompanyDetails(reply)`, `companyDetailsSignal`, `readCompanyDetails(reply)`, `readAppNameLabel(config, details)`, `readLogoUrl(config, isDark, details)`, `CompanyDetails`, `CompanySource` | Company / brand details (app name, company name, favicon, logos) |
+| `setCustomThemes(themes)`, `toCustomThemeList(themes)`, `customThemesSignal`, `CustomThemeMap`, `CustomThemes` | Custom themes as data (object keyed by theme name, or a list) |
 | `setBranch(id, name)`, `readBranchId()`, `clearBranch()`, `branchIdSignal`, `branchNameSignal` | Selected branch, sent as `x-branch-id` |
 | `startSession(token, user, isRemembered)`, `restoreSession()`, `endSession(keepKeys)`, `authUserSignal`, `isAuthenticatedSignal` | Login state (restored on reload) |
 | `toOptionTypes(rows)`, `readResponseRows(response)` | Backend option rows → `OptionType[]` |
@@ -706,8 +812,24 @@ npm run example-basic:dev   # http://localhost:5174
 It shows login, dashboard, users CRUD (drawer + confirm + permissions), a **Components** section with every control,
 upload, overlay, skeleton and state, and settings for language (10, including 3 RTL and Telugu, Kannada, Tamil), theme (all 35 DaisyUI themes + custom `org-light` / `org-dark`) and navigation style.
 All pages live in one `App` component (`example/src/app.tsx`) and are picked by `?page`; the languages, branches and
-menu are signals in the config (`example/src/backend/backend-signals.ts`), filled from fake backend replies by
-`backend/backend.service.ts`. It uses the library source directly, so changes show up without a build.
+menu are signals in the config (`example/src/app-init/app-init-signals.ts`), filled from fake backend replies by
+`app-init/app-init.service.ts`. It uses the library source directly, so changes show up without a build.
+
+Everything the example loads comes from the **sor** service (`MsUrl.sor` → `/api/org-sor`):
+
+| Data | Request | Signal |
+| --- | --- | --- |
+| Company details | `GET /company-details` | `companySignal` (on start) |
+| Languages | `GET /load/LANG?active=true` | `supportLangSignal` (on start) |
+| Themes | `GET /content-load?query=theme` | `themesSignal` (on start) |
+| Texts of a language | `GET /content-load?query=locales.<code>` (all languages: `?query=locales`) | `localeSignal` (languages the library asks for) |
+| Menu | `GET /authorization/<persona>?roles=<roles joined with ",">` (from the signed-in user) | `navSignal` (after sign in) |
+| Branches | `GET /load/BRANCHS?profile=<user id>` | `branchSignal` (after sign in, before the menu) |
+
+`readContent(reply, query)` takes the content out of a `content-load` reply (`{ data }` and the query path are
+optional: `readContent(reply, "locales.en-US")`). The fake backend is `example/fake-api.ts`, a Vite plugin (dev
+server and preview) that answers these URLs from `example/fake-api/*.json`; a real app has no such file.
+example-basic and the MFE shell work the same way (no branches); each MFE has its own fake backend for running alone.
 
 ```bash
 npm run example:install

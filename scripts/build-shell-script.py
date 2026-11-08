@@ -39,7 +39,6 @@ def fix_text(path: str, text: str) -> str:
         )
         text = text.replace('@import "tailwindcss";', '@import "tailwindcss";\n@import "shared-lib-web/styles.css";', 1)
         text = re.sub(r'@source "\.\./\.\./\.\./src";\n', "", text)
-        text = text.replace("come from theme/org-themes.json", "come from src/theme/org-themes.json")
     if path == "index.html":
         text = text.replace("<title>Org MFE shell</title>", "<title>__APP_NAME__</title>")
     return text
@@ -65,11 +64,13 @@ VITE_CONFIG = """// vite.config.ts — the MFE shell (a normal app).
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { fakeApi } from "./fake-api.ts";
 
 export default defineConfig({
   // dff-util expects Node's "global" object.
   define: { global: "globalThis" },
-  plugins: [react(), tailwindcss()],
+  // fakeApi(): the fake sor backend (fake-api/*.json) — remove it when the real services are there.
+  plugins: [fakeApi(), react(), tailwindcss()],
 });
 """
 
@@ -116,10 +117,10 @@ npm run build    # -> dist/
 ```
 
 - `public/env.mfe.js` — the MFEs: `{ id, path, url, render }` (change per environment, no build needed)
-- `src/config.ts` — shell config (app key, languages, themes, logo, layout, http, menu); `src/locales/<code>/<group>.json` — texts; `src/theme/` — custom themes
+- `src/config.ts` — shell config (app key, languages, themes, logo, layout, http, menu); texts, themes, languages, company details and menu from sor (fake: `fake-api.ts` + `fake-api/`)
 - `src/shell.tsx` — provider, AppLayout / AsideLayout, login, home; MFEs mount in `<div id="mfe-body">`
 - `src/mfe.ts` — single-spa registration; `src/session.ts` — sign in / out and the menu
-- Sign in with any email; the menu comes from `public/api/app-api/menu-access.json`
+- Sign in with any email; the menu comes from sor `/authorization/<persona>` (fake: `fake-api/menu-access.json`)
 """
 
 generated: dict[str, str] = {}

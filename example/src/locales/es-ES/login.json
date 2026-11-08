@@ -1,9 +1,0 @@
-{
-  "title": "Iniciar sesión",
-  "email": "Correo",
-  "password": "Contraseña",
-  "remember": "Recordarme",
-  "submit": "Entrar",
-  "hint": "Cualquier correo y una contraseña de 6 o más caracteres funcionan.",
-  "logout": "Cerrar sesión"
-}

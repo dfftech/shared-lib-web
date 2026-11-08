@@ -1,0 +1,30 @@
+{
+  "forms": {
+    "title": "Formulaires",
+    "name": "Nom complet",
+    "email": "E-mail",
+    "role": "Rôle",
+    "startDate": "Date de début",
+    "active": "Actif",
+    "notes": "Notes",
+    "submit": "Envoyer",
+    "cancel": "Annuler",
+    "submitted": "Formulaire envoyé",
+    "values": "Valeurs envoyées"
+  },
+  "REQUIRED": "Ce champ est obligatoire",
+  "INVALID_EMAIL": "Format d’e-mail invalide",
+  "ui": {
+    "lightThemes": "Thèmes clairs",
+    "darkThemes": "Thèmes sombres",
+    "selectOption": "Choisir une option",
+    "settings": "Paramètres",
+    "language": "Langue",
+    "theme": "Thème",
+    "logout": "Se déconnecter",
+    "account": "Compte",
+    "collapseMenu": "Réduire le menu",
+    "expandMenu": "Agrandir le menu",
+    "close": "Fermer"
+  }
+}

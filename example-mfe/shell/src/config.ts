@@ -1,9 +1,10 @@
 // config.ts — the shell config: the same appNameKey, languages and themes as the MFEs + the app shell parts.
-// Everything loaded is a signal (session.ts fills them): localeSignal, themesSignal and supportLangSignal on start,
+// Everything loaded is a signal (session.ts fills them): localeSignal, themesSignal, supportLangSignal and companySignal on start,
 // navSignal after sign in (also after a refresh).
 import { signal } from "@preact/signals-react";
 import {
   toAbsoluteUrl,
+  type CompanySource,
   type CustomThemesModule,
   type LangSource,
   type LocaleBundle,
@@ -17,12 +18,15 @@ export const APP_NAME_KEY = "ORG";
 /** Service name prefix: "ORG" -> /org-api. */
 const APP_API_KEY = APP_NAME_KEY.toLowerCase();
 
-/** API of the shell ("/api" on this site; the fake backend is public/api). */
+/** API of the shell ("/api" on this site; the fake backend is fake-api.ts + fake-api/). */
 export const API_BASE_URL = toAbsoluteUrl("/api");
 
-/** Service paths (AppHttp adds the base URL): MsUrl.main + "/menu-access.json" -> /api/org-api/menu-access.json. */
+/** Service paths (AppHttp adds the base URL): MsUrl.sor + "/company-details" -> /api/org-sor/company-details.
+ * Everything comes from sor (company details, languages, locales, themes, menu). Fake backend: fake-api.ts + fake-api/. */
 export const MsUrl = {
   main: `/${APP_API_KEY}-api`,
+  sor: `/${APP_API_KEY}-sor`,
+  utils: `/${APP_API_KEY}-util`,
 };
 
 /** The supported languages (backend reply): null until it arrives. */
@@ -34,25 +38,28 @@ export const navSignal = signal<MenuSource | null>(null);
 /** The texts per language ({ "en-US": {...} }): the library asks for codes, session.ts loads them. */
 export const localeSignal = signal<LocaleBundle | null>(null);
 
-/** The custom themes (theme/org-themes.json): null until loaded. */
+/** The custom themes (sor /content-load?query=theme): null until loaded. */
 export const themesSignal = signal<CustomThemesModule | null>(null);
+
+/** The company details (backend reply: appName, companyName, faviconUrl, logoUrl, logoDarkUrl): null until it arrives. */
+export const companySignal = signal<CompanySource | null>(null);
 
 export const shellConfig: UiConfig = {
   appNameKey: APP_NAME_KEY,
   // The texts as a signal: { "en-US": {...}, ... }; the library asks for languages, the app loads them.
   loadLocale: localeSignal,
-  // The languages as a signal (public/api/org-api/languages.json, loaded on start by session.ts).
+  // The languages as a signal (sor /load/LANG?active=true, loaded on start by session.ts).
   loadSupportLanguages: supportLangSignal,
-  // Themes as a signal: the custom org themes (theme/org-themes.json, listed first) + all 35 DaisyUI themes.
+  // The brand comes from the company details (sor /company-details), not from this config:
+  // appName (label + tab title), logoUrl / logoDarkUrl, faviconUrl; companyName is the logo alt text.
+  loadCompanyDetails: companySignal,
+  // Themes as a signal: the custom org themes (sor /content-load?query=theme, listed first) + all 35 DaisyUI themes.
   loadThemes: themesSignal,
-  appName: "app.name",
   homePath: "/",
-  logoUrl: "/logo-light.svg",
-  logoDarkUrl: "/logo-dark.svg",
   // The shell owns the header (settings dialog for language / theme, user menu) and the side menu.
   // <SharedWebUiProvider type="shell">: pages are real paths — /settings, /forms, /profile (not ?page=settings).
   layout: { menuMode: "sidebar", isSidebarCollapsible: true, headerSettings: "menu", toastPosition: "top-end" },
   http: { baseUrl: API_BASE_URL, logoutUrl: "/" },
-  // The menu of the signed-in user as a signal (fake backend: public/api/org-api/menu-access.json).
+  // The menu of the signed-in user as a signal (fake backend: sor /authorization/<persona>?roles=<roles>).
   loadMenuNavigation: navSignal,
 };

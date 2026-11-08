@@ -1,0 +1,31 @@
+{
+  "profile": {
+    "title": "الملف الشخصي",
+    "edit": "تعديل الملف",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "saved": "تم حفظ الملف",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "role": "الدور",
+    "location": "الموقع",
+    "about": "نبذة",
+    "photo": "صورة الملف"
+  },
+  "REQUIRED": "هذا الحقل مطلوب",
+  "INVALID_EMAIL": "صيغة البريد غير صحيحة",
+  "ui": {
+    "lightThemes": "سمات فاتحة",
+    "darkThemes": "سمات داكنة",
+    "selectOption": "اختر خيارًا",
+    "settings": "الإعدادات",
+    "language": "اللغة",
+    "theme": "السمة",
+    "logout": "تسجيل الخروج",
+    "account": "الحساب",
+    "collapseMenu": "طي القائمة",
+    "expandMenu": "توسيع القائمة",
+    "close": "إغلاق"
+  }
+}

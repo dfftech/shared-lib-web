@@ -2,6 +2,7 @@
 // The backend sources of the config, used by the provider itself (like loadThemes):
 //
 //   loadSupportLanguages  once, when the provider mounts                         -> setLanguages(reply)
+//   loadCompanyDetails    once, when the provider mounts (not for "mfe")         -> setCompanyDetails(reply)
 //   loadBranches          when a user is signed in (sign in, or restored session) -> setBranches(reply)
 //                         (before the menu: the menu request already sends x-branch-id)
 //   loadMenuNavigation    when a user is signed in                                -> skeleton, then setMenu(reply)
@@ -10,7 +11,7 @@
 // A source is your function, a URL / path (AppHttp.Get), or a SIGNAL you fill yourself:
 //   loadMenuNavigation: navSignal      // null = skeleton, a reply = the menu; every new value is shown at once
 // A signal is followed as it is (no call, no sign-in rule): your code decides when it changes.
-// Type "mfe" uses only loadSupportLanguages (the shell owns the rest) and shows no menu.
+// Type "mfe" uses only loadSupportLanguages (the shell owns the rest, company details too) and shows no menu.
 
 import { effect } from "@preact/signals-react";
 import type { BranchSource, LangSource, MenuSource } from "../interfaces/app-types.ts";
@@ -19,12 +20,16 @@ import { AppHttp, readJwtToken } from "../utils/app-http.ts";
 import { isSignalSource } from "../utils/signal-source.ts";
 import { isAuthenticatedSignal } from "./auth-service.ts";
 import { registerBranches, setBranches } from "./branch-service.ts";
+import { setCompanyDetails } from "./company-service.ts";
 import { registerLanguages, setLanguages } from "./language-service.ts";
 import { registerMenu, setMenu, setMenuLoading } from "./menu-service.ts";
 import { appTypeSignal, uiConfigSignal } from "./signals.ts";
 
 /** Configs whose loadSupportLanguages already ran (StrictMode mounts twice). */
 const languageLoadedConfigs = new WeakSet<UiConfig>();
+
+/** Configs whose loadCompanyDetails already ran (StrictMode mounts twice). */
+const companyLoadedConfigs = new WeakSet<UiConfig>();
 
 /** The token whose branches and menu were loaded last ("" = signed out), so a second mount does not load again. */
 let loadedSessionToken: string | undefined = undefined;
@@ -62,6 +67,23 @@ export async function loadConfigLanguages(config: UiConfig): Promise<void> {
     setLanguages(reply as LangSource);
   } catch (error) {
     console.error("shared-lib-web: config.loadSupportLanguages failed; the default language stays.", error);
+  }
+}
+
+/** loadCompanyDetails -> setCompanyDetails. Once per config. On an error the config values (appName, logos) stay. */
+export async function loadConfigCompany(config: UiConfig): Promise<void> {
+  const companySource = config.loadCompanyDetails;
+  const isLoaded = companyLoadedConfigs.has(config);
+  if (!isCallableSource(companySource) || isLoaded) {
+    return;
+  }
+  companyLoadedConfigs.add(config);
+  try {
+    const reply = await callApiSource(companySource);
+    setCompanyDetails(reply);
+  } catch (error) {
+    console.error("shared-lib-web: config.loadCompanyDetails failed; the config app name and logos stay.", error);
+    setCompanyDetails({});
   }
 }
 
@@ -159,7 +181,7 @@ function stopAll(stoppers: Array<(() => void) | undefined>): void {
 
 /**
  * Starts the config sources. Called once by SharedWebUiProvider (layout effect); returns the cleanup.
- * Type "mfe": only loadSupportLanguages, and an empty menu (no skeleton; the shell shows the menu).
+ * Type "mfe": only loadSupportLanguages (no company details), and an empty menu (no skeleton; the shell shows the menu).
  */
 export function startApiLoading(): () => void {
   const config = uiConfigSignal.peek();
@@ -173,8 +195,10 @@ export function startApiLoading(): () => void {
     setMenu([]);
     return stopAll.bind(null, [stopLanguages]);
   }
+  void loadConfigCompany(config);
+  const stopCompany = followSignalSource(config.loadCompanyDetails, setCompanyDetails);
   const stopBranches = followSignalSource(config.loadBranches, registerBranches);
   const stopMenu = followSignalSource(config.loadMenuNavigation, registerMenu);
   const stopSession = effect(followSession);
-  return stopAll.bind(null, [stopLanguages, stopBranches, stopMenu, stopSession]);
+  return stopAll.bind(null, [stopLanguages, stopCompany, stopBranches, stopMenu, stopSession]);
 }

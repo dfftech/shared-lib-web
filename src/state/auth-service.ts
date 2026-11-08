@@ -55,8 +55,9 @@ export function startSession(token: string, user: AuthUser | null, isRemembered:
   AppStorage.setData(tokenKey, token);
   AppStorage.setData(AUTH_USER_KEY, user);
   AppStorage.setData(REMEMBER_ME, isRemembered);
-  sessionTokenSignal.value = token;
+  // The user first: whatever runs on sign in (branches, menu) already reads the user.
   authUserSignal.value = user;
+  sessionTokenSignal.value = token;
 }
 
 /** Reads a saved session (sessionStorage). Called by SharedWebUiProvider. */
@@ -68,8 +69,8 @@ export function restoreSession(): void {
     return;
   }
   const storedUser = AppStorage.getData(AUTH_USER_KEY);
-  sessionTokenSignal.value = token;
   authUserSignal.value = storedUser && typeof storedUser === "object" ? (storedUser as AuthUser) : null;
+  sessionTokenSignal.value = token;
 }
 
 /** Sends the browser to config.http.logoutUrl (replace: Back does not return to the signed-in page). */

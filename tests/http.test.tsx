@@ -208,6 +208,31 @@ async function testFullUrlForAllMethods(): Promise<void> {
   expect(urls[5]).toContain("http://other.test/plain");
 }
 
+/** Fake media server: remembers the request and answers with bytes. */
+async function fakeMediaFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+  const headers = (init?.headers ?? {}) as Record<string, string>;
+  receivedRequests.push({ url: String(input), headers: headers });
+  const bytes = new Uint8Array([137, 80, 78, 71]);
+  return new Response(bytes, { status: 200, headers: { "content-type": "image/png" } });
+}
+
+async function testMediaBlob(): Promise<void> {
+  await renderWithHttp();
+  receivedRequests.length = 0;
+  startSession("Bearer media.token", { id: "u1", name: "Asha" });
+  globalThis.fetch = fakeMediaFetch as typeof fetch;
+  const blob = await AppHttp.Media("/files/logo.png");
+  const sameBlob = await AppHttp.Media("https://cdn.test/a.png", { size: "small" });
+  expect(blob.size).toBe(4);
+  expect(blob.type).toBe("image/png");
+  expect(sameBlob.size).toBe(4);
+  expect(receivedRequests[0]?.url).toBe("https://api.test/api/files/logo.png");
+  expect(receivedRequests[0]?.headers.Authorization).toBe("Bearer media.token");
+  expect(receivedRequests[0]?.headers["Content-Type"]).toBe(undefined);
+  expect(receivedRequests[1]?.url).toBe("https://cdn.test/a.png?size=small");
+  endSession([], false);
+}
+
 describe("AppHttp", function describeHttp() {
   afterEach(cleanup);
   it("sends token, x-session-id, x-branch-id and extra headers", testServiceUrlsAndHeaders);
@@ -217,4 +242,5 @@ describe("AppHttp", function describeHttp() {
   it("keeps LANG and THEME on log out and removes the token", testStorageKeysAndLogout);
   it("makes a relative base URL absolute and shows appNameKey when appName is missing", testRelativeBaseUrlAndAppName);
   it("adds http.baseUrl to paths in every method; http(s) URLs stay as they are", testFullUrlForAllMethods);
+  it("Media returns the body as a Blob with the usual headers", testMediaBlob);
 });

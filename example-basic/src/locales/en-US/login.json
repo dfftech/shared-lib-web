@@ -1,9 +1,0 @@
-{
-  "title": "Sign in",
-  "email": "Email",
-  "password": "Password",
-  "remember": "Remember me",
-  "submit": "Sign in",
-  "hint": "Any email and a 6+ character password will work.",
-  "logout": "Sign out"
-}

@@ -24,7 +24,12 @@ export type {
   ApiSource,
   AppType,
   ValueSignal,
+  CompanyDetails,
+  CompanySource,
   CustomTheme,
+  CustomThemeEntry,
+  CustomThemeMap,
+  CustomThemes,
   CustomThemesModule,
   LocaleBundle,
   ThemesLoader,
@@ -86,6 +91,7 @@ export {
   themeSignal,
   appTypeSignal,
   customThemesSignal,
+  companyDetailsSignal,
   toastsSignal,
   translationSignal,
   uiConfigSignal,
@@ -161,8 +167,12 @@ export {
   loadConfigThemes,
   mergeCustomThemes,
   setCustomThemes,
+  toCustomThemeList,
   unwrapThemesModule,
 } from "./theme/custom-themes.ts";
+export { isCompanyPending, readAppNameLabel, readCompanyDetails, setCompanyDetails } from "./state/company-service.ts";
+export { readLogoUrl } from "./theme/logo.ts";
+export { readContent } from "./utils/content-util.ts";
 export { ShowToast, clearToasts, removeToast } from "./state/toast-service.ts";
 export { ShowProgress } from "./state/progress-service.ts";
 export { closeSidebar, toggleSidebar } from "./state/sidebar-service.ts";
@@ -280,6 +290,7 @@ export {
 export {
   callApiSource,
   clearSessionData,
+  loadConfigCompany,
   loadConfigLanguages,
   loadSessionData,
 } from "./state/api-loader.ts";

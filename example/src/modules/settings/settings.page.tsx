@@ -1,4 +1,4 @@
-// settings.page.tsx — view only. Branches come from the backend (backend/backend.service.ts), languages and themes from config.ts.
+// settings.page.tsx — view only. Branches come from the backend (app-init/app-init.service.ts), languages and themes from config.ts.
 import {
   ArticleLayout,
   ContentLayout,

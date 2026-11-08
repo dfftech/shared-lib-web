@@ -1,0 +1,30 @@
+{
+  "forms": {
+    "title": "النماذج",
+    "name": "الاسم الكامل",
+    "email": "البريد الإلكتروني",
+    "role": "الدور",
+    "startDate": "تاريخ البدء",
+    "active": "نشط",
+    "notes": "ملاحظات",
+    "submit": "إرسال",
+    "cancel": "إلغاء",
+    "submitted": "تم إرسال النموذج",
+    "values": "القيم المرسلة"
+  },
+  "REQUIRED": "هذا الحقل مطلوب",
+  "INVALID_EMAIL": "صيغة البريد غير صحيحة",
+  "ui": {
+    "lightThemes": "سمات فاتحة",
+    "darkThemes": "سمات داكنة",
+    "selectOption": "اختر خيارًا",
+    "settings": "الإعدادات",
+    "language": "اللغة",
+    "theme": "السمة",
+    "logout": "تسجيل الخروج",
+    "account": "الحساب",
+    "collapseMenu": "طي القائمة",
+    "expandMenu": "توسيع القائمة",
+    "close": "إغلاق"
+  }
+}

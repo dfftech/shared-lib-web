@@ -3,7 +3,7 @@
 
 @source "../../src";
 
-/* All 35 DaisyUI 5 themes. The custom org themes come from theme/org-themes.json (config.loadThemes): no CSS. */
+/* All 35 DaisyUI 5 themes. The custom org themes come from sor (/content-load?query=theme, config.loadThemes): no CSS. */
 @plugin "daisyui" {
   themes: all;
 }

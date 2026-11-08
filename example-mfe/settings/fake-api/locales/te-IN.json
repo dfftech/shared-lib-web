@@ -1,0 +1,30 @@
+{
+  "REQUIRED": "ఈ ఫీల్డ్ తప్పనిసరి",
+  "INVALID_EMAIL": "ఇమెయిల్ ఫార్మాట్ తప్పు",
+  "settings": {
+    "title": "సెట్టింగ్‌లు",
+    "text": "localStorage లో సేవ్ అయ్యాయి (ORG-LANG, ORG-THEME). ఇతర MFEలు తెరిచినప్పుడు వాటిని చదువుతాయి.",
+    "language": "భాష",
+    "theme": "థీమ్",
+    "saved": "సేవ్ చేసింది: {{lang}} · {{theme}}",
+    "layout": "లేఅవుట్",
+    "appLayout": "యాప్ లేఅవుట్ (హెడర్ + మెనూ)",
+    "asideLayout": "పక్క లేఅవుట్ (మెనూ మాత్రమే)",
+    "menu": "మెనూ నావిగేషన్",
+    "sidebar": "సైడ్‌బార్",
+    "megaMenu": "మెగా మెనూ"
+  },
+  "ui": {
+    "lightThemes": "లైట్ థీమ్‌లు",
+    "darkThemes": "డార్క్ థీమ్‌లు",
+    "selectOption": "ఒక ఎంపికను ఎంచుకోండి",
+    "settings": "సెట్టింగ్‌లు",
+    "language": "భాష",
+    "theme": "థీమ్",
+    "logout": "లాగ్ అవుట్",
+    "account": "ఖాతా",
+    "collapseMenu": "మెనూ కుదించు",
+    "expandMenu": "మెనూ విస్తరించు",
+    "close": "మూసివేయి"
+  }
+}

@@ -240,6 +240,20 @@ export class AppHttp {
     return AppHttp.CloudUpload(uploadUrl, file);
   }
 
+  /**
+   * GET that returns the raw body as a Blob (images, video, audio, any binary file).
+   * The URL rule of every method applies (a path gets the base URL), and the same headers are sent (token,
+   * x-session-id, x-branch-id, http.headers, setHeader values; no Content-Type). No progress bar: pages often load
+   * many media files at once.
+   *   const blob = await AppHttp.Media(`${MsUrl.utils}/files/${id}`);
+   *   const objectUrl = URL.createObjectURL(blob);   // <img src={objectUrl}>; URL.revokeObjectURL(objectUrl) later
+   */
+  static async Media(url: string, params?: HttpParams): Promise<Blob> {
+    const fullUrl = AppHttp.FullUrl(url);
+    const headers = AppHttp.RawHeaders();
+    return Http.FileDownload(fullUrl, params, headers);
+  }
+
   /** Downloads a file and saves it in the browser. */
   static async DownloadFile(url: string, params: HttpParams = {}, fileName?: string): Promise<void> {
     const headers = AppHttp.RawHeaders();

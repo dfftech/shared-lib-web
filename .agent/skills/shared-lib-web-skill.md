@@ -27,7 +27,7 @@ src/
 ├── lang/lang.service.ts langSignal (null) + loadLanguages() at start: langSignal.value = await AppHttp.Get(languagesUrl)
 ├── app.tsx             ONE component: AuthLayout when signed out; signed in: AppLayout (or the project's own layout) + the component for useCurrentPage()
 │                       from a PAGE_ELEMENTS map (keys = menu hrefs), wrapped in Suspense + <RequireAccess key={page}>
-├── config.ts           UiConfig: appNameKey (key / ENV_BASE_NAME), appName (label), defaultLanguage (optional, default "en-US"), loadLocale, themes, darkThemes, logos, layout, http (NO menu, NO language list, NO router, NO storage)
+├── config.ts           UiConfig: appNameKey (key / ENV_BASE_NAME), loadCompanyDetails (brand), defaultLanguage (optional, default "en-US"), loadLocale, loadThemes, themes, darkThemes, layout, http (NO menu, NO language list, NO router, NO storage)
 ├── index.css           @import "tailwindcss"; @import "shared-lib-web/styles.css"; @plugin "daisyui" {...}
 ├── locales/{code}.json one JSON per language code: en-US.json, ar-SA.json (loaded by config.loadLocale)
 └── modules/...         see react-web-skill.md
@@ -40,7 +40,12 @@ src/
   Texts: `loadLocale(code)` = TOP-LEVEL function returning ``import(`./locales/${code}.json`)``. RTL is automatic for ar, he, fa, ur.
   Codes are always full: "en-US", files `en-US.json`, `nameLang`/TypeLang keys "en-US". Without the prop: `setLanguages(reply)`.
 - `themes` + `darkThemes`: DaisyUI theme names; enable each in `@plugin "daisyui"`.
-- `logoUrl` / `logoDarkUrl`: picked by theme.
+- Custom themes JSON (`loadThemes` / `customThemes`): an object keyed by theme name —
+  `{ "org-dark": { "isDark": true, "name": "org-dark", "variables": { "color-primary": "oklch(...)", ... } }, "org-light": {...} }`.
+- Brand: `loadCompanyDetails` (function / URL / signal) → `{ appName, companyName, faviconUrl, logoUrl, logoDarkUrl }`.
+  No `appName` / `logoUrl` / `logoDarkUrl` in config.ts (they are only a static fallback for apps without company details).
+  appName = label + tab title, faviconUrl = tab icon, logoDarkUrl on dark themes (else logoUrl), companyName = logo alt
+  (`companyDetailsSignal` to show it elsewhere). By hand: `setCompanyDetails(reply)`.
 - `layout`: `{ menuMode: "sidebar" | "megamenu", isSidebarCollapsible, showMenu }`.
 - No `navigation` in config.ts: the menu comes from the backend through `nav` (below). (`navigation: NavItem[]` exists only for apps with a fixed menu.)
   `icon` is a lucide name string. `permissions: { read, create, update, delete }`; `read: false` hides the item.
