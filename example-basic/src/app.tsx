@@ -20,7 +20,7 @@ const loginFallback = <SkeletonAuthForm />;
 const comingSoon = <ComingSoon />;
 const notFound = <PageNotFound />;
 
-/** The component for each page value. The keys are the hrefs of the backend menu (sor /authorization/<persona>?roles=<roles>). */
+/** The component for each page value. The keys are the hrefs of the backend menu (util /authorization/<persona>?roles=<roles>). */
 const PAGE_ELEMENTS: Record<string, ReactElement> = {
   "/": <DashboardPage />,
   "/dashboard": <DashboardPage />,

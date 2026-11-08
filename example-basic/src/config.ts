@@ -20,8 +20,8 @@ const API_BASE_URL = toAbsoluteUrl(envBaseUrl ?? "/api");
 /**
  * Service paths of this project. They are paths: AppHttp adds the base URL (http.baseUrl / window.env API_BASE_URL),
  * so MsUrl.sor + "/company-details" -> https://<site>/api/org-sor/company-details.
- * Everything comes from sor: company details, languages (/load/LANG), locales and themes (/content-load),
- * menu (/authorization/<persona>), branches (/load/BRANCHS).
+ * From sor: company details, languages (/load/LANG), locales and themes (/content-load), branches (/load/BRANCHS).
+ * From utils: the menu (/authorization/<persona>?roles=<roles>).
  */
 export const MsUrl = {
   api: `/${APP_API_KEY}-api`,
@@ -45,7 +45,7 @@ export const config: UiConfig = {
   // AppHttp: every request gets Authorization and x-session-id (x-branch-id is "": no branches here). Use MsUrl above.
   // After log out the browser goes to logoutUrl (here: the app start page, which shows the login).
   http: { baseUrl: API_BASE_URL, logoutUrl: "/" },
-  // The menu of the signed-in user (the "backend" of the example is sor /authorization/<persona>?roles=<roles>).
+  // The menu of the signed-in user (the "backend" of the example is util /authorization/<persona>?roles=<roles>).
   loadMenuNavigation: navSignal,
   // The languages as a signal (sor /load/LANG?active=true: only en-US, so no language switcher).
   loadSupportLanguages: supportLangSignal,

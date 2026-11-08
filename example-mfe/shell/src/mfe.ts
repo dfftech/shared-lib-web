@@ -24,7 +24,7 @@ import {
 /** One entry of env.mfe.js. */
 export interface MfeRoute {
   id: string; // single-spa name
-  isAuth?: boolean; // true = the auth MFE: shown while nobody is signed in, whatever the address (no path)
+  isAuth?: boolean; // true = the auth MFE: shown while nobody is signed in, whatever the address; path = signed-out address
   path?: string; // page that shows it ("/forms" = ?page=forms); missing = widget, always on
   url: string; // the MFE build (exports bootstrap / mount / unmount)
   render: string; // id of the fixed slot in the shell layout
@@ -80,11 +80,11 @@ export function findAuthRoute(): MfeRoute | undefined {
   return undefined;
 }
 
-/** The MFE of a page, or undefined when the shell shows that page itself. */
+/** The page MFE of a page (never the auth MFE: it is only for signed-out users), or undefined. */
 export function findMfeRoute(page: string): MfeRoute | undefined {
   const routes = readMfeRoutes();
   for (const route of routes) {
-    if (route.path === page) {
+    if (route.path === page && !route.isAuth) {
       return route;
     }
   }

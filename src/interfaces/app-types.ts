@@ -83,11 +83,15 @@ export interface LanguageRowType {
   code?: string;
   langCode?: string;
   languageCode?: string;
+  /** The code as sor /load/LANG sends it: { "key": "en-US", "label": "English", "locale": "English", "disabled": false }. */
+  key?: string;
   id?: string;
   /** Name shown in the switcher (usually in that language, "Français"). */
   name?: string;
   label?: string;
   nameLang?: Record<string, string>;
+  /** The language's own name ("Français", "हिन्दी"); shown when label and name are missing. */
+  locale?: string;
   /** Flag emoji or short text. */
   flag?: string;
   /** "ltr" or "rtl". When missing: rtl for ar, he, fa, ur. */
@@ -98,6 +102,8 @@ export interface LanguageRowType {
   default?: boolean;
   /** false hides the language. */
   active?: boolean;
+  /** true hides the language (sor /load/LANG). */
+  disabled?: boolean;
   /** Lower numbers come first. */
   priority?: number;
 }

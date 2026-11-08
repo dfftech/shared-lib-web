@@ -22,9 +22,9 @@ export function readLanguageRows(source: LangSource | null | undefined): Languag
   return source.data ?? [];
 }
 
-/** The language code of a row ("en-US"), from code, langCode, languageCode or id. */
+/** The language code of a row ("en-US"), from code, langCode, languageCode, key or id. */
 export function readLanguageRowCode(row: LanguageRowType): string {
-  return row.code ?? row.langCode ?? row.languageCode ?? row.id ?? ConstValue.EMPTY;
+  return row.code ?? row.langCode ?? row.languageCode ?? row.key ?? row.id ?? ConstValue.EMPTY;
 }
 
 /** "rtl" / "ltr" from direction or dir. undefined lets the shell decide (rtl for ar, he, fa, ur). */
@@ -40,10 +40,10 @@ export function readLanguageRowDirection(row: LanguageRowType): Direction | unde
   return ConstValue.LTR as Direction;
 }
 
-/** Name shown in the switcher: label, name, nameLang in that language, or the code. */
+/** Name shown in the switcher: label, name, nameLang in that language, locale (its own name), or the code. */
 export function readLanguageRowLabel(row: LanguageRowType, languageCode: string): string {
   const ownName = row.nameLang?.[languageCode];
-  return row.label ?? row.name ?? ownName ?? languageCode;
+  return row.label ?? row.name ?? ownName ?? row.locale ?? languageCode;
 }
 
 /** Sort compare: lower priority first. Same priority keeps the backend order. */
@@ -53,13 +53,13 @@ export function compareLanguagePriority(first: LanguageRowType, second: Language
   return firstPriority - secondPriority;
 }
 
-/** Rows that can be shown: a code is present and active is not false. Sorted by priority. */
+/** Rows that can be shown: a code is present, active is not false and disabled is not true. Sorted by priority. */
 export function readActiveLanguageRows(source: LangSource | null | undefined): LanguageRowType[] {
   const rows = readLanguageRows(source);
   const activeRows: LanguageRowType[] = [];
   for (const row of rows) {
     const languageCode = readLanguageRowCode(row);
-    const isActive = row.active !== false;
+    const isActive = row.active !== false && row.disabled !== true;
     if (languageCode.length > 0 && isActive) {
       activeRows.push(row);
     }

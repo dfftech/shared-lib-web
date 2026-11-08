@@ -170,9 +170,29 @@ async function testMissingFileFallsBack(): Promise<void> {
   expect(readSummary()).toBe("en-US|ltr|Hello|");
 }
 
+/** sor /load/LANG: { data: [{ key, label, locale, disabled }] } — disabled rows are hidden. */
+function testSorLanguageRows(): void {
+  const sorReply = {
+    meta: { duration: 41 },
+    data: [
+      { disabled: true, key: "ar-SA", label: "Arabic", locale: "العربية" },
+      { disabled: false, key: "en-US", label: "English", locale: "English" },
+      { disabled: false, key: "fr-FR", label: "Français", locale: "Français" },
+      { disabled: false, key: "te-IN", locale: "తెలుగు" },
+    ],
+    status: "LOADED_SUCCESSFULLY",
+  };
+  const options = toLanguageOptions(sorReply);
+  expect(options.length).toBe(3);
+  expect(options[0].code).toBe("en-US");
+  expect(options[1].label).toBe("Français");
+  expect(options[2].label).toBe("తెలుగు");
+}
+
 describe("Backend languages", function describeBackendLanguages() {
   afterEach(resetLanguageStorage);
   it("converts the backend reply into language options", testToLanguageOptions);
+  it("reads the sor /load/LANG rows (key, label, locale, disabled)", testSorLanguageRows);
   it("starts with lang null and shows the list when it arrives", testNullThenData);
   it("switches to the backend default when nothing was chosen", testBackendDefaultIsUsed);
   it("keeps the saved language when it is in the list", testSavedChoiceWins);

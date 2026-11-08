@@ -103,7 +103,7 @@ async function loadNav(): Promise<void> {
     const persona = user?.persona ?? DEFAULT_PERSONA;
     const roles = user?.roles ?? DEFAULT_ROLES;
     const roleText = roles.join(",");
-    const reply = await AppHttp.Get(`${MsUrl.sor}/authorization/${persona}`, { roles: roleText });
+    const reply = await AppHttp.Get(`${MsUrl.utils}/authorization/${persona}`, { roles: roleText });
     navSignal.value = reply as MenuSource;
   } catch {
     navSignal.value = [];

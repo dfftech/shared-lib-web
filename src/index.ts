@@ -173,6 +173,7 @@ export {
 export { isCompanyPending, readAppNameLabel, readCompanyDetails, setCompanyDetails } from "./state/company-service.ts";
 export { readLogoUrl } from "./theme/logo.ts";
 export { readContent } from "./utils/content-util.ts";
+export { readErrorMessage } from "./utils/error-util.ts";
 export { ShowToast, clearToasts, removeToast } from "./state/toast-service.ts";
 export { ShowProgress } from "./state/progress-service.ts";
 export { closeSidebar, toggleSidebar } from "./state/sidebar-service.ts";

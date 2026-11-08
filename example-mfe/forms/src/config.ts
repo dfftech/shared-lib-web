@@ -9,16 +9,16 @@
 import { signal } from "@preact/signals-react";
 import {
   AppHttp,
-  readContent,
   fillLocaleBundle,
+  readContent,
   readEnvData,
   toAbsoluteUrl,
   type CustomThemesModule,
   type LangSource,
-  type LocaleModule,
   type LocaleBundle,
+  type LocaleModule,
   type UiConfig,
-} from "shared-lib-web";
+} from 'shared-lib-web';
 
 /** Key / base name, the same in the shell and every MFE: ORG-THEME, ORG-LANG ... */
 export const APP_NAME_KEY = "ORG";

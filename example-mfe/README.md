@@ -52,20 +52,25 @@ The shell uses `layout.pageMode: "path"`, so every page is a real address:
 
 ## Shell pages vs MFEs
 
-`/` (Home) and `/settings` (Settings) are pages of the shell itself — clicking Settings in the menu stays in the
-shell and shows `settings.page.tsx`. They are registered in `SHELL_PAGES` (`shell.tsx`); a shell page wins over an MFE
-with the same path. Every other path is an MFE of `env.mfe.js` (or ComingSoon):
+`/settings` (Settings) and `/dashboard` (the shell's Home page) are pages of the shell itself — clicking Settings in
+the menu stays in the shell and shows `settings.page.tsx`. They are registered in `SHELL_PAGES` (`shell.tsx`).
+An MFE of `env.mfe.js` with the same path **wins** (single-spa mounts it anyway), so the shell's `/dashboard` page is
+only a fallback until a dashboard MFE is configured. Every other path is an MFE of `env.mfe.js` (or ComingSoon):
 
 ```tsx
 const SHELL_PAGES: Record<string, ComponentType> = {
-  "/": HomePage,
+  "/dashboard": HomePage,   // fallback: a "/dashboard" MFE in env.mfe.js wins
   "/settings": SettingsPage,
 };
 ```
 
+**Home:** without a token home is `/auth?page=login` (the auth MFE); with a token home is `/dashboard`
+(`SIGNED_IN_HOME` in `session.ts`, `homePath` in `config.ts`). A bare `/` while signed in goes to `/dashboard`.
+
 ## Signed out: the auth MFE
 
-The shell has no login page. The `env.mfe.js` entry with `isAuth: true` (no `path`) is active while nobody is signed in,
+The shell has no login page. The `env.mfe.js` entry with `isAuth: true` is active while nobody is signed in (its `path`,
+for example `/auth`, is the address shown then: `/auth?page=login`),
 so `http://localhost:9000/forms` signed out shows the login, and after sign in the same address shows the forms MFE.
 
 1. `auth/src/auth.page.tsx` signs in with the library: `startSession(token, user)`.
@@ -73,6 +78,15 @@ so `http://localhost:9000/forms` signed out shows the login, and after sign in t
    (same page, same `ORG-` keys) — `isAuthenticatedSignal` turns true in the shell.
 3. The shell renders its layout, loads the menu, and single-spa unmounts the auth MFE and mounts the page MFE.
 4. Sign out in the shell's user menu → `SESSION_EVENT` again → the auth MFE comes back.
+
+The address follows the session (`followSignInAddress` in `shell/src/session.ts`):
+
+| When | Address |
+| --- | --- |
+| Signed out (log out, or opening the app without a session) | `/auth?page=login` (replaced, so Back does not return to it) |
+| Opened `/profile` without a session, then signed in | `/profile` (the page asked for is remembered) |
+| Signed in after a log out (or nothing was asked for) | `/dashboard` |
+| Opened `/auth` or `/` while already signed in | `/dashboard` |
 
 The auth MFE also sets `loadCompanyDetails`, so its login page shows the brand (logo, app name, favicon).
 
@@ -87,7 +101,7 @@ own `env.js` is only used when it runs alone.
 
 ```js
 window.envMfe = [
-  { id: "@org/auth",     isAuth: true,       url: "http://localhost:5176/auth.js",     render: "mfe-body" },
+  { id: "@org/auth",     path: "/auth", isAuth: true, url: "http://localhost:5176/auth.js", render: "mfe-body" },
   { id: "@org/forms",    path: "/forms",    url: "http://localhost:5177/forms.js",    render: "mfe-body" },
   { id: "@org/profile",  path: "/profile",  url: "http://localhost:5178/profile.js",  render: "mfe-body" },
 ];
@@ -125,8 +139,9 @@ build with its own Docker context:
 | `public/env.js` (`window.env`: `REACT_APP_ORG_API_BASE_URL` …, loaded by `index.html`) | ✓ (used by every MFE inside the shell) | ✓ (alone) | ✓ (alone) | ✓ (alone) |
 | `src/mfe-page.tsx`, `src/mfe-lifecycles.ts` | – | ✓ | ✓ | ✓ |
 
-Everything comes from **sor** (`MsUrl.sor` → `/api/org-sor`, the real service — no fake backend): `/company-details`, `/load/LANG?active=true`,
-`/content-load?query=theme`, `/content-load?query=locales.<code>`, `/authorization/<persona>?roles=<roles>` (menu).
+From **sor** (`MsUrl.sor` → `/api/org-sor`, the real service — no fake backend): `/company-details`, `/load/LANG?active=true`,
+`/content-load?query=theme`, `/content-load?query=locales.<code>`, `POST /auth-signin` (auth MFE). From **utils**
+(`MsUrl.utils` → `/api/org-util`): `/authorization/<persona>?roles=<roles>` (the shell's menu).
 Inside the shell an MFE asks the shell's `/api`, so sor's locale content must hold the shell groups and every MFE group.
 
 Keep the common parts the same in every project: `appNameKey` (`ORG`, so all read the same `ORG-THEME` / `ORG-LANG` /

@@ -119,7 +119,7 @@ npm run build    # -> dist/
 - `src/shell.tsx` — provider, AppLayout / AsideLayout, home + `SHELL_PAGES`; MFEs mount in `<div id="mfe-body">`
 - `src/settings.page.tsx` — the Settings page (a shell page)
 - `src/mfe.ts` — single-spa registration; `src/session.ts` — sign out and the menu
-- No login in the shell: signed out it shows the auth MFE (`env.mfe.js` entry with `isAuth: true`, run it on 5186); the menu comes from sor `/authorization/<persona>`
+- No login in the shell: signed out it shows the auth MFE (`env.mfe.js` entry with `isAuth: true`, run it on 5186); the menu comes from utils `/authorization/<persona>`
 """
 
 generated: dict[str, str] = {}

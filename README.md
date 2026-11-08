@@ -818,7 +818,8 @@ All pages live in one `App` component (`example/src/app.tsx`) and are picked by 
 menu are signals in the config (`example/src/app-init/app-init-signals.ts`), filled from the sor replies by
 `app-init/app-init.service.ts`. It uses the library source directly, so changes show up without a build.
 
-Everything the example loads comes from the **sor** service (`MsUrl.sor` → `/api/org-sor`):
+The example loads everything from the **sor** service (`MsUrl.sor` → `/api/org-sor`), except the menu, which comes
+from **utils** (`MsUrl.utils` → `/api/org-util`):
 
 | Data | Request | Signal |
 | --- | --- | --- |
@@ -826,7 +827,7 @@ Everything the example loads comes from the **sor** service (`MsUrl.sor` → `/a
 | Languages | `GET /load/LANG?active=true` | `supportLangSignal` (on start) |
 | Themes | `GET /content-load?query=theme` | `themesSignal` (on start) |
 | Texts of a language | `GET /content-load?query=locales.<code>` (all languages: `?query=locales`) | `localeSignal` (languages the library asks for) |
-| Menu | `GET /authorization/<persona>?roles=<roles joined with ",">` (from the signed-in user) | `navSignal` (after sign in) |
+| Menu (utils) | `GET /authorization/<persona>?roles=<roles joined with ",">` (from the signed-in user) | `navSignal` (after sign in) |
 | Branches | `GET /load/BRANCHS?profile=<user id>` | `branchSignal` (after sign in, before the menu) |
 
 `readContent(reply, query)` takes the content out of a `content-load` reply (`{ data }` and the query path are

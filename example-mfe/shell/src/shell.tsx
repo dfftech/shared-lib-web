@@ -1,7 +1,7 @@
 // shell.tsx — the shell UI in one file: provider, layout, login and home page.
 //   signed out -> the auth MFE (env.mfe.js isAuth: true) in <div id="mfe-body" /> — the shell has NO login of its own
 //   signed in  -> AppLayout (header, menu, user) or AsideLayout (menu only; picked on the Settings page), and in <main>:
-//                   a page of the shell itself (SHELL_PAGES: "/" home, "/settings" settings),
+//                   a page of the shell itself (SHELL_PAGES: "/dashboard" home, "/settings" settings),
 //                   or the MFE of the current page (env.mfe.js) in <div id="mfe-body" />
 
 import { useSignals } from "@preact/signals-react/runtime";
@@ -56,13 +56,13 @@ function SignedOutShell() {
   );
 }
 
-// ---- Home ("/"): a page of the shell itself, with links to the MFEs ----
+// ---- Home ("/dashboard"): a page of the shell itself, with links to the MFEs ----
 
 function HomePage() {
   const { t } = useUi();
   const cards: ReactElement[] = [];
   for (const route of readMfeRoutes()) {
-    if (route.path) {
+    if (route.path && !route.isAuth) {
       cards.push(
         <PageLink key={route.id} page={route.path} className="rounded-box border border-base-300 p-4 hover:bg-base-200">
           <span className="font-semibold">{route.id}</span>
@@ -89,7 +89,8 @@ function HomePage() {
  * Register a new shell page here: { "/reports": ReportsPage }.
  */
 const SHELL_PAGES: Record<string, ComponentType> = {
-  "/": HomePage,
+  // With a token "/" goes to /dashboard (session.ts). Only a fallback: a dashboard MFE in env.mfe.js wins.
+  "/dashboard": HomePage,
   "/settings": SettingsPage,
 };
 
@@ -112,9 +113,8 @@ function Shell() {
     return <SignedOutShell />;
   }
   const email = authUserSignal.value?.email ?? "";
-  // A shell page wins over an MFE with the same path.
-  const isShellPage = page in SHELL_PAGES;
-  const mfeRoute = isShellPage ? undefined : findMfeRoute(page);
+  // An MFE of env.mfe.js wins over a shell page with the same path (single-spa mounts it anyway).
+  const mfeRoute = findMfeRoute(page);
   const shellPage = renderShellPage(page);
   // Desktop with the side menu: the user sits at the bottom of the menu, so the header copy is hidden there.
   const headerUserClassName = isDesktopSidebarSignal.value ? "lg:hidden" : undefined;

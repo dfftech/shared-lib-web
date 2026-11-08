@@ -2,7 +2,7 @@
 // Fills the signals of app-init-signals.ts:
 //   texts and themes  -> localeSignal (the languages the library asks for: sor /content-load?query=locales.<code>), themesSignal (sor /content-load?query=theme)
 //   on start  -> supportLangSignal (sor /load/LANG?active=true), companySignal (sor /company-details)
-//   signed in (or restored after a refresh) -> navSignal (sor /authorization/<persona>?roles=<roles>); signed out -> null
+//   signed in (or restored after a refresh) -> navSignal (util /authorization/<persona>?roles=<roles>); signed out -> null
 import { effect } from "@preact/signals-react";
 import { AppHttp, authUserSignal, readContent, fillLocaleBundle, isAuthenticatedSignal, readJwtToken, type CompanySource, type CustomThemesModule, type LangSource, type LocaleModule, type MenuSource } from "shared-lib-web";
 import { MsUrl } from "../config.ts";
@@ -90,7 +90,7 @@ async function loadNav(): Promise<void> {
     const persona = user?.persona ?? DEFAULT_PERSONA;
     const roles = user?.roles ?? DEFAULT_ROLES;
     const roleText = roles.join(",");
-    const reply = await AppHttp.Get(`${MsUrl.sor}/authorization/${persona}`, { roles: roleText });
+    const reply = await AppHttp.Get(`${MsUrl.utils}/authorization/${persona}`, { roles: roleText });
     navSignal.value = reply as MenuSource;
   } catch {
     navSignal.value = [];

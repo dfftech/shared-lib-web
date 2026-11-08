@@ -26,7 +26,7 @@ export const isLoggedIn = isAuthenticatedSignal;
 /** Fake login: any email works. A real app saves the token from the login API. */
 export function startSession(email: string, remember: boolean): void {
   const fakeToken = AppUUID4();
-  // persona + roles: the menu request (sor /authorization/<persona>?roles=...); id: the branches (/load/BRANCHS?profile=).
+  // persona + roles: the menu request (util /authorization/<persona>?roles=...); id: the branches (/load/BRANCHS?profile=).
   const user = { id: email, email: email, persona: "admin", roles: ["ADMIN_ADMIN"] };
   startSharedSession(fakeToken, user, remember);
 }
