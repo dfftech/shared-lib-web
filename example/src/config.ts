@@ -53,7 +53,10 @@ export const config: UiConfig = {
   layout: { menuMode: "sidebar", isSidebarCollapsible: true, headerSettings: "menu", toastPosition: "top-end" },
   // AppHttp: every request gets Authorization, x-session-id and x-branch-id. Use the URLs from MsUrl above.
   // After log out the browser goes to logoutUrl (here: the app start page, which shows the login).
-  http: { baseUrl: API_BASE_URL, logoutUrl: "/" },
+  http: {
+    baseUrl: API_BASE_URL,
+    logoutUrl: "/",
+  },
   // The backend data as signals: every new value is shown at once (null = not here yet).
   loadSupportLanguages: supportLangSignal,
   // The brand comes from the company details (sor /company-details), not from this config:
