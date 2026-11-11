@@ -21,7 +21,7 @@ import {
   type UiConfig,
 } from "../src/index.ts";
 import { AppLayout } from "../src/layout.ts";
-import { testConfig } from "./test-config.ts";
+import { TEST_JWT_1, TEST_JWT_2, TEST_JWT_3, testConfig } from "./test-config.ts";
 
 const receivedRequests: Array<{ url: string; headers: Record<string, string> }> = [];
 
@@ -55,14 +55,14 @@ async function renderWithHttp(): Promise<void> {
 async function testServiceUrlsAndHeaders(): Promise<void> {
   await renderWithHttp();
   expect(AppHttp.BaseUrl()).toBe("https://api.test/api");
-  startSession("Bearer abc.def", { id: "u1", name: "Asha" });
+  startSession(`Bearer ${TEST_JWT_1}`, { id: "u1", name: "Asha" });
   expect(isAuthenticatedSignal.value).toBe(true);
   setBranch("B7");
   globalThis.fetch = fakeBackendFetch as typeof fetch;
   await AppHttp.Load("ROLES", { active: true });
   const request = receivedRequests[0];
   expect(request?.url).toContain("https://api.test/api/app-sor/load/ROLES?active=true");
-  expect(request?.headers.Authorization).toBe("Bearer abc.def");
+  expect(request?.headers.Authorization).toBe(`Bearer ${TEST_JWT_1}`);
   expect(request?.headers["x-branch-id"]).toBe("B7");
   expect(request?.headers["x-app"]).toBe("shared");
   expect(request?.headers["x-session-id"]?.length).toBeGreaterThan(10);
@@ -115,9 +115,9 @@ async function testEnvBaseUrlAndBranchHeader(): Promise<void> {
 
 async function testTokenFromStorage(): Promise<void> {
   await renderWithHttp();
-  AppStorage.setData(TOKEN, "Bearer from.storage");
+  AppStorage.setData(TOKEN, `Bearer ${TEST_JWT_2}`);
   const headers = AppHttp.Headers();
-  expect(headers.Authorization).toBe("Bearer from.storage");
+  expect(headers.Authorization).toBe(`Bearer ${TEST_JWT_2}`);
   AppStorage.removeData(TOKEN);
   const headersWithoutToken = AppHttp.Headers();
   expect(headersWithoutToken.Authorization).toBeUndefined();
@@ -129,8 +129,8 @@ async function testStorageKeysAndLogout(): Promise<void> {
   AppStorage.setData(LANG, "ar-SA");
   expect(window.localStorage.getItem("TEST-THEME")).toBe("dark");
   expect(window.localStorage.getItem("TEST-LANG")).toBe("ar-SA");
-  startSession("abc", null);
-  expect(window.sessionStorage.getItem("TEST-TOKEN")).toBe("abc");
+  startSession(TEST_JWT_1, null);
+  expect(window.sessionStorage.getItem("TEST-TOKEN")).toBe(TEST_JWT_1);
   endSession();
   expect(AppStorage.getData(TOKEN)).toBeNull();
   expect(AppStorage.getText(THEME)).toBe("dark");
@@ -156,8 +156,8 @@ async function testRelativeBaseUrlAndAppName(): Promise<void> {
   expect(AppHttp.BaseUrl()).toBe("http://localhost/api");
   expect(Http.API_BASE_URL).toBe("http://localhost/api");
   expect(screen.getAllByText("RELATIVE").length).toBeGreaterThan(0);
-  AppStorage.setData(TOKEN, "xyz");
-  expect(window.sessionStorage.getItem("RELATIVE-TOKEN")).toBe("xyz");
+  AppStorage.setData(TOKEN, TEST_JWT_3);
+  expect(window.sessionStorage.getItem("RELATIVE-TOKEN")).toBe(TEST_JWT_3);
 }
 
 const logoutConfig: UiConfig = {
@@ -172,10 +172,10 @@ async function testLogoutRedirect(): Promise<void> {
     </SharedWebUiProvider>,
   );
   await screen.findByText("logout-ready");
-  startSession("abc", null);
+  startSession(TEST_JWT_1, null);
   endSession([], false);
   expect(window.location.hash).toBe("");
-  startSession("abc", null);
+  startSession(TEST_JWT_1, null);
   endSession();
   expect(window.location.hash).toBe("#logged-out");
   expect(AppStorage.getData(TOKEN)).toBeNull();
@@ -219,7 +219,7 @@ async function fakeMediaFetch(input: string | URL | Request, init?: RequestInit)
 async function testMediaBlob(): Promise<void> {
   await renderWithHttp();
   receivedRequests.length = 0;
-  startSession("Bearer media.token", { id: "u1", name: "Asha" });
+  startSession(`Bearer ${TEST_JWT_3}`, { id: "u1", name: "Asha" });
   globalThis.fetch = fakeMediaFetch as typeof fetch;
   const blob = await AppHttp.Media("/files/logo.png");
   const sameBlob = await AppHttp.Media("https://cdn.test/a.png", { size: "small" });
@@ -227,7 +227,7 @@ async function testMediaBlob(): Promise<void> {
   expect(blob.type).toBe("image/png");
   expect(sameBlob.size).toBe(4);
   expect(receivedRequests[0]?.url).toBe("https://api.test/api/files/logo.png");
-  expect(receivedRequests[0]?.headers.Authorization).toBe("Bearer media.token");
+  expect(receivedRequests[0]?.headers.Authorization).toBe(`Bearer ${TEST_JWT_3}`);
   expect(receivedRequests[0]?.headers["Content-Type"]).toBe(undefined);
   expect(receivedRequests[1]?.url).toBe("https://cdn.test/a.png?size=small");
   endSession([], false);

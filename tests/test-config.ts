@@ -1,6 +1,11 @@
 // Shared test config: two LTR and one RTL language, loaders return plain objects.
 import type { LocaleModule, UiConfig } from "../src/index";
 
+/** Valid test JWTs (no exp: JwtValid is true, so AppHttp does not regenerate). */
+export const TEST_JWT_1 = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MSJ9.sig";
+export const TEST_JWT_2 = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MiJ9.sig";
+export const TEST_JWT_3 = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1MyJ9.sig";
+
 function loadEnglish(): Promise<LocaleModule> {
   const messages = {
     app: { name: "Test App" },

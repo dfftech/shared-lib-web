@@ -50,7 +50,10 @@ export const config: UiConfig = {
   layout: { menuMode: "sidebar", isSidebarCollapsible: true, headerSettings: "menu", toastPosition: "top-end" },
   // AppHttp: every request gets Authorization and x-session-id (x-branch-id is "": no branches here). Use MsUrl above.
   // After log out the browser goes to logoutUrl (here: the app start page, which shows the login).
-  http: { baseUrl: API_BASE_URL, logoutUrl: "/" },
+  http: {
+    baseUrl: API_BASE_URL,
+    logoutUrl: "/",
+  },
   // The menu of the signed-in user (the "backend" of the example is util /authorization/<persona>?roles=<roles>).
   loadMenuNavigation: navSignal,
   // The languages as a signal (sor /load/LANG?active=true: only en-US, so no language switcher).

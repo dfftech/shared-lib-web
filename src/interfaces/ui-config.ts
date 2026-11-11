@@ -231,6 +231,12 @@ export interface HttpConfig {
   loadUrl?: string;
   /** Show the top progress bar during requests. Default true. */
   showProgress?: boolean;
+  /**
+   * URL (or path) of the JWT regenerate service (GET, answers { token } or { data: { token } }), for example
+   * `${MsUrl.utils}/jwt-regenerate`. Before a request, when JwtValid(token) is false, AppHttp gets a new token
+   * (saved in sessionStorage); an error logs out (endSession -> logoutUrl). Not set: no regeneration.
+   */
+  regenerateUrl?: string;
 }
 
 /** The whole configuration of an app. */

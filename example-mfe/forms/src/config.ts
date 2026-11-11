@@ -120,5 +120,8 @@ export const config: UiConfig = {
   // pageMode "path" like the shell: openPage("/profiles") / PageLink here change the path (/profiles), so single-spa
   // in the shell mounts that MFE (without it an MFE would write ?page=profiles).
   layout: { showMenu: false, showScrollToTop: true, toastPosition: "top-end", pageMode: "path" },
-  http: { baseUrl: API_BASE_URL },
+  http: {
+    baseUrl: API_BASE_URL,
+    regenerateUrl: `${MsUrl.utils}/jwt-regenerate`,   // JwtValid false -> new token; error -> log out
+  },
 };

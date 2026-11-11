@@ -63,7 +63,11 @@ export const shellConfig: UiConfig = {
   // <SharedWebUiProvider type="shell">: pages are real paths — /settings, /forms, /profile (not ?page=settings).
   // showLayoutChoice: the settings dialog also offers App layout / Aside layout (shell.tsx renders AppLayout or AsideLayout).
   layout: { menuMode: 'sidebar', isSidebarCollapsible: true, headerSettings: 'menu', toastPosition: 'top-end', showLayoutChoice: true },
-  http: { baseUrl: API_BASE_URL, logoutUrl: '/' },
+  http: {
+    baseUrl: API_BASE_URL,
+    logoutUrl: '/',
+    regenerateUrl: `${MsUrl.utils}/jwt-regenerate`,   // JwtValid false -> new token; error -> log out
+  },
   // The menu of the signed-in user as a signal (util /authorization/<persona>?roles=<roles>).
   loadMenuNavigation: navSignal,
 };

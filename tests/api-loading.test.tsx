@@ -17,6 +17,7 @@ import {
   type UiConfig,
 } from "../src/index.ts";
 import { forgetApiSession } from "../src/state/api-loader.ts";
+import { TEST_JWT_1, TEST_JWT_2 } from "./test-config.ts";
 
 const requests: Array<{ url: string; branchId: string }> = [];
 
@@ -82,7 +83,7 @@ describe("config loaders", () => {
     expect(readRequestedUrls()).toBe("/languages");
     expect(navigationLoadingSignal.value).toBe(true);
     await act(async () => {
-      startSession("Bearer t1", { id: "u1", name: "Asha" });
+      startSession(`Bearer ${TEST_JWT_1}`, { id: "u1", name: "Asha" });
     });
     await waitFor(() => expect(navigationSignal.value.length).toBe(2));
     expect(readRequestedUrls()).toBe("/languages,/branches,/menu");
@@ -110,7 +111,7 @@ describe("config loaders", () => {
 
   it("mfe: only the languages are loaded; no menu skeleton, no branch or menu calls", async () => {
     globalThis.fetch = fakeFetch as typeof fetch;
-    startSession("Bearer t2", { id: "u2", name: "Ravi" });
+    startSession(`Bearer ${TEST_JWT_2}`, { id: "u2", name: "Ravi" });
     render(<SharedWebUiProvider type="mfe" config={buildConfig()}><p>page</p></SharedWebUiProvider>);
     await waitFor(() => expect(languagesSignal.value.length).toBe(2));
     await act(async () => {

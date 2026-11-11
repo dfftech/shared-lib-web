@@ -10,7 +10,7 @@ import {
   isAuthenticatedSignal,
   startSession as startSharedSession,
 } from "shared-lib-web";
-import { AppUUID4, ConstValue } from "dff-util";
+import { ConstValue, JwtEncode } from "dff-util";
 
 function readSessionEmail(): string {
   const user = authUserSignal.value;
@@ -23,9 +23,14 @@ export const sessionEmail = computed(readSessionEmail);
 /** true when signed in. */
 export const isLoggedIn = isAuthenticatedSignal;
 
+const FAKE_TOKEN_SECRET = "example-secret";
+const FAKE_TOKEN_SECONDS = 86400;
+
 /** Fake login: any email works. A real app saves the token from the login API. */
 export function startSession(email: string, remember: boolean): void {
-  const fakeToken = AppUUID4();
+  // A real JWT (1 day): AppHttp checks it with JwtValid before every request.
+  const tokenData = { sub: email };
+  const fakeToken = JwtEncode(tokenData, FAKE_TOKEN_SECRET, FAKE_TOKEN_SECONDS);
   // persona + roles: the menu request (util /authorization/<persona>?roles=...); id: the branches (/load/BRANCHS?profile=).
   const user = { id: email, email: email, persona: "admin", roles: ["ADMIN_ADMIN"] };
   startSharedSession(fakeToken, user, remember);

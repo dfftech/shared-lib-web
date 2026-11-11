@@ -6,6 +6,7 @@
 //   isAuthenticatedSignal.value             // true / false
 //   endSession();                           // log out (LANG, THEME ... are kept)
 //   endSession([BRANCH_ID]);                // log out, also keeps the listed AppStorage keys
+//   refreshSessionToken(newToken);          // new token after a JWT regenerate (user stays; AppHttp calls it itself)
 //
 // Microfrontends: each one bundles its own copy of the library. startSession / endSession fire SESSION_EVENT, and
 // every other copy (startSessionSync, started by the provider) applies it: an auth MFE signs in -> the shell is signed in.
@@ -43,17 +44,18 @@ const LIBRARY_COPY_ID = String(randomNumber);
 /** What SESSION_EVENT carries. */
 interface SessionEventDetail {
   isSignedIn?: boolean;
+  isTokenRefresh?: boolean;
   copyId?: string;
 }
 
 let isSessionSyncStarted = false;
 
 /** Tells every other library copy on the page that the session started or ended. */
-function notifySessionChanged(isSignedIn: boolean): void {
+function notifySessionChanged(isSignedIn: boolean, isTokenRefresh: boolean = false): void {
   if (typeof window === "undefined") {
     return;
   }
-  const detail: SessionEventDetail = { isSignedIn: isSignedIn, copyId: LIBRARY_COPY_ID };
+  const detail: SessionEventDetail = { isSignedIn: isSignedIn, isTokenRefresh: isTokenRefresh, copyId: LIBRARY_COPY_ID };
   const eventInit = { detail: detail };
   const sessionEvent = new CustomEvent(SESSION_EVENT, eventInit);
   window.dispatchEvent(sessionEvent);
@@ -85,6 +87,26 @@ export function startSession(token: string, user: AuthUser | null, isRemembered:
   authUserSignal.value = user;
   sessionTokenSignal.value = token;
   notifySessionChanged(true);
+}
+
+/**
+ * Replaces the token after a JWT regenerate: user, branch and REMEMBER_ME stay, no menu / branch reload.
+ * Every other library copy on the page takes the new token too.
+ */
+export function refreshSessionToken(token: string): void {
+  const tokenKey = readTokenKey();
+  AppStorage.setData(tokenKey, token);
+  sessionTokenSignal.value = token;
+  notifySessionChanged(true, true);
+}
+
+/** Another library copy refreshed the token: read it from AppStorage. */
+function applyRefreshedToken(): void {
+  const tokenKey = readTokenKey();
+  const token = AppStorage.getData(tokenKey);
+  if (typeof token === "string" && token.length > 0) {
+    sessionTokenSignal.value = token;
+  }
 }
 
 /** Reads a saved session (sessionStorage). Called by SharedWebUiProvider. */
@@ -137,6 +159,10 @@ export function handleSessionEvent(event: Event): void {
   const detail = (event as CustomEvent<SessionEventDetail>).detail;
   const isOwnEvent = detail?.copyId === LIBRARY_COPY_ID;
   if (!detail || isOwnEvent) {
+    return;
+  }
+  if (detail.isTokenRefresh) {
+    applyRefreshedToken();
     return;
   }
   if (detail.isSignedIn) {

@@ -197,6 +197,8 @@ export {
   redirectToLogoutUrl,
   isAuthenticatedSignal,
   readAccessToken,
+  readTokenKey,
+  refreshSessionToken,
   restoreSession,
   sessionTokenSignal,
   startSession,
@@ -212,6 +214,9 @@ export {
   toAbsoluteUrl,
   uploadToSignedUrl,
   clearSharedGetCache,
+  jwtRegenerateCall,
+  readRegenerateUrl,
+  ensureFreshToken,
   type HttpHeaders,
   type HttpParams,
 } from "./utils/app-http.ts";

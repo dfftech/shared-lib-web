@@ -22,13 +22,19 @@
 //   const saved = await AppHttp.Post(saveUrl, body);
 //   AppHttp.setHeader("x-custom", value);
 //
+//   // JWT regenerate: set http.regenerateUrl. Before every request: JwtValid(token) false -> GET regenerateUrl once
+//   // (shared page-wide in readSharedGetCache) -> new token ({ token } or { data: { token } }) saved in sessionStorage;
+//   // an error or no token -> endSession() (log out, goes to http.logoutUrl).
+//   http: { baseUrl, logoutUrl: "/login", regenerateUrl: `${MsUrl.utils}/jwt-regenerate` }
+//
 //   // file upload to a signed URL
 //   const signed = await AppHttp.Post(`${MsUrl.utils}/s3/upload-url`, { fileName: file.name });
 //   const uploaded = await uploadToSignedUrl(file, signed.data.upload, signed.data.download);
 //   // uploaded = { filename, mimetype, url }
 
-import { Http, type FileType } from "dff-util";
+import { Http, JwtValid, type FileType } from "dff-util";
 import type { UiConfig } from "../interfaces/ui-config.ts";
+import { endSession, refreshSessionToken } from "../state/auth-service.ts";
 import { ShowProgress } from "../state/progress-service.ts";
 import { readAppConfig } from "./app-config.ts";
 import { AppStorage } from "./app-storage.ts";
@@ -40,6 +46,7 @@ export type HttpParams = Record<string, string | number | boolean | null | undef
 export type HttpHeaders = Record<string, string>;
 
 const CONFIG_MISSING = "shared-lib-web: config is missing. Render <SharedWebUiProvider config={config}> or call setAppConfig(config) first.";
+const REGENERATE_URL_MISSING = "shared-lib-web: the token is not valid and config.http.regenerateUrl is empty.";
 const BASE_URL_MISSING = "shared-lib-web: no API base URL. Set config.http.baseUrl or window.env.REACT_APP_<APPNAMEKEY>_API_BASE_URL.";
 
 /** window.env name (without prefix) of the API base URL. */
@@ -147,6 +154,71 @@ async function readResponseBody(response: Response): Promise<unknown> {
   return response.text();
 }
 
+/** config.http.regenerateUrl, or "" when not set. */
+export function readRegenerateUrl(): string {
+  const config = readAppConfig();
+  return config?.http?.regenerateUrl ?? "";
+}
+
+/**
+ * GET http.regenerateUrl. Returns the new token from { token } or { data: { token } }.
+ * Throws when regenerateUrl is empty or the reply has no token.
+ */
+export async function jwtRegenerateCall(): Promise<string> {
+  const regenerateUrl = readRegenerateUrl();
+  if (regenerateUrl.length === 0) {
+    throw new Error(REGENERATE_URL_MISSING);
+  }
+  const fullUrl = AppHttp.FullUrl(regenerateUrl);
+  const headers = AppHttp.Headers();
+  const reply = (await Http.Get(fullUrl, {}, headers)) as { token?: string; data?: { token?: string } } | undefined;
+  const token = reply?.token ?? reply?.data?.token;
+  if (!token) {
+    throw new Error("jwt-regenerate: no token");
+  }
+  refreshSessionToken(token);
+  return token;
+}
+
+/** The regenerate failed: log out (endSession goes to http.logoutUrl). */
+function handleRegenerateError(): void {
+  endSession();
+}
+
+/**
+ * Runs the regenerate once: the running call is kept in readSharedGetCache under the config regenerateUrl,
+ * so every request (shell and MFEs) waits for the same one.
+ */
+function regenerateOnce(regenerateUrl: string): Promise<unknown> {
+  const cache = readSharedGetCache();
+  const running = cache.get(regenerateUrl);
+  if (running) {
+    return running;
+  }
+  const request = jwtRegenerateCall();
+  const handled = request.catch(handleRegenerateError);
+  const forget = forgetSharedGet.bind(null, regenerateUrl);
+  const regenerate = handled.finally(forget);
+  cache.set(regenerateUrl, regenerate);
+  return regenerate;
+}
+
+/**
+ * Before a request: no token or JwtValid(token) -> nothing. Otherwise the token is regenerated (once);
+ * an empty config.http.regenerateUrl throws only then (at the time of the call).
+ */
+export async function ensureFreshToken(): Promise<void> {
+  const token = readJwtToken();
+  if (token.length === 0 || JwtValid(token)) {
+    return;
+  }
+  const regenerateUrl = readRegenerateUrl();
+  if (regenerateUrl.length === 0) {
+    throw new Error(REGENERATE_URL_MISSING);
+  }
+  await regenerateOnce(regenerateUrl);
+}
+
 export class AppHttp {
   /**
    * API base URL: window.env REACT_APP_<APPNAMEKEY>_API_BASE_URL first, then config.http.baseUrl.
@@ -209,6 +281,7 @@ export class AppHttp {
 
   /** GET with query params. */
   static async Get(url: string, params: HttpParams = {}, customHeaders: HttpHeaders = {}): Promise<unknown> {
+    await ensureFreshToken();
     const baseHeaders = AppHttp.Headers();
     const headers = { ...baseHeaders, ...customHeaders };
     const fullUrl = AppHttp.FullUrl(url);
@@ -239,6 +312,7 @@ export class AppHttp {
 
   /** POST a JSON body. */
   static async Post(url: string, body: unknown, customHeaders: HttpHeaders = {}): Promise<unknown> {
+    await ensureFreshToken();
     const baseHeaders = AppHttp.Headers();
     const headers = { ...baseHeaders, ...customHeaders };
     const fullUrl = AppHttp.FullUrl(url);
@@ -248,6 +322,7 @@ export class AppHttp {
 
   /** PUT a JSON body to url/id. */
   static async Put(url: string, id: string, body: unknown): Promise<unknown> {
+    await ensureFreshToken();
     const headers = AppHttp.Headers();
     const fullUrl = AppHttp.FullUrl(url);
     const itemUrl = `${fullUrl}/${id}`;
@@ -257,6 +332,7 @@ export class AppHttp {
 
   /** DELETE url/id. */
   static async Delete(url: string, id: string, params: HttpParams = {}): Promise<unknown> {
+    await ensureFreshToken();
     const headers = AppHttp.Headers();
     const fullUrl = AppHttp.FullUrl(url);
     const itemUrl = `${fullUrl}/${id}`;
@@ -266,6 +342,7 @@ export class AppHttp {
 
   /** PATCH a JSON body. */
   static async Patch(url: string, body: unknown): Promise<unknown> {
+    await ensureFreshToken();
     const headers = AppHttp.Headers();
     const bodyText = JSON.stringify(body ?? {});
     const requestInit = { method: "PATCH", headers: headers, body: bodyText };
@@ -314,6 +391,7 @@ export class AppHttp {
    *   const objectUrl = URL.createObjectURL(blob);   // <img src={objectUrl}>; URL.revokeObjectURL(objectUrl) later
    */
   static async Media(url: string, params?: HttpParams): Promise<Blob> {
+    await ensureFreshToken();
     const fullUrl = AppHttp.FullUrl(url);
     const headers = AppHttp.RawHeaders();
     return Http.FileDownload(fullUrl, params, headers);
@@ -321,6 +399,7 @@ export class AppHttp {
 
   /** Downloads a file and saves it in the browser. */
   static async DownloadFile(url: string, params: HttpParams = {}, fileName?: string): Promise<void> {
+    await ensureFreshToken();
     const headers = AppHttp.RawHeaders();
     const fullUrl = AppHttp.FullUrl(url);
     const request = Http.FileDownload(fullUrl, params, headers);
