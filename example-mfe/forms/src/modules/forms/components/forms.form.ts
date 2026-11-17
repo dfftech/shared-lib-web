@@ -1,6 +1,7 @@
 // forms.form.ts — TypeScript only: form set-up and the props of the Type* controls.
 import {
   useUi,
+  type OtpVerifiedResult,
   type TranslateFunction,
   type TypeButtonProps,
   type TypeDateProps,
@@ -13,7 +14,15 @@ import type { OptionType } from "dff-util";
 import type { FormEventHandler } from "react";
 import { useForm, type Control } from "react-hook-form";
 import { getDefaultContact } from "../hooks/data.ts";
-import { CONTACT_FORM_ID, contactCancel, contactSubmitted, setContactReset, submittedContact } from "../hooks/service.ts";
+import {
+  CONTACT_FORM_ID,
+  contactCancel,
+  contactEmailVerify,
+  contactSubmitted,
+  setContactForm,
+  submittedContact,
+  verifiedEmailOtp,
+} from "../hooks/service.ts";
 import { roleOptions } from "../hooks/service-load.ts";
 import type { ContactType } from "../hooks/types.ts";
 import { contactValidation } from "../hooks/validation.ts";
@@ -29,7 +38,11 @@ export interface FormsFormModel {
   notesProps: TypeTextAreaProps<ContactType>;
   cancelProps: TypeButtonProps;
   submitProps: TypeButtonProps;
+  verifyEmailProps: TypeButtonProps;
   valuesTitle: string;
+  /** The verified one-time code of the email as JSON ("" = not verified yet). */
+  verifiedOtpJson: string;
+  verifiedTitle: string;
   /** The last submitted values as JSON ("" = nothing submitted yet). */
   submittedJson: string;
   onSubmit: FormEventHandler<HTMLFormElement>;
@@ -67,9 +80,18 @@ function buildSubmitProps(t: TranslateFunction): TypeButtonProps {
   return { type: "submit", form: CONTACT_FORM_ID, icon: "Send", label: t("forms.submit") };
 }
 
+function buildVerifyEmailProps(t: TranslateFunction): TypeButtonProps {
+  return { action: "secondary", isOutline: true, size: "sm", icon: "ShieldCheck", label: t("ui.otpVerify"), onPress: contactEmailVerify };
+}
+
 /** The submitted values as readable JSON ("" when nothing was submitted). */
 function readSubmittedJson(values: ContactType | null): string {
   return values ? JSON.stringify(values, null, 2) : "";
+}
+
+/** The verified OTP result as readable JSON ("" when not verified). */
+function readVerifiedOtpJson(result: OtpVerifiedResult | null): string {
+  return result ? JSON.stringify(result, null, 2) : "";
 }
 
 export function useFormsForm(): FormsFormModel {
@@ -77,11 +99,12 @@ export function useFormsForm(): FormsFormModel {
   const defaultValues = getDefaultContact();
   const formOptions = { defaultValues: defaultValues };
   const form = useForm<ContactType>(formOptions);
-  setContactReset(form.reset);
+  setContactForm(form);
   const onSubmit = form.handleSubmit(contactSubmitted);
   const control = form.control;
   const submitted = submittedContact.value;
   const options = roleOptions.value;
+  const verifiedOtp = verifiedEmailOtp.value;
 
   return {
     titleText: t("forms.title"),
@@ -94,7 +117,10 @@ export function useFormsForm(): FormsFormModel {
     notesProps: buildNotesProps(control, t),
     cancelProps: buildCancelProps(t),
     submitProps: buildSubmitProps(t),
+    verifyEmailProps: buildVerifyEmailProps(t),
     valuesTitle: t("forms.values"),
+    verifiedOtpJson: readVerifiedOtpJson(verifiedOtp),
+    verifiedTitle: t("ui.otpVerified"),
     submittedJson: readSubmittedJson(submitted),
     onSubmit: onSubmit,
   };

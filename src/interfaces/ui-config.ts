@@ -217,6 +217,21 @@ export type PageMode = "query" | "path";
 /** Toast corner / edge. "end" is right in LTR and left in RTL. */
 export type ToastPosition = "top-start" | "top-center" | "top-end" | "bottom-start" | "bottom-center" | "bottom-end";
 
+/**
+ * The one-time code (OTP) services used by OtpModal / openOtpModal. URLs or paths (a path gets the base URL):
+ *   http: { otp: { sendUrl: `${MsUrl.sor}/otp-send`, verifyUrl: `${MsUrl.sor}/otp-verify`, resendSeconds: 180 } }
+ */
+export interface OtpConfig {
+  /** POST { userid } -> { data: { message, oid, uid } } (or the object itself). */
+  sendUrl: string;
+  /** POST { otp, oid, uid } -> { data: { message, oid, uid } } (or the object itself). */
+  verifyUrl: string;
+  /** Seconds before "Resend code" works again. Default 180. */
+  resendSeconds?: number;
+  /** Number of characters of the code. Default 6. */
+  length?: number;
+}
+
 /** Backend settings used by AppHttp and the session. */
 export interface HttpConfig {
   /** API base URL, for example "https://api.example.com/api" or "/api". window.env API_BASE_URL wins when set. */
@@ -237,6 +252,8 @@ export interface HttpConfig {
    * (saved in sessionStorage); an error logs out (endSession -> logoutUrl). Not set: no regeneration.
    */
   regenerateUrl?: string;
+  /** One-time code services of OtpModal (send / verify). Not set: openOtpModal shows an error toast. */
+  otp?: OtpConfig;
 }
 
 /** The whole configuration of an app. */

@@ -10,6 +10,8 @@ export interface FieldWrapperProps {
   errorText?: string;
   hint?: string;
   className?: string;
+  /** Keep the label for screen readers only (not shown). Default false. */
+  isLabelHidden?: boolean;
   children?: ReactNode;
 }
 
@@ -19,16 +21,17 @@ export function readMessageId(inputId: string): string {
 }
 
 export function FieldWrapper(props: FieldWrapperProps) {
-  const { inputId, label, errorText, hint, className, children } = props;
+  const { inputId, label, errorText, hint, className, isLabelHidden = false, children } = props;
   const messageId = readMessageId(inputId);
   const messageText = errorText ?? hint;
   const messageClassName = errorText ? "label text-error" : "label";
   const classList = ["fieldset", className];
   const wrapperClassName = joinClassNames(classList);
+  const labelClassName = isLabelHidden ? "sr-only" : "fieldset-legend";
 
   return (
     <fieldset className={wrapperClassName}>
-      <label className="fieldset-legend" htmlFor={inputId}>
+      <label className={labelClassName} htmlFor={inputId}>
         {label}
       </label>
       {children}

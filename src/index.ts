@@ -38,7 +38,7 @@ export type {
   ToastPosition,
   UiConfig,
 } from "./interfaces/ui-config.ts";
-export type { HttpConfig } from "./interfaces/ui-config.ts";
+export type { HttpConfig, OtpConfig } from "./interfaces/ui-config.ts";
 export type {
   AuthUser,
   BranchOption,
@@ -358,6 +358,31 @@ export { PageLoader } from "./components/page-loader.tsx";
 export { TopProgress } from "./components/top-progress.tsx";
 export { ScrollToTop, scrollToTop, type ScrollToTopProps } from "./components/scroll-to-top.tsx";
 export { SettingsMenu, closeSettings, openSettings, type SettingsMenuProps } from "./components/settings-menu.tsx";
+export { OTP_FORM_ID, OtpModal } from "./components/otp-modal.tsx";
+export {
+  DEFAULT_OTP_LENGTH,
+  DEFAULT_OTP_RESEND_SECONDS,
+  cancelOtpModal,
+  closeOtpModal,
+  formatOtpCountdown,
+  handleOtpResend,
+  handleOtpVerify,
+  openOtpModal,
+  otpIsSendingSignal,
+  otpIsVerifyingSignal,
+  otpModalSignal,
+  otpResendSecondsSignal,
+  otpSendCall,
+  otpSessionSignal,
+  readOtpConfig,
+  readOtpLength,
+  stopOtpResendCountdown,
+  type OtpFormType,
+  type OtpModalState,
+  type OtpOpenOptions,
+  type OtpSession,
+  type OtpVerifiedResult,
+} from "./state/otp-service.ts";
 
 // ---- Skeletons ----
 export { SkeletonArticle } from "./skeleton/skeleton-article.tsx";

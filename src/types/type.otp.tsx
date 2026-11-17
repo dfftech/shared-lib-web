@@ -18,6 +18,8 @@ import type { TypeFieldProps } from "./field-props.ts";
 export interface TypeOtpProps<TFieldValues extends FieldValues> extends TypeFieldProps<TFieldValues> {
   /** Number of characters. Default 6. */
   length?: number;
+  /** Keep the label for screen readers only (not shown). Default false. */
+  isLabelHidden?: boolean;
 }
 
 /** Builds the boxes that show one character each. The box at the cursor is highlighted. */
@@ -43,7 +45,7 @@ function buildOtpBoxes(value: string, length: number, hasError: boolean): ReactE
 }
 
 export function TypeOtp<TFieldValues extends FieldValues>(props: TypeOtpProps<TFieldValues>) {
-  const { control, name, label, rules, error, hint, disabled, className, length = 6 } = props;
+  const { control, name, label, rules, error, hint, disabled, className, length = 6, isLabelHidden = false } = props;
   const { t } = useUi();
   const inputId = useId();
   const controllerOptions = { control: control, name: name, rules: rules, disabled: disabled };
@@ -57,7 +59,14 @@ export function TypeOtp<TFieldValues extends FieldValues>(props: TypeOtpProps<TF
   const boxes = buildOtpBoxes(value, length, hasError);
 
   return (
-    <FieldWrapper inputId={inputId} label={label} errorText={errorText} hint={hint} className={className}>
+    <FieldWrapper
+      inputId={inputId}
+      label={label}
+      errorText={errorText}
+      hint={hint}
+      className={className}
+      isLabelHidden={isLabelHidden}
+    >
       <div className="relative flex w-fit gap-2" dir="ltr">
         <input
           id={inputId}

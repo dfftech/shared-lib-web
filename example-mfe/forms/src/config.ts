@@ -123,5 +123,7 @@ export const config: UiConfig = {
   http: {
     baseUrl: API_BASE_URL,
     regenerateUrl: `${MsUrl.utils}/jwt-regenerate`,   // JwtValid false -> new token; error -> log out
+    // OtpModal: send { userid } / verify { otp, oid, uid }; "Resend code" after resendSeconds.
+    otp: { sendUrl: `${MsUrl.sor}/otp-send`, verifyUrl: `${MsUrl.sor}/otp-verify`, resendSeconds: 180 },
   },
 };

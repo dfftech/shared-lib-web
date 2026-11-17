@@ -63,6 +63,18 @@ export const DEFAULT_UI_MESSAGES: LocaleMessages = {
     uploadTypeError: "\"{{name}}\" is not an allowed file type. Please upload {{types}}.",
     uploadSizeError: "\"{{name}}\" ({{size}}) is larger than the allowed {{max}}.",
     uploadTotalError: "Total size {{size}} is larger than the allowed {{max}}.",
+    otpTitle: "Verification code",
+    otpText: "Please enter the OTP sent to your registered id to verify your identity.",
+    otpCode: "OTP",
+    otpNoCode: "Didn't receive the code?",
+    otpResend: "Resend code",
+    otpResendIn: "Resend in {{time}}",
+    otpVerify: "Verify",
+    otpSent: "The code was sent.",
+    otpSendFailed: "Could not send the code. Please try again.",
+    otpVerified: "Verified.",
+    otpInvalid: "The code is not valid. Please try again.",
+    otpSessionMissing: "Please send a new code first.",
   },
 };
 

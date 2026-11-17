@@ -210,7 +210,7 @@ Keys: `TOKEN`, `AUTH_USER`, `SESSION_INFO`, `SCREEN_ACCESS`, `SCREEN_ACTION`, `N
 | Group | Exports |
 | --- | --- |
 | Form controls (react-hook-form) | `TypeInput`, `TypeTextArea`, `TypeSelect`, `TypeSwitch`, `TypeCheckbox`, `TypeDate`, `TypeTime`, `TypeOtp`, `TypeList`, `TypeLang`, `TypeSearch`, `TypeFilter`, `TypeUpload`, `TypeUploadBox` |
-| Actions / overlays | `TypeButton`, `TypeDropdown`, `TypeModal`, `TypeDrawer`, `TypeConfirm`, `TypeTable`, `TypeIcon`, `TypeImage`, `TypeVideo`, `MediaViewer` |
+| Actions / overlays | `TypeButton`, `TypeDropdown`, `TypeModal`, `TypeDrawer`, `TypeConfirm`, `OtpModal`, `TypeTable`, `TypeIcon`, `TypeImage`, `TypeVideo`, `MediaViewer` |
 | App parts | `AppBrand`, `UserMenu`, `LanguageSwitcher`, `ThemeSwitcher`, `BranchSwitcher`, `SettingsMenu`, `ToastContainer`, `TopProgress`, `ScrollToTop`, `PageLoader` |
 | Pages / states | `RequireAccess`, `PermissionDenied`, `PageNotFound`, `ComingSoon`, `EmptyState` |
 | Page blocks | `HeadLayout`, `ArticleLayout`, `ContentLayout`, `GridLayout`, `FloatLayout` |
@@ -222,6 +222,45 @@ Keys: `TOKEN`, `AUTH_USER`, `SESSION_INFO`, `SCREEN_ACCESS`, `SCREEN_ACTION`, `N
 <TypeInput control={control} name="email" label={t("user.email")} type="email" rules={rules.email} />
 <TypeButton action="primary" label={t("save")} icon="Save" type="submit" />
 <TypeIcon name="users" />
+```
+
+
+### OTP modal — `OtpModal`
+
+1. Set the send / verify URLs in `config.ts`:
+
+```ts
+http: {
+  baseUrl: API_BASE_URL,
+  otp: {
+    sendUrl: `${MsUrl.sor}/otp-send`,     // POST { userid }          -> { data: { message, oid, uid } }
+    verifyUrl: `${MsUrl.sor}/otp-verify`, // POST { otp, oid, uid }   -> { data: { message, oid, uid } }
+    resendSeconds: 180,                   // optional, default 180
+    length: 6,                            // optional, default 6
+  },
+},
+```
+
+2. Render `<OtpModal />` once (page or layout) and open it. The code is sent on open:
+
+```tsx
+import { OtpModal, openOtpModal, type OtpVerifiedResult } from "shared-lib-web";
+
+export function handleEmailVerified(result: OtpVerifiedResult): void {
+  // result = { oid, uid, otp }
+}
+
+export function verifyEmail(): void {
+  openOtpModal({
+    userId: email,                        // sent as "userid" and shown in the dialog
+    title: t("login.otpTitle"),           // optional, default t("ui.otpTitle")
+    message: t("login.otpMessage"),       // optional, default t("ui.otpText")
+    onVerified: handleEmailVerified,      // optional, called after a successful verify
+    onCancel: handleOtpCancel,            // optional
+  });
+}
+
+<OtpModal />
 ```
 
 Every component exports its `*Props` type (`TypeInputProps`, `AppLayoutProps` …).
