@@ -35,7 +35,7 @@ export interface SettingsMenuProps {
   showNavigationMode?: boolean;
   /** Sidebar look: full-width row with the label; icon only on the collapsed rail. Default false. */
   isInSidebar?: boolean;
-  /** Show the App layout / Aside layout choice. Default config.layout.showLayoutChoice (false). */
+  /** Show the App layout / Aside layout choice. Default config.layout.showLayoutChoice (true). */
   showLayoutChoice?: boolean;
 }
 
@@ -166,7 +166,7 @@ export function SettingsMenu(props: SettingsMenuProps) {
   const darkTitle = t("ui.darkThemes");
   const sidebarText = t("ui.sidebar");
   const megaMenuText = t("ui.megaMenu");
-  const showLayoutChoice = props.showLayoutChoice ?? config.layout?.showLayoutChoice ?? false;
+  const showLayoutChoice = props.showLayoutChoice ?? config.layout?.showLayoutChoice ?? true;
   const layoutChoice = layoutChoiceSignal.value;
   const appLayoutText = t("ui.appLayout");
   const asideLayoutText = t("ui.asideLayout");

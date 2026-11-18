@@ -11,23 +11,25 @@
 // An MFE has no layout of its own: it reads layoutChoiceSignal to know whether the shell shows a header.
 
 import { signal } from "@preact/signals-react";
+import { uiConfigSignal } from "./signals.ts";
 import { AppStorage } from "../utils/app-storage.ts";
 import { LAYOUT_CHOICE } from "../utils/storage-keys.ts";
 
 export type LayoutChoice = "app" | "aside";
 
-/** The current layout choice ("app" until a saved one is read). */
-export const layoutChoiceSignal = signal<LayoutChoice>("app");
+/** The current layout choice ("aside" until a saved one is read). */
+export const layoutChoiceSignal = signal<LayoutChoice>("aside");
 
-/** "aside" stays "aside"; anything else (nothing saved, an old value) is "app". */
-export function toLayoutChoice(value: string | null | undefined): LayoutChoice {
-  return value === "aside" ? "aside" : "app";
+/** Keeps a valid choice; missing or invalid values use the configured default. */
+export function toLayoutChoice(value: string | null | undefined, defaultChoice: LayoutChoice = "aside"): LayoutChoice {
+  return value === "app" || value === "aside" ? value : defaultChoice;
 }
 
 /** Reads the saved choice into layoutChoiceSignal (not saved again). */
 export function applySavedLayoutChoice(): void {
   const savedValue = AppStorage.getText(LAYOUT_CHOICE);
-  const choice = toLayoutChoice(savedValue);
+  const defaultChoice = uiConfigSignal.peek()?.layout?.defaultLayout ?? "aside";
+  const choice = toLayoutChoice(savedValue, defaultChoice);
   if (choice !== layoutChoiceSignal.peek()) {
     layoutChoiceSignal.value = choice;
   }

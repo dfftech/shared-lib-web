@@ -19,13 +19,25 @@ describe("layout choice", () => {
   afterEach(() => {
     cleanup();
     localStorage.clear();
-    layoutChoiceSignal.value = "app";
+    layoutChoiceSignal.value = "aside";
   });
 
-  it("only 'aside' is aside; anything else is 'app'", () => {
+  it("defaults to aside; only an explicit 'app' choice selects app", () => {
     expect(toLayoutChoice("aside")).toBe("aside");
-    expect(toLayoutChoice("single")).toBe("app");
-    expect(toLayoutChoice(null)).toBe("app");
+    expect(toLayoutChoice("app")).toBe("app");
+    expect(toLayoutChoice("single")).toBe("aside");
+    expect(toLayoutChoice(null)).toBe("aside");
+  });
+
+  it("uses aside when there is no saved choice", () => {
+    render(<SharedWebUiProvider config={config}><p>page</p></SharedWebUiProvider>);
+    expect(layoutChoiceSignal.value).toBe("aside");
+  });
+
+  it("uses the configured default when there is no saved choice", () => {
+    const appDefaultConfig: UiConfig = { ...config, layout: { defaultLayout: "app" } };
+    render(<SharedWebUiProvider config={appDefaultConfig}><p>page</p></SharedWebUiProvider>);
+    expect(layoutChoiceSignal.value).toBe("app");
   });
 
   it("the provider reads the saved choice; changeLayoutChoice saves it", () => {
@@ -35,7 +47,7 @@ describe("layout choice", () => {
     });
     expect(AppStorage.getText(LAYOUT_CHOICE)).toBe("aside");
     cleanup();
-    layoutChoiceSignal.value = "app";
+    layoutChoiceSignal.value = "aside";
     render(<SharedWebUiProvider config={config}><p>page</p></SharedWebUiProvider>);
     expect(layoutChoiceSignal.value).toBe("aside");
   });

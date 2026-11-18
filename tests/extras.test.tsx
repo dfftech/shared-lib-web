@@ -133,7 +133,7 @@ async function testSettingsMenu(): Promise<void> {
   fireEvent.click(darkButton);
   expect(themeSignal.value).toBe("dark");
   expect(within(dialog).getByRole("button", { name: "Mega menu" })).toBeTruthy();
-  expect(within(dialog).queryByRole("button", { name: "Aside layout" })).toBeNull();
+  expect(within(dialog).getByRole("button", { name: "Aside layout" }).getAttribute("aria-pressed")).toBe("true");
   fireEvent.keyDown(dialog, { key: "Escape" });
   expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull();
 }

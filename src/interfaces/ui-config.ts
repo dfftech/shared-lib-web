@@ -156,6 +156,8 @@ export type NavigationMode = "sidebar" | "megamenu";
 
 /** Layout settings. */
 export interface LayoutConfig {
+  /** Layout used when no valid LAYOUT_CHOICE preference is saved. Default "aside". */
+  defaultLayout?: "app" | "aside";
   /** Menu mode at start: "sidebar" or "megamenu". Default "sidebar". The user's pick is saved as MENU_MODE. */
   menuMode?: NavigationMode;
   /** Show the menu (sidebar / mega menu bar) at start. Change it at runtime with setMenuVisible(). Default true. */
@@ -166,7 +168,7 @@ export interface LayoutConfig {
   headerSettings?: "inline" | "menu";
   /**
    * Show the layout choice (App layout / Aside layout) in the settings dialog — for apps that render AppLayout or
-   * AsideLayout from layoutChoiceSignal (a shell). Saved as LAYOUT_CHOICE. Default false.
+   * AsideLayout from layoutChoiceSignal (a shell). Saved as LAYOUT_CHOICE. Default true.
    */
   showLayoutChoice?: boolean;
   /** Where toasts appear. Default "top-end". */
