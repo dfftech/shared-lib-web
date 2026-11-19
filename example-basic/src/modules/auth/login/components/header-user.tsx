@@ -19,5 +19,5 @@ export interface HeaderUserProps {
 export function HeaderUser(props: HeaderUserProps) {
   const email = sessionEmail.value;
   const name = readNameFromEmail(email);
-  return <UserMenu name={name} email={email} items={userMenuItems} onLogout={endSession} isInSidebar={props.isInSidebar} />;
+  return <UserMenu name={name} email={email} avatarUrl="/avatar.svg" items={userMenuItems} onLogout={endSession} isInSidebar={props.isInSidebar} />;
 }

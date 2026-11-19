@@ -7,7 +7,8 @@
 //   <UserMenu name="Asha Rao" email="asha@example.com" items={userMenuItems} onLogout={handleLogout} />
 //   <AppLayout sidebarUser={<UserMenu isInSidebar ... />}>   // at the bottom of the side menu
 
-import type { MouseEventHandler, ReactElement } from "react";
+import type { MouseEventHandler, ReactElement, SyntheticEvent } from "react";
+import { useReducer } from "react";
 import { useUi } from "../context/use-ui.ts";
 import { PageLink } from "../query/page-link.tsx";
 import { isRailEverywhereSignal, isSidebarCollapsedSignal } from "../state/signals.ts";
@@ -40,22 +41,50 @@ interface UserAvatarProps {
   avatarUrl?: string;
 }
 
-/** Round picture, or the initials when there is no picture. */
-function UserAvatar(props: UserAvatarProps) {
-  const { name, avatarUrl } = props;
-  const initials = readInitials(name);
-  if (avatarUrl) {
-    return (
-      <div className="w-9 shrink-0 rounded-full">
-        <img src={avatarUrl} alt="" />
-      </div>
-    );
+interface UserAvatarImageProps {
+  avatarUrl: string;
+  firstCharacter: string;
+}
+
+function reduceAvatarError(_hasError: boolean, _event: SyntheticEvent<HTMLImageElement>): boolean {
+  return true;
+}
+
+function UserAvatarImage(props: UserAvatarImageProps) {
+  const { avatarUrl, firstCharacter } = props;
+  const [hasError, dispatchAvatarError] = useReducer(reduceAvatarError, false);
+  if (hasError) {
+    return <UserAvatarFallback firstCharacter={firstCharacter} />;
   }
   return (
-    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-content">
-      {initials}
+    <div className="size-9 shrink-0 overflow-hidden rounded-full">
+      <img src={avatarUrl} alt="" className="size-full object-cover" onError={dispatchAvatarError} />
     </div>
   );
+}
+
+interface UserAvatarFallbackProps {
+  firstCharacter: string;
+}
+
+function UserAvatarFallback(props: UserAvatarFallbackProps) {
+  const { firstCharacter } = props;
+  return (
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-content">
+      {firstCharacter}
+    </div>
+  );
+}
+
+/** Round picture, or the first character of the name when there is no picture. */
+function UserAvatar(props: UserAvatarProps) {
+  const { name, avatarUrl } = props;
+  const firstLetter = name.charAt(0);
+  const firstCharacter = firstLetter.toUpperCase();
+  if (!avatarUrl) {
+    return <UserAvatarFallback firstCharacter={firstCharacter} />;
+  }
+  return <UserAvatarImage key={avatarUrl} avatarUrl={avatarUrl} firstCharacter={firstCharacter} />;
 }
 
 /** Dropdown and menu classes for the header, the open sidebar and the collapsed rail. */

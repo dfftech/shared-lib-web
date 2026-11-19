@@ -224,6 +224,27 @@ async function testSidebarUser(): Promise<void> {
   expect(within(accountButton).getByText("asha@example.com")).toBeTruthy();
 }
 
+function testMissingAvatarShowsFirstCharacter(): void {
+  render(
+    <SharedWebUiProvider config={testConfig}>
+      <UserMenu name="Asha Rao" />
+    </SharedWebUiProvider>,
+  );
+  expect(screen.getByText("A")).toBeTruthy();
+}
+
+function testBrokenAvatarShowsFirstCharacter(): void {
+  const view = render(
+    <SharedWebUiProvider config={testConfig}>
+      <UserMenu name="Asha Rao" avatarUrl="/missing-avatar.png" />
+    </SharedWebUiProvider>,
+  );
+  const image = view.container.querySelector("img");
+  expect(image).not.toBeNull();
+  fireEvent.error(image as HTMLImageElement);
+  expect(screen.getByText("A")).toBeTruthy();
+}
+
 function setSmallScreen(): void {
   isSmallScreenSignal.value = true;
 }
@@ -267,6 +288,8 @@ describe("Optional layout", function describeOptionalLayout() {
   afterEach(cleanup);
   it("main entry has components but no app shell", testMainEntryHasNoShell);
   it("AppLayout shows the user at the bottom of the sidebar", testSidebarUser);
+  it("UserMenu shows the first character when no avatar is set", testMissingAvatarShowsFirstCharacter);
+  it("UserMenu shows the first character when an avatar fails to load", testBrokenAvatarShowsFirstCharacter);
   it("AsideLayout has no header, no mega menu and a rail on small screens", testAsideLayout);
   it("AppLayout can hide the sidebar", testHideSidebar);
   it("AppLayout can take an own header, sidebar and footer", testReplaceParts);

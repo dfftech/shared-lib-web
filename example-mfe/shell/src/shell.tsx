@@ -91,10 +91,10 @@ function Shell() {
   const headerUserClassName = isDesktopSidebarSignal.value ? "lg:hidden" : undefined;
   const headerEnd = (
     <div className={headerUserClassName}>
-      <UserMenu name={email} email={email} onLogout={signOut} />
+      <UserMenu name={email} email={email} avatarUrl="/avatar.svg" onLogout={signOut} />
     </div>
   );
-  const sidebarUser = <UserMenu isInSidebar name={email} email={email} onLogout={signOut} />;
+  const sidebarUser = <UserMenu isInSidebar name={email} email={email} avatarUrl="/avatar.svg" onLogout={signOut} />;
   const mfeError = mfeErrorSignal.value;
   const showMfeError = Boolean(mfeRoute) && mfeError?.id === mfeRoute?.id;
 
