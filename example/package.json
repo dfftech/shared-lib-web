@@ -1,6 +1,6 @@
 {
   "name": "shared-lib-web-example",
-  "private": true,
+  "private": false,
   "version": "0.0.0",
   "type": "module",
   "description": "Example app for shared-lib-web. Vite is only used here (an app needs a bundler); the library itself is built with tsc.",
