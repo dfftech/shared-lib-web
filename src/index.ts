@@ -57,6 +57,27 @@ export type {
 } from "./interfaces/app-types.ts";
 export type { TranslateFunction, TranslateParams, UiContextState, UiContextValue } from "./interfaces/ui-context.ts";
 export type { ToastItem, ToastType } from "./interfaces/toast.ts";
+export type {
+  FileType,
+  JsonValueType,
+  KeyValueType,
+  OptionType,
+  OrderType,
+  PersonaType,
+  PubSubEventType,
+  RequestBodyType,
+  RequestByCodeType,
+  RequestByIdType,
+  RequestByKeyType,
+  RequestByNameType,
+  RequestByTypeType,
+  RequestParamType,
+  RequestQueryType,
+  ResponseType,
+  SearchType,
+  SessionInfo,
+  SessionUser,
+} from "./utils/app-http.ts";
 
 // ---- Provider and hook ----
 export { SharedWebUiProvider, type SharedWebUiProviderProps } from "./providers/shared-web-ui-provider.tsx";

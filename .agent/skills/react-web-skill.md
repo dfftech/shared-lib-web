@@ -50,6 +50,35 @@ types/     → TypeButton, TypeInput, TypeSelect, TypeSwitch, … (ALWAYS use)
 
 ---
 
+## Call and callback rules
+
+- Never nest functions. Every handler, mapper, promise callback, effect callback, timer callback, and builder is
+  declared at top level and passed by name.
+- Never pass a newly created object or array directly to a method. Create the object or array as a named variable
+  first, then pass that variable.
+- Never pass a constructor, helper call, expression, or awaited chain into another method:
+  `method(new Value())`, `method(buildValue())`, `method(await loadValue())`, and `method({ ... })` are prohibited.
+- Avoid callback hell. Prefer `async` / `await`, top-level callback names, `for...of`, and small named functions.
+- For React arrays, do not use `.map((item) => <Row />)`; build rows with a top-level `buildRows(items)` function
+  and a `for...of` loop. Do not use inline event arrows; use `dataValue` plus top-level handlers.
+
+```ts
+// WRONG
+await saveUser({ id: id, name: readName() });
+items.map((item) => <UserRow user={item} />);
+loadUsers().then((users) => saveUsers(users).then(updateRows));
+
+// RIGHT
+const name = readName();
+const body = { id: id, name: name };
+const saved = await saveUser(body);
+const rows = buildUserRows(items);
+const users = await loadUsers();
+await saveUsers(users);
+```
+
+---
+
 ## Route page (permission + skeleton)
 
 Auth/permission **only** here — never in module pages. This is a plain React component; mount it however the project wires up screens (route element, conditional render, etc.) — no file-based routing required.
@@ -262,7 +291,7 @@ export const userListIsLoading = signal(false);
 export const userListCall = async (params: SearchType): Promise<ResponseType | undefined> => {
   try {
     userListIsLoading.value = true;
-    const resp = await AppHttp.Get(AppHttp.MsUrl.base + "/profile/search", params);
+    const resp = await AppHttp.Get<ResponseType>(AppHttp.MsUrl.base + "/profile/search", params);
     return { data: Array.isArray(resp?.data) ? resp.data : [], total: resp?.total || 0 };
   } catch (error: any) {
     const message = t(error?.error?.message || ConstKeys.WENT_WRONG);

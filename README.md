@@ -129,6 +129,57 @@ AppHttp.setHeader("x-custom", "value");
 | `Headers() / RawHeaders() / setHeader(name, value)` | headers |
 | `withProgress(promise)` | shows the top progress bar |
 
+### Typed HTTP replies
+
+`Get`, `GetShared`, `Post`, `Put`, `Delete`, `Patch`, and `Load` accept a result type in angle brackets. The
+generic controls the compile-time return type; it does not convert or validate the API reply at runtime.
+Without a generic, the reply is `unknown`.
+
+```ts
+interface UserRow {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface UserResponse {
+  data: UserRow[];
+  total: number;
+}
+
+const response = await AppHttp.Get<UserResponse>(
+  `${MsUrl.main}/profile/search`,
+  { page: 1 },
+);
+
+const rows: UserRow[] = response.data;
+const saved = await AppHttp.Post<UserRow>(`${MsUrl.main}/profile/save`, body);
+const updated = await AppHttp.Put<UserRow>(`${MsUrl.main}/profile/save`, id, body);
+await AppHttp.Delete<ResponseType>(`${MsUrl.main}/profile`, id);
+const loaded = await AppHttp.Load<UserResponse>("COUNTRY");
+const shared = await AppHttp.GetShared<UserResponse>(`${MsUrl.sor}/load/LANG`);
+```
+
+Use the existing envelope types when they match the backend:
+
+```ts
+import type {
+  OptionType,
+  RequestBodyType,
+  RequestParamType,
+  RequestQueryType,
+  ResponseType,
+  SearchType,
+} from "shared-lib-web";
+
+const reply = await AppHttp.Get<ResponseType>(url, params);
+```
+
+Available shared HTTP types include `FileType`, `JsonValueType`, `KeyValueType`, `OptionType`, `OrderType`,
+`PersonaType`, `PubSubEventType`, `RequestBodyType`, `RequestByCodeType`, `RequestByIdType`,
+`RequestByKeyType`, `RequestByNameType`, `RequestByTypeType`, `RequestParamType`, `RequestQueryType`,
+`ResponseType`, `SearchType`, `SessionInfo`, and `SessionUser`.
+
 ### JWT regenerate
 
 With `http.regenerateUrl` set, before every request: `JwtValid(token)` (dff-util) is false → one GET to

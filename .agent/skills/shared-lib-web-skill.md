@@ -90,6 +90,10 @@ const { locale, theme, direction, t, changeLanguage, changeTheme, languages, the
   `Authorization: Bearer <TOKEN>`, `x-session-id`, `x-branch-id` (AppStorage BRANCH_ID, "" when none) and the progress bar.
   Branch: `setBranch(branch.id, branch.name)`, `readBranchId()`, `branchIdSignal`, `clearBranch()` (endSession clears it). Base URL: window.env REACT_APP_<APPNAMEKEY>_API_BASE_URL, else http.baseUrl (relative "/api" is made absolute).
   `AppHttp.Get(url, params)`, `Post`, `Put(url, id, body)`, `Patch`, `Delete(url, id)`, `Load(id, params)`, `CloudUpload` / `uploadFile`, `DownloadFile`, `uploadToSignedUrl(file, uploadUrl, downloadUrl)`.
+  Type API replies when the shape is known: `AppHttp.Get<UserResponse>(url, params)`, `AppHttp.Post<UserRow>(url, body)`,
+  `AppHttp.Put<UserRow>(url, id, body)`, `AppHttp.Delete<ResponseType>(url, id)`, `AppHttp.Patch<UserRow>(url, body)`,
+  `AppHttp.Load<OptionResponse>("COUNTRY")`, or `AppHttp.GetShared<LanguageResponse>(url)`. The generic is the
+  compile-time result type (`unknown` by default); it does not convert or validate runtime data.
   Service URLs are PROJECT level, NOT in AppHttp: the app's config.ts exports
   `MsUrl = { api: `${API_BASE_URL}/xxx-api`, main, sor, events, tms, utils }` with
   `API_BASE_URL = toAbsoluteUrl(readEnvData(APP_NAME_KEY, "API_BASE_URL") ?? default)`; call `AppHttp.Get(`${MsUrl.main}/...`)`.
@@ -97,7 +101,11 @@ const { locale, theme, direction, t, changeLanguage, changeTheme, languages, the
 - Login state: `startSession(token, user, isRemembered)`, `endSession(keepKeys)` (goes to `http.logoutUrl`), `authUserSignal`, `isAuthenticatedSignal`.
 - Backend option rows: `const rows = readResponseRows(response); options.value = toOptionTypes(rows);`.
 - Option lists: `readCountryOptions()`, `readTelCodeOptions()`, `readLanguageOptions()` (from dff-util data) in `hooks/service-load.ts`.
-- Shared types: `TranslationType`, `ScreenAccessType`, `MenuAccessType` from shared-lib-web; request/response types from dff-util.
+- Shared types: `TranslationType`, `ScreenAccessType`, `MenuAccessType` plus HTTP types from `shared-lib-web`;
+  HTTP types include `FileType`, `JsonValueType`, `KeyValueType`, `OptionType`, `OrderType`, `PersonaType`,
+  `PubSubEventType`, `RequestBodyType`, `RequestByCodeType`, `RequestByIdType`, `RequestByKeyType`,
+  `RequestByNameType`, `RequestByTypeType`, `RequestParamType`, `RequestQueryType`, `ResponseType`, `SearchType`,
+  `SessionInfo`, and `SessionUser`. Prefer these shared exports over local copies.
 
 ## Layouts and components
 
@@ -160,11 +168,15 @@ function buildEmailProps(control: Control<UserType>, t: TranslateFunction): Type
 ## Rules
 
 1. File names lowercase with `-` (`app-layout.tsx`, `user.form.ts`). No nested functions, no `abcd(xyz())`, no chained calls — run `npm run check:style` (see dff-code-style-skill.md).
-2. Named exports only. `.ts` = logic, `.tsx` = markup, same base name, import with extension.
-3. Use dff-util before writing any constant, regex, message key, helper or type.
-4. Full DaisyUI class names only (no `"btn-" + x`).
-5. Icons only through `TypeIcon` / icon name strings.
-6. Vite apps add `define: { global: "globalThis" }` (needed by dff-util).
+2. Create values before passing them to methods. No `method({ ... })`, `method(new Value())`, `method(buildValue())`,
+   or nested constructors/helpers. Name the object, array, class instance, result, and params before the call.
+3. No nested functions or callback hell. Use top-level handlers, `async` / `await`, `for...of`, and named callback
+   functions. No inline arrow callbacks or chained `.then()` callbacks.
+4. Named exports only. `.ts` = logic, `.tsx` = markup, same base name, import with extension.
+5. Use dff-util before writing any constant, regex, message key, helper or type.
+6. Full DaisyUI class names only (no `"btn-" + x`).
+7. Icons only through `TypeIcon` / icon name strings.
+8. Vite apps add `define: { global: "globalThis" }` (needed by dff-util).
 
 ## Reference
 

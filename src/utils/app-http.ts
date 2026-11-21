@@ -33,6 +33,41 @@
 //   // uploaded = { filename, mimetype, url }
 
 import { Http, JwtValid, type FileType } from "dff-util";
+
+export type {
+  FileType,
+  JsonValueType,
+  KeyValueType,
+  OptionType,
+  OrderType,
+  PubSubEventType,
+  RequestBodyType,
+  RequestByCodeType,
+  RequestByIdType,
+  RequestByNameType,
+  RequestByTypeType,
+  RequestParamType,
+  ResponseType,
+  SearchType,
+  SessionInfo,
+  SessionUser,
+} from "dff-util";
+
+export type PersonaType = "admin" | "staff" | "user";
+export type RequestByKeyType = RequestQueryType & { key: string };
+export type RequestQueryType = {
+  id?: string;
+  query?: string;
+  active?: boolean;
+  data?: string;
+  filters?: string;
+  key?: string;
+  value?: string;
+  label?: string;
+  type?: string;
+  code?: string;
+  name?: string;
+};
 import type { UiConfig } from "../interfaces/ui-config.ts";
 import { endSession, refreshSessionToken } from "../state/auth-service.ts";
 import { ShowProgress } from "../state/progress-service.ts";
@@ -280,13 +315,13 @@ export class AppHttp {
   }
 
   /** GET with query params. */
-  static async Get(url: string, params: HttpParams = {}, customHeaders: HttpHeaders = {}): Promise<unknown> {
+  static async Get<TResult = unknown>(url: string, params: HttpParams = {}, customHeaders: HttpHeaders = {}): Promise<TResult> {
     await ensureFreshToken();
     const baseHeaders = AppHttp.Headers();
     const headers = { ...baseHeaders, ...customHeaders };
     const fullUrl = AppHttp.FullUrl(url);
     const request = Http.Get(fullUrl, params, headers);
-    return AppHttp.withProgress(request);
+    return AppHttp.withProgress(request) as Promise<TResult>;
   }
 
   /**
@@ -295,53 +330,53 @@ export class AppHttp {
    * everyone on the page (languages, themes, texts, company details), not for user data. A failed request is not kept.
    *   const reply = await AppHttp.GetShared(`${MsUrl.sor}/load/LANG`, { active: true });
    */
-  static GetShared(url: string, params: HttpParams = {}): Promise<unknown> {
+  static GetShared<TResult = unknown>(url: string, params: HttpParams = {}): Promise<TResult> {
     const fullUrl = AppHttp.FullUrl(url);
     const key = buildSharedGetKey(fullUrl, params);
     const cache = readSharedGetCache();
     const cached = cache.get(key);
     if (cached) {
-      return cached;
+      return cached as Promise<TResult>;
     }
     const request = AppHttp.Get(url, params);
     cache.set(key, request);
     const forget = forgetSharedGet.bind(null, key);
     request.catch(forget);
-    return request;
+    return request as Promise<TResult>;
   }
 
   /** POST a JSON body. */
-  static async Post(url: string, body: unknown, customHeaders: HttpHeaders = {}): Promise<unknown> {
+  static async Post<TResult = unknown>(url: string, body: unknown, customHeaders: HttpHeaders = {}): Promise<TResult> {
     await ensureFreshToken();
     const baseHeaders = AppHttp.Headers();
     const headers = { ...baseHeaders, ...customHeaders };
     const fullUrl = AppHttp.FullUrl(url);
     const request = Http.Post(fullUrl, body, headers);
-    return AppHttp.withProgress(request);
+    return AppHttp.withProgress(request) as Promise<TResult>;
   }
 
   /** PUT a JSON body to url/id. */
-  static async Put(url: string, id: string, body: unknown): Promise<unknown> {
+  static async Put<TResult = unknown>(url: string, id: string, body: unknown): Promise<TResult> {
     await ensureFreshToken();
     const headers = AppHttp.Headers();
     const fullUrl = AppHttp.FullUrl(url);
     const itemUrl = `${fullUrl}/${id}`;
     const request = Http.Put(itemUrl, body, headers);
-    return AppHttp.withProgress(request);
+    return AppHttp.withProgress(request) as Promise<TResult>;
   }
 
   /** DELETE url/id. */
-  static async Delete(url: string, id: string, params: HttpParams = {}): Promise<unknown> {
+  static async Delete<TResult = unknown>(url: string, id: string, params: HttpParams = {}): Promise<TResult> {
     await ensureFreshToken();
     const headers = AppHttp.Headers();
     const fullUrl = AppHttp.FullUrl(url);
     const itemUrl = `${fullUrl}/${id}`;
     const request = Http.Delete(itemUrl, params, headers);
-    return AppHttp.withProgress(request);
+    return AppHttp.withProgress(request) as Promise<TResult>;
   }
 
   /** PATCH a JSON body. */
-  static async Patch(url: string, body: unknown): Promise<unknown> {
+  static async Patch<TResult = unknown>(url: string, body: unknown): Promise<TResult> {
     await ensureFreshToken();
     const headers = AppHttp.Headers();
     const bodyText = JSON.stringify(body ?? {});
@@ -353,16 +388,16 @@ export class AppHttp {
       const errorText = await response.text();
       throw new Error(errorText || `PATCH ${response.status}`);
     }
-    return readResponseBody(response);
+    return readResponseBody(response) as unknown as TResult;
   }
 
   /** Option lists from the backend loader: GET `${config.http.loadUrl}/${id}`. */
-  static async Load(id: string, params: HttpParams = {}): Promise<unknown> {
+  static async Load<TResult = unknown>(id: string, params: HttpParams = {}): Promise<TResult> {
     const savedConfig = readSavedConfig();
     const loadUrl = savedConfig.http?.loadUrl ?? "/load";
     const fullLoadUrl = AppHttp.FullUrl(loadUrl);
     const itemUrl = `${fullLoadUrl}/${id}`;
-    return AppHttp.Get(itemUrl, params);
+    return AppHttp.Get<TResult>(itemUrl, params);
   }
 
   /** PUT a file to a signed upload URL (plain PUT, no extra headers, so bucket CORS accepts it). */

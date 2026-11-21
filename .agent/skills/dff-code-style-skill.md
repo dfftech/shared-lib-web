@@ -51,7 +51,94 @@ const rawCode = readCode();
 const code = rawCode.toLowerCase();
 ```
 
-## Rule 4 — FILE_NAMING
+## Rule 4 — NO_CONSTRUCTED_ARGUMENT
+
+Do not construct a value inside another call. Create the value in a separate named variable first.
+
+```ts
+// WRONG
+saveUser(new User(params));
+sendOptions(buildOptions({ active: true }));
+AppHttp.Post(url, { name: "Asha", active: true });
+items.map((item) => toRow(item));
+
+// RIGHT
+const user = new User(params);
+saveUser(user);
+
+const optionsParams = { active: true };
+const options = buildOptions(optionsParams);
+sendOptions(options);
+
+const body = { name: "Asha", active: true };
+AppHttp.Post(url, body);
+
+const rows = [];
+for (const item of items) {
+  const row = toRow(item);
+  rows.push(row);
+}
+```
+
+This rule applies to constructors, object literals, arrays, helper calls, primitives, and expressions passed
+directly into another method:
+
+```ts
+// WRONG
+method({
+  id: readId(),
+  names: ["A", "B"],
+});
+
+// RIGHT
+const id = readId();
+const names = ["A", "B"];
+const params = { id: id, names: names };
+method(params);
+```
+
+Keep the call input readable: one action per line, with named variables for values that would otherwise be
+created inline.
+
+## Rule 5 — NO_CALLBACK_HELL
+
+Do not nest callbacks. Declare every callback as a top-level function and pass the function name.
+Do not pass arrow callbacks into methods or constructors.
+
+```ts
+// WRONG
+loadUsers().then((users) => {
+  saveUsers(users).then((saved) => {
+    ShowToast(saved.message);
+  });
+});
+
+// RIGHT
+const users = await loadUsers();
+const saved = await saveUsers(users);
+ShowToast(saved.message);
+```
+
+For DOM events, promises, timers, signals, arrays, and effects, use top-level handlers or loop logic:
+
+```ts
+// WRONG
+items.map((item) => <Row row={item} />);
+promise.catch((error) => handleError(error));
+setTimeout(() => loadData(), 300);
+useEffect(() => loadData(), []);
+
+// RIGHT
+const rows = buildRows(items);
+promise.catch(handleLoadError);
+setTimeout(loadData, 300);
+useEffect(loadDataOnMount, RUN_ONCE);
+```
+
+Never hide sequential async work in chained `.then()` callbacks, nested `.catch()` callbacks, or nested local
+functions. Prefer `async` / `await`, a top-level callback name, or a `for...of` loop.
+
+## Rule 6 — FILE_NAMING
 
 File and folder names: lowercase words joined with `-`, `.` for a role suffix.
 `app-layout.tsx`, `ui-provider.tsx`, `type.icon.ts`, `type.text-area.tsx`, `user.form.ts`, `service-http.ts`, `ui-provider.test.tsx`.
