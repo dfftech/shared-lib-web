@@ -70,6 +70,8 @@
   },
   "peerDependencies": {
     "@preact/signals-react": ">=3.0.0",
+    "@tanstack/react-table": ">=8.21.3",
+    "@tanstack/react-virtual": ">=3.14.0",
     "@uiw/react-md-editor": ">=4.0.0",
     "dff-util": ">=1.4.5",
     "lucide-react": ">=0.400.0",
@@ -82,6 +84,8 @@
   },
   "devDependencies": {
     "@preact/signals-react": "^3.12.0",
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.14.26",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",

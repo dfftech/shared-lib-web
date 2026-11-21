@@ -455,6 +455,13 @@ export { TypeModal, type ModalSize, type TypeModalProps } from "./types/type.mod
 export { TypeDrawer, type DrawerSide, type DrawerSize, type TypeDrawerProps } from "./types/type.drawer.tsx";
 export { TypeConfirm, type TypeConfirmProps } from "./types/type.confirm.tsx";
 export { TypeTable, readRowKey, type TableColumn, type TypeTableProps } from "./types/type.table.tsx";
+export {
+  TypeDataView,
+  TYPE_DATA_VIEW_LABELS,
+  type TypeDataViewLabels,
+  type TypeDataViewProps,
+  type TypeDataViewView,
+} from "./types/type.data-view.tsx";
 export type { TypeFieldProps } from "./types/field-props.ts";
 export type { ButtonAction, ControlSize } from "./types/class-names.ts";
 export { joinClassNames } from "./types/class-names.ts";

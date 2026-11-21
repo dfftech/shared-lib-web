@@ -1,27 +1,25 @@
 // user.list.tsx — view only.
-import { ArticleLayout, FloatLayout, GridLayout, TypeButton, TypeFilter, TypeSearch, TypeTable } from "shared-lib-web";
+import { FloatLayout, HeadLayout, TypeButton, TypeDataView, TypeFilter, TypeSearch } from 'shared-lib-web';
 import { useUserList } from "./user.list.ts";
 
 export function UserList() {
-  const { titleText, searchProps, roleFilterProps, reloadProps, addProps, tableProps } = useUserList();
-  return (
+  const { titleText, searchProps, roleFilterProps, reloadProps, addProps, dataViewProps } = useUserList();
+  const headerActions = (
     <>
-      <ArticleLayout>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-bold text-primary">{titleText}</h2>
-          <div className="flex items-center gap-2">
-            <TypeSearch {...searchProps} />
-            <TypeFilter {...roleFilterProps} />
-            <TypeButton {...reloadProps} />
-          </div>
-        </div>
-      </ArticleLayout>
-      <GridLayout className="mt-4">
-        <TypeTable {...tableProps} />
-      </GridLayout>
+      <TypeSearch {...searchProps} />
+      <TypeFilter {...roleFilterProps} />
+      <TypeButton {...reloadProps} />
+    </>
+  );
+  return (
+    <div className="flex flex-col">
+      <HeadLayout title={titleText} actions={headerActions} isBelowHeader={false} />
+      <div className="mt-4">
+        <TypeDataView {...dataViewProps} />
+      </div>
       <FloatLayout>
         <TypeButton {...addProps} />
       </FloatLayout>
-    </>
+    </div>
   );
 }

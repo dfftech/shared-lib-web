@@ -14,9 +14,7 @@
 //
 // A submit button in the header sits outside the <form>, so give the form an id and pass it as `form` to TypeButton.
 
-import { useSignals } from "@preact/signals-react/runtime";
-import type { ReactNode } from "react";
-import { isAsideLayoutSignal } from "../state/signals.ts";
+import type { ReactNode } from 'react';
 import { joinClassNames } from "../types/class-names.ts";
 
 export interface HeadLayoutProps {
@@ -26,7 +24,7 @@ export interface HeadLayoutProps {
   actions?: ReactNode;
   /** Optional extra row under the title and actions (filters, tabs, ...). */
   children?: ReactNode;
-  /** Sticks just under the 4rem app header (top-16). Set false when the page has no app header (top-0). Default true (false in an AsideLayout). */
+  /** Adds a 4rem top offset when another header sits above the scroll container. Default false. */
   isBelowHeader?: boolean;
   /** Stretches over the page padding of <main> (p-4 lg:p-6) so the bar touches both edges. Default true. */
   isFullWidth?: boolean;
@@ -37,14 +35,17 @@ const FULL_WIDTH_CLASS = "-mx-4 -mt-4 border-b border-base-300 px-4 lg:-mx-6 lg:
 const CARD_CLASS = "rounded-box px-4 shadow-sm";
 
 export function HeadLayout(props: HeadLayoutProps) {
-  useSignals();
   const { title, actions, children, isFullWidth = true, className } = props;
-  const isAsideLayout = isAsideLayoutSignal.value;
-  const isBelowHeader = props.isBelowHeader ?? !isAsideLayout;
-  const topClass = isBelowHeader ? "top-16" : "top-0";
+  const isBelowHeader = props.isBelowHeader ?? false;
+  const topClass = isBelowHeader ? 'top-16' : 'top-0';
   const shapeClass = isFullWidth ? FULL_WIDTH_CLASS : CARD_CLASS;
   // min-h-16 on the box (border included) = the 4rem logo box, so both bottom borders sit on one line.
-  const classList = ["sticky z-20 flex min-h-16 flex-col justify-center bg-base-100/95 backdrop-blur", topClass, shapeClass, className];
+  const classList = [
+    'sticky z-20 flex min-h-16 flex-col justify-center bg-base-100/95 backdrop-blur',
+    topClass,
+    shapeClass,
+    className,
+  ];
   const headerClassName = joinClassNames(classList);
   const actionsElement = actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null;
   const extraElement = children ? <div className="pb-3">{children}</div> : null;

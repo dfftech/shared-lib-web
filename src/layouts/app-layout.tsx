@@ -14,9 +14,9 @@
 //   <AppLayout sidebar={<MySidebar />} footer={<MyFooter />}>
 
 import { useSignals } from "@preact/signals-react/runtime";
-import { Suspense, type ReactNode } from "react";
-import { translate } from "../i18n/translator.ts";
+import { Suspense, type ReactNode } from 'react';
 import { ScrollToTop } from "../components/scroll-to-top.tsx";
+import { translate } from '../i18n/translator.ts';
 import { SkeletonPage } from "../skeleton/skeleton-page.tsx";
 import { handleDrawerToggleChange } from "../state/sidebar-service.ts";
 import { isMenuVisibleSignal, isSidebarCollapsedSignal, isSidebarOpenSignal, navigationModeSignal, uiConfigSignal } from "../state/signals.ts";
@@ -61,7 +61,7 @@ export function AppLayout(props: AppLayoutProps) {
   const closeText = translate("ui.close");
   const pageFallback = <SkeletonPage />;
   const isDesktopSidebar = showSidebar && !isMegaMenu; // same rule as isDesktopSidebarSignal, plus the showSidebar prop
-  const drawerClassList = ["drawer", isDesktopSidebar ? "lg:drawer-open" : ""];
+  const drawerClassList = ['drawer h-dvh overflow-hidden', isDesktopSidebar ? 'lg:drawer-open' : ''];
   const libraryHeader = <Header endContent={headerEnd} showMenuButtons={showSidebar} />;
   const headerElement = header ?? libraryHeader;
   const librarySidebar = <Sidebar footer={sidebarFooter} user={sidebarUser} />;
@@ -80,12 +80,12 @@ export function AppLayout(props: AppLayoutProps) {
         checked={isSidebarOpen}
         onChange={handleDrawerToggleChange}
       />
-      <div className="drawer-content flex min-h-screen min-w-0 flex-col bg-base-200">
+      <div className="drawer-content flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-base-200">
         {showHeader ? headerElement : null}
-        <main className="flex-1 space-y-4 p-4 lg:p-6">
-          <Suspense fallback={pageFallback}>
-            {children}
-          </Suspense>
+        <main className="min-h-0 flex-1">
+          <div className="space-y-4 p-4 lg:p-6">
+            <Suspense fallback={pageFallback}>{children}</Suspense>
+          </div>
         </main>
         {footer}
       </div>

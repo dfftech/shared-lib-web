@@ -16,6 +16,7 @@ import {
   SkeletonPage,
   useCurrentPage,
 } from "shared-lib-web";
+import { useSignals } from "@preact/signals-react/runtime";
 import { AppLayout, AsideLayout, AuthLayout } from "shared-lib-web/layout";
 import { Suspense, type ReactElement } from "react";
 import { layoutChoiceSignal } from "./layout/layout-choice.ts";
@@ -29,6 +30,7 @@ import { SettingsPage } from "./modules/settings/settings.page.tsx";
 import { FeedbackPage } from "./modules/showcase/feedback/feedback.page.tsx";
 import { FormsPage } from "./modules/showcase/forms/forms.page.tsx";
 import { OverlaysPage } from "./modules/showcase/overlays/overlays.page.tsx";
+import { DataViewPage } from "./modules/showcase/data-view/data-view.page.tsx";
 
 const headerEnd = <HeaderUser />;
 const sidebarUser = <HeaderUser isInSidebar />;
@@ -52,6 +54,7 @@ const PAGE_ELEMENTS: Record<string, ReactElement> = {
   "/components/forms": <FormsPage />,
   "/components/overlays": <OverlaysPage />,
   "/components/feedback": <FeedbackPage />,
+  "/components/data-view": <DataViewPage />,
 };
 
 /** The component for a page value, or "page not found". */
@@ -60,6 +63,7 @@ function readPageElement(page: string): ReactElement {
 }
 
 export function App() {
+  useSignals();
   const page = useCurrentPage();
   if (!isLoggedIn.value) {
     return (

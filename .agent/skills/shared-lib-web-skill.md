@@ -121,6 +121,7 @@ const { locale, theme, direction, t, changeLanguage, changeTheme, languages, the
 | Page header / filters (not sticky) | `ArticleLayout` |
 | Form or details card | `ContentLayout` |
 | Table | `GridLayout` + `TypeTable` (+ `readRowKey(event)`) |
+| Virtualized data views | `TypeDataView` with TanStack `ColumnDef` columns; client/server rendering, all row layouts and controls |
 | Floating add button | `FloatLayout` + `TypeButton isIconOnly` |
 | Edit/view panel | `TypeDrawer` |
 | Dialog | `TypeModal`; destructive confirm: `TypeConfirm tone="error"` |
@@ -182,3 +183,31 @@ function buildEmailProps(control: Control<UserType>, t: TranslateFunction): Type
 
 `example/` in the shared-lib-web repository follows this skill
 (login, dashboard, users CRUD, components showcase, settings, 11 languages, all 35 DaisyUI themes + custom org-light/org-dark, both navigation modes).
+
+## TypeDataView
+
+Install `@tanstack/react-table` and `@tanstack/react-virtual`. Define TanStack `ColumnDef<Row>[]` columns,
+usually in a top-level constant or a `useMemo` with `[]`. Use `rendering="client"` for local data and
+`rendering="server"` (the default) with `rowCount`, paging and sort/filter handlers for API data.
+
+```tsx
+const columns: ColumnDef<User>[] = [
+  { accessorKey: "name", header: "Name", size: 240 },
+  { accessorKey: "email", header: "Email" },
+  { accessorKey: "role", header: "Role", enableSorting: false },
+  { accessorKey: "age", header: "Age", meta: { className: "text-right" } },
+];
+
+<TypeDataView data={users} columns={columns} rendering="client" initialState={{ sorting: [] }} height={400} />
+```
+
+Views:
+
+```tsx
+<TypeDataView layout="table" data={rows} columns={columns} />                         // rows
+<TypeDataView layout="list" data={rows} columns={columns} />                         // list
+<TypeDataView layout="card" view="columns" data={rows} columns={columns} />           // columns
+<TypeDataView layout="card" view="grid-vertical" lanes={3} data={rows} columns={columns} />
+<TypeDataView layout="card" view="masonry-vertical" lanes={3} data={rows} columns={columns} />
+<TypeDataView layout="card" view="masonry-horizontal" lanes={2} data={rows} columns={columns} />
+```

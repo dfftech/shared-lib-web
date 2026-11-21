@@ -13,7 +13,7 @@ DaisyUI themes, Signals state, AppHttp / AppStorage. Built on `dff-util`. MIT li
 ## Install
 
 ```bash
-npm install shared-lib-web dff-util react react-dom @preact/signals-react lucide-react react-hook-form
+npm install shared-lib-web dff-util react react-dom @preact/signals-react lucide-react react-hook-form @tanstack/react-table @tanstack/react-virtual
 npm install -D tailwindcss daisyui @tailwindcss/vite
 npm install @uiw/react-md-editor          # only for shared-lib-web/markdown
 ```
@@ -28,6 +28,214 @@ npm install @uiw/react-md-editor          # only for shared-lib-web/markdown
 ```ts
 // vite.config.ts — dff-util needs Node's global
 export default defineConfig({ plugins: [react(), tailwindcss()], define: { global: "globalThis" } });
+```
+
+## TypeDataView
+
+`TypeDataView` is a virtualized table, list or card view backed by TanStack Table. It supports client/server
+rendering, sorting, filtering, paging, column controls, selection and infinite scroll.
+
+```tsx
+import { useMemo, useState } from "react";
+import type { ColumnDef, PaginationState, RowSelectionState } from "@tanstack/react-table";
+import { TypeDataView } from "shared-lib-web";
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  age: number;
+  active: boolean;
+  overdue?: boolean;
+}
+
+const columns = useMemo<ColumnDef<User>[]>(
+  () => [
+    { accessorKey: "name", header: "Name", size: 240 },
+    { accessorKey: "email", header: "Email" },
+    { accessorKey: "role", header: "Role", enableSorting: false },
+    { accessorKey: "age", header: "Age", meta: { className: "text-right" } },
+  ],
+  [],
+);
+
+// Client-side sorting and filtering.
+<TypeDataView
+  data={users}
+  columns={columns}
+  rendering="client"
+  initialState={{ sorting: [] }}
+  height={400}
+/>
+
+// Sorting and pagination call server handlers in server mode.
+<TypeDataView
+  data={rows}
+  columns={columns}
+  rowCount={total}
+  pagination={pagination}
+  onPaginationChange={setPagination}
+  sorting={sorting}
+  onSortingChange={setSorting}
+  getRowId={(row) => row.id}
+  loading={isLoading}
+  onRowClick={(row) => open(row)}
+/>
+
+// Without pagination, all rows remain virtualized and no footer is shown.
+<TypeDataView
+  data={tenThousandRows}
+  columns={columns}
+  rendering="client"
+  initialState={{ sorting: [] }}
+  estimateSize={52}
+/>
+```
+
+### Layouts
+
+Leave `layout` out for an automatic table on desktop and cards below 768px. Use `layout="card"`,
+`layout="table"` or `layout="list"` to force a layout.
+
+All supported `view` values:
+
+- `rows` - table rows; headers, sorting and selection
+- `list` - full-width DaisyUI list rows
+- `columns` - cards in a horizontal strip
+- `grid-vertical` - equal-height cards in a vertical grid
+- `masonry-vertical` - measured-height cards in vertical lanes
+- `masonry-horizontal` - measured-width cards in horizontal lanes
+
+```tsx
+<TypeDataView
+  data={rows}
+  columns={columns}
+  renderCard={(row) => <ProductCard product={row} />}
+/>
+
+<TypeDataView
+  layout="card"
+  view="grid-vertical"
+  estimateSize={380}
+  lanes={3}
+  data={rows}
+  columns={columns}
+  renderCard={(row) => <ProductCard product={row} />}
+/>
+
+<TypeDataView layout="table" data={rows} columns={columns} />
+
+<TypeDataView
+  layout="list"
+  data={rows}
+  columns={columns}
+  renderListItem={(row) => (
+    <>
+      <Avatar user={row} />
+      <div className="list-col-grow">
+        <div className="font-bold">{row.name}</div>
+        <div className="text-xs opacity-60">{row.email}</div>
+      </div>
+      <button
+        className="btn btn-sm"
+        onClick={(event) => {
+          event.stopPropagation();
+          edit(row);
+        }}
+      >
+        Edit
+      </button>
+    </>
+  )}
+/>
+```
+
+### Selection
+
+Row ids enable selection to survive paging. `onSelectedRowsChange` reports the selected row objects on the
+current page.
+
+```tsx
+const [selection, setSelection] = useState<RowSelectionState>({});
+
+<TypeDataView
+  data={rows}
+  columns={columns}
+  getRowId={(row) => row.id}
+  enableRowSelection
+  rowSelection={selection}
+  onRowSelectionChange={setSelection}
+  onSelectedRowsChange={(selected) => setSelectedRows(selected)}
+  pagination={pagination}
+  onPaginationChange={setPagination}
+  rowCount={total}
+/>
+```
+
+### Filtering, columns and appearance
+
+```tsx
+<TypeDataView
+  data={rows}
+  columns={columns}
+  tableClassName="table-zebra table-sm"
+  getRowClassName={(row) => (row.overdue ? "text-error" : "")}
+  stickyHeader={false}
+  skeletonCount={6}
+  emptyMessage={<EmptyState />}
+  labels={{
+    search: "Buscar...",
+    page: (current, total) => `Página ${current}/${total}`,
+    selected: (count) => `${count} seleccionados`,
+  }}
+  renderToolbar={(table) => (
+    <button className="btn btn-sm" onClick={() => table.resetColumnVisibility()}>
+      Reset
+    </button>
+  )}
+/>
+
+<TypeDataView
+  data={users}
+  columns={columns}
+  rendering="client"
+  initialState={{ sorting: [] }}
+  enableGlobalFilter
+  enableColumnFilters
+  enableColumnPinning
+  enableColumnResizing
+/>
+```
+
+### Infinite scroll and server inputs
+
+Append rows to `data` for infinite scroll. Do not pass `loading` while appending, because loading replaces
+the rows with skeleton placeholders.
+
+```tsx
+<TypeDataView
+  data={items}
+  columns={columns}
+  rendering="client"
+  loading={firstLoad}
+  onEndReached={() => hasMore && loadNext()}
+  endReachedThreshold={15}
+/>
+
+<TypeDataView
+  data={rows}
+  columns={columns}
+  rowCount={total}
+  pagination={pagination}
+  onPaginationChange={setPagination}
+  enableGlobalFilter
+  globalFilter={search}
+  onGlobalFilterChange={(value) => {
+    setSearch(value);
+    resetPage();
+  }}
+/>
 ```
 
 ## config.ts
@@ -261,7 +469,7 @@ Keys: `TOKEN`, `AUTH_USER`, `SESSION_INFO`, `SCREEN_ACCESS`, `SCREEN_ACTION`, `N
 | Group | Exports |
 | --- | --- |
 | Form controls (react-hook-form) | `TypeInput`, `TypeTextArea`, `TypeSelect`, `TypeSwitch`, `TypeCheckbox`, `TypeDate`, `TypeTime`, `TypeOtp`, `TypeList`, `TypeLang`, `TypeSearch`, `TypeFilter`, `TypeUpload`, `TypeUploadBox` |
-| Actions / overlays | `TypeButton`, `TypeDropdown`, `TypeModal`, `TypeDrawer`, `TypeConfirm`, `OtpModal`, `TypeTable`, `TypeIcon`, `TypeImage`, `TypeVideo`, `MediaViewer` |
+| Actions / overlays | `TypeButton`, `TypeDropdown`, `TypeModal`, `TypeDrawer`, `TypeConfirm`, `OtpModal`, `TypeTable`, `TypeDataView`, `TypeIcon`, `TypeImage`, `TypeVideo`, `MediaViewer` |
 | App parts | `AppBrand`, `UserMenu`, `LanguageSwitcher`, `ThemeSwitcher`, `BranchSwitcher`, `SettingsMenu`, `ToastContainer`, `TopProgress`, `ScrollToTop`, `PageLoader` |
 | Pages / states | `RequireAccess`, `PermissionDenied`, `PageNotFound`, `ComingSoon`, `EmptyState` |
 | Page blocks | `HeadLayout`, `ArticleLayout`, `ContentLayout`, `GridLayout`, `FloatLayout` |

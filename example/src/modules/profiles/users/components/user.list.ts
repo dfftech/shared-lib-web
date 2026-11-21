@@ -1,18 +1,20 @@
 // user.list.ts — TypeScript only: list data, filters and props.
+import type { CellContext, ColumnDef } from '@tanstack/react-table';
+import { TimeAgo } from 'dff-util';
+import { useEffect, type ChangeEvent } from 'react';
 import {
-  readRowKey,
+  translate,
   useUi,
+  type TranslateFunction,
   type TypeButtonProps,
+  type TypeDataViewProps,
   type TypeFilterProps,
   type TypeSearchProps,
-  type TypeTableProps,
-} from "shared-lib-web";
-import { useEffect, type ChangeEvent, type MouseEvent } from "react";
-import { editModeUpdate, userRoleFilter, userSearchText } from "../hooks/service.ts";
+} from 'shared-lib-web';
 import { userListCall, userListIsLoading, userRows } from "../hooks/service-http.ts";
 import { countryLoadCall, roleLoadCall, roleOptions } from "../hooks/service-load.ts";
-import type { UserType } from "../hooks/types.ts";
-import { userColumns } from "./user.grid.ts";
+import { editModeUpdate, userRoleFilter, userSearchText } from '../hooks/service.ts';
+import type { UserType } from '../hooks/types.ts';
 
 const RUN_ONCE: never[] = [];
 
@@ -22,7 +24,54 @@ export interface UserListModel {
   roleFilterProps: TypeFilterProps;
   reloadProps: TypeButtonProps;
   addProps: TypeButtonProps;
-  tableProps: TypeTableProps<UserType>;
+  dataViewProps: TypeDataViewProps<UserType>;
+}
+
+export function readUserRoleCell(user: UserType): string {
+  const roleKey = `roles.${user.role}`;
+  return translate(roleKey);
+}
+
+export function readUserStatusCell(user: UserType): string {
+  const statusKey = user.active ? 'user.active' : 'user.inactive';
+  return translate(statusKey);
+}
+
+export function readUserUpdatedCell(user: UserType): string {
+  const updatedDate = new Date(user.updatedAt);
+  return TimeAgo(updatedDate);
+}
+
+export function renderUserRoleColumn(context: CellContext<UserType, unknown>): string {
+  return readUserRoleCell(context.row.original);
+}
+
+export function renderUserStatusColumn(context: CellContext<UserType, unknown>): string {
+  return readUserStatusCell(context.row.original);
+}
+
+export function renderUserUpdatedColumn(context: CellContext<UserType, unknown>): string {
+  return readUserUpdatedCell(context.row.original);
+}
+
+export function readUserRowId(user: UserType): string {
+  return user.id;
+}
+
+export function buildUserDataColumns(t: TranslateFunction): ColumnDef<UserType>[] {
+  return [
+    { accessorKey: 'name', header: t('user.name'), size: 240 },
+    { accessorKey: 'email', header: t('user.email') },
+    { accessorKey: 'role', header: t('user.role'), cell: renderUserRoleColumn },
+    { accessorKey: 'country', header: t('user.country') },
+    { accessorKey: 'active', header: t('user.status'), cell: renderUserStatusColumn },
+    {
+      accessorKey: 'updatedAt',
+      header: t('user.updated'),
+      cell: renderUserUpdatedColumn,
+      meta: { className: 'whitespace-nowrap' },
+    },
+  ];
 }
 
 export function loadUserListOnMount(): void {
@@ -49,8 +98,8 @@ export function handleUserAddClick(): void {
   void editModeUpdate(undefined, "add");
 }
 
-export function handleUserRowClick(event: MouseEvent<HTMLTableRowElement>): void {
-  const userId = readRowKey(event);
+export function handleUserRowClick(user: UserType): void {
+  const userId = user.id;
   void editModeUpdate(userId);
 }
 
@@ -80,27 +129,45 @@ export function useUserList(): UserListModel {
   const allUsers = userRows.value;
   const roleFilter = userRoleFilter.value;
   const visibleUsers = filterUsers(allUsers, searchText, roleFilter);
+  const columns = buildUserDataColumns(t);
 
   return {
-    titleText: t("user.title"),
-    searchProps: { name: "search", label: t("ui.search"), value: searchText, onChange: handleUserSearchChange },
-    roleFilterProps: { label: t("user.role"), options: roleOptions.value, value: roleFilter, onChange: handleRoleFilterChange },
-    reloadProps: { action: "ghost", size: "sm", label: t("user.reload"), icon: "RefreshCw", onPress: handleUserReloadClick },
+    titleText: t('user.title'),
+    searchProps: { name: 'search', label: t('ui.search'), value: searchText, onChange: handleUserSearchChange },
+    roleFilterProps: {
+      label: t('user.role'),
+      options: roleOptions.value,
+      value: roleFilter,
+      onChange: handleRoleFilterChange,
+    },
+    reloadProps: {
+      action: 'ghost',
+      size: 'sm',
+      label: t('user.reload'),
+      icon: 'RefreshCw',
+      onPress: handleUserReloadClick,
+    },
     addProps: {
-      action: "primary",
-      size: "lg",
-      label: t("user.add"),
-      icon: "Plus",
+      action: 'primary',
+      size: 'lg',
+      label: t('user.add'),
+      icon: 'Plus',
       isIconOnly: true,
-      className: "btn-circle shadow-lg",
+      className: 'btn-circle shadow-lg',
       onPress: handleUserAddClick,
     },
-    tableProps: {
-      rows: visibleUsers,
-      columns: userColumns,
-      rowKey: "id",
-      isLoading: userListIsLoading.value,
+    dataViewProps: {
+      data: visibleUsers,
+      columns,
+      getRowId: readUserRowId,
+      // layout: "table",
+      rendering: 'client',
+      height: 'fill',
+      loading: userListIsLoading.value,
       onRowClick: handleUserRowClick,
+      enableGlobalFilter: true,
+      showColumnsMenu: true,
+      initialState: { sorting: [] },
     },
   };
 }

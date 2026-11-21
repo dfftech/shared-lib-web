@@ -23,6 +23,8 @@
   },
   "dependencies": {
     "@preact/signals-react": "^3.12.0",
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.14.26",
     "@uiw/react-md-editor": "^4.2.3",
     "dff-util": "^1.4.5",
     "lucide-react": "^1.69.0",

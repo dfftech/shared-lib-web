@@ -12,6 +12,7 @@ import { LoginPage } from "./modules/auth/login/login.page.tsx";
 import { DashboardPage } from "./modules/dashboard/dashboard.page.tsx";
 import { UserPage } from "./modules/profiles/users/user.page.tsx";
 import { SettingsPage } from "./modules/settings/settings.page.tsx";
+import { DataViewPage } from "./modules/showcase/data-view/data-view.page.tsx";
 
 const headerEnd = <HeaderUser />;
 const sidebarUser = <HeaderUser isInSidebar />;
@@ -32,6 +33,7 @@ const PAGE_ELEMENTS: Record<string, ReactElement> = {
   "/menu-management": comingSoon,
   "/menu-access": comingSoon,
   "/app-settings": <SettingsPage />,
+  "/components/data-view": <DataViewPage />,
 };
 
 /** The component for a page value, or "page not found". */
