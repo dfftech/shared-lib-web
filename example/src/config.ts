@@ -50,7 +50,7 @@ export const config: UiConfig = {
   // Themes as a signal: the custom org themes (sor /content-load?query=theme, listed first) + all 35 DaisyUI themes.
   loadThemes: themesSignal,
   homePath: "/",
-  layout: { menuMode: "sidebar", isSidebarCollapsible: true, headerSettings: "menu", toastPosition: "top-end" },
+  layout: { menuMode: "sidebar", isSidebarCollapsible: true, headerSettings: "menu", showLayoutChoice: false, toastPosition: "top-end" },
   // AppHttp: every request gets Authorization, x-session-id and x-branch-id. Use the URLs from MsUrl above.
   // After log out the browser goes to logoutUrl (here: the app start page, which shows the login).
   http: {

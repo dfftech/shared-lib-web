@@ -3,8 +3,9 @@
 //   - signed out: the login page
 //   - signed in:  AppLayout, and inside it the component for the current page (?page=profiles -> "/profiles")
 
-import { ComingSoon, isDesktopSidebarSignal, PageNotFound, RequireAccess, SkeletonAuthForm, SkeletonPage, useCurrentPage } from "shared-lib-web";
-import { AppLayout, AuthLayout } from "shared-lib-web/layout";
+import { useSignals } from "@preact/signals-react/runtime";
+import { ComingSoon, isDesktopSidebarSignal, layoutChoiceSignal, PageNotFound, RequireAccess, SkeletonAuthForm, SkeletonPage, useCurrentPage } from "shared-lib-web";
+import { AppLayout, AsideLayout, AuthLayout } from "shared-lib-web/layout";
 import { Suspense, type ReactElement } from "react";
 import { HeaderUser } from "./modules/auth/login/components/header-user.tsx";
 import { isLoggedIn } from "./modules/auth/login/hooks/service.ts";
@@ -42,6 +43,7 @@ function readPageElement(page: string): ReactElement {
 }
 
 export function App() {
+  useSignals();
   const page = useCurrentPage();
   if (!isLoggedIn.value) {
     return (
@@ -56,6 +58,15 @@ export function App() {
   // On desktop in "sidebar" mode the user sits at the bottom of the side menu, so the header copy is hidden there.
   const headerUserClassName = isDesktopSidebarSignal.value ? "lg:hidden" : undefined;
   const appHeaderEnd = <div className={headerUserClassName}>{headerEnd}</div>;
+  if (layoutChoiceSignal.value === "aside") {
+    return (
+      <AsideLayout sidebarUser={sidebarUser} showSettings>
+        <Suspense fallback={pageFallback}>
+          <RequireAccess key={page}>{pageElement}</RequireAccess>
+        </Suspense>
+      </AsideLayout>
+    );
+  }
   return (
     <AppLayout headerEnd={appHeaderEnd} sidebarUser={sidebarUser}>
       <Suspense fallback={pageFallback}>
