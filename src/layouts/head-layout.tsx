@@ -24,7 +24,7 @@ export interface HeadLayoutProps {
   actions?: ReactNode;
   /** Optional extra row under the title and actions (filters, tabs, ...). */
   children?: ReactNode;
-  /** Adds a 4rem top offset when another header sits above the scroll container. Default false. */
+  /** Adds a 4rem top offset when another header sits above the scroll container. Default true. */
   isBelowHeader?: boolean;
   /** Stretches over the page padding of <main> (p-4 lg:p-6) so the bar touches both edges. Default true. */
   isFullWidth?: boolean;
@@ -36,7 +36,7 @@ const CARD_CLASS = "rounded-box px-4 shadow-sm";
 
 export function HeadLayout(props: HeadLayoutProps) {
   const { title, actions, children, isFullWidth = true, className } = props;
-  const isBelowHeader = props.isBelowHeader ?? false;
+  const isBelowHeader = props.isBelowHeader ?? true;
   const topClass = isBelowHeader ? 'top-16' : 'top-0';
   const shapeClass = isFullWidth ? FULL_WIDTH_CLASS : CARD_CLASS;
   // min-h-16 on the box (border included) = the 4rem logo box, so both bottom borders sit on one line.

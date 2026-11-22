@@ -11,8 +11,13 @@ import {
   useReactTable,
   type Column,
   type ColumnDef,
+  type Cell,
+  type CellContext,
   type ColumnFiltersState,
   type ColumnPinningState,
+  type Header,
+  type HeaderContext,
+  type HeaderGroup,
   type InitialTableState,
   type OnChangeFn,
   type PaginationState,
@@ -246,10 +251,14 @@ const DEFAULT_SIZE: Record<TypeDataViewLayout, number> = {
 type Labels = TypeDataViewLabels;
 
 /** Joins the class names that are set. */
-const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' ');
+function cx(...parts: (string | false | null | undefined)[]): string {
+  const definedParts = parts.filter(Boolean);
+  return definedParts.join(' ');
+}
 
-const columnTitle = <T,>(column: Column<T, unknown>) =>
-  typeof column.columnDef.header === 'string' && column.columnDef.header ? column.columnDef.header : column.id;
+function columnTitle<T>(column: Column<T, unknown>): string {
+  return typeof column.columnDef.header === 'string' && column.columnDef.header ? column.columnDef.header : column.id;
+}
 
 /** Sticky offsets for columns pinned to the left or right edge. */
 function pinStyle<T>(column: Column<T, unknown>): React.CSSProperties {
@@ -268,16 +277,22 @@ function resolveLayout(layout: TypeDataViewProps<unknown>['layout'], isMobile: b
   return layout ?? (isMobile ? 'masonry-row' : 'rows');
 }
 
+function subscribeToMediaQuery(notify: () => void): () => void {
+  const mq = window.matchMedia(MOBILE_QUERY);
+  mq.addEventListener('change', notify);
+  return mq.removeEventListener.bind(mq, 'change', notify);
+}
+
+function getMediaQuerySnapshot(): boolean {
+  return window.matchMedia(MOBILE_QUERY).matches;
+}
+
+function getMediaQueryServerSnapshot(): boolean {
+  return false;
+}
+
 function useIsMobile(): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      const mq = window.matchMedia(MOBILE_QUERY);
-      mq.addEventListener('change', notify);
-      return () => mq.removeEventListener('change', notify);
-    },
-    () => window.matchMedia(MOBILE_QUERY).matches,
-    () => false
-  );
+  return useSyncExternalStore(subscribeToMediaQuery, getMediaQuerySnapshot, getMediaQueryServerSnapshot);
 }
 
 /** State that follows `value` when the parent passes it, and is kept here otherwise. */
@@ -286,37 +301,84 @@ function useControlled<V>(value: V | undefined, initial: V) {
   return [value ?? inner, setInner] as const;
 }
 
+type Size = { width: number; height: number };
+
+function updateSizeFromRect(rect: DOMRectReadOnly, setSize: React.Dispatch<React.SetStateAction<Size>>) {
+  setSize({ width: rect.width, height: rect.height });
+}
+
+function handleResizeObserverEntries(setSize: React.Dispatch<React.SetStateAction<Size>>, entries: ResizeObserverEntry[]) {
+  const entry = entries[0];
+  if (entry) updateSizeFromRect(entry.contentRect, setSize);
+}
+
+function disconnectObserver(observer: ResizeObserver): void {
+  observer.disconnect();
+}
+
+function initializeSizeObserver(
+  ref: RefObject<HTMLElement | null>,
+  setSize: React.Dispatch<React.SetStateAction<Size>>
+): (() => void) | undefined {
+  const el = ref.current;
+  if (!el) return undefined;
+  setSize({ width: el.clientWidth, height: el.clientHeight });
+  const handleEntries = handleResizeObserverEntries.bind(null, setSize);
+  const observer = new ResizeObserver(handleEntries);
+  observer.observe(el);
+  return disconnectObserver.bind(null, observer);
+}
+
 /** Width and height of an element, kept up to date while it resizes. */
 function useSize(ref: RefObject<HTMLElement | null>) {
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  // Layout effect: the first size is read before paint, so card lanes do not jump on the first frame.
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    setSize({ width: el.clientWidth, height: el.clientHeight });
-    const observer = new ResizeObserver(([{ contentRect: r }]) =>
-      setSize((s) => (s.width === r.width && s.height === r.height ? s : { width: r.width, height: r.height }))
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [ref]);
+  const [size, setSize] = useState<Size>({ width: 0, height: 0 });
+  const initializeObserver = initializeSizeObserver.bind(null, ref, setSize);
+  useLayoutEffect(initializeObserver, [ref, setSize]);
   return size;
+}
+
+function handleEndReachedEffect(reached: boolean, count: number, firedFor: React.MutableRefObject<number>, onEndReached?: () => void) {
+  if (reached && firedFor.current !== count) {
+    firedFor.current = count;
+    onEndReached?.();
+  }
 }
 
 /** Calls `onEndReached` once per distinct row count while the end of the list is visible. */
 function useEndReached(reached: boolean, count: number, onEndReached?: () => void) {
   const firedFor = useRef(-1);
-  useEffect(() => {
-    if (reached && firedFor.current !== count) {
-      firedFor.current = count;
-      onEndReached?.();
-    }
-  }, [reached, count, onEndReached]);
+  const handleEffect = handleEndReachedEffect.bind(null, reached, count, firedFor, onEndReached);
+  useEffect(handleEffect, [reached, count, onEndReached]);
+}
+
+function renderSelectHeader<T>(table: Table<T>, multiple: boolean, labels: Labels): React.ReactNode {
+  return multiple ? (
+    <Checkbox
+      checked={table.getIsAllPageRowsSelected()}
+      indeterminate={table.getIsSomePageRowsSelected()}
+      onChange={table.getToggleAllPageRowsSelectedHandler()}
+      label={labels.selectAll}
+    />
+  ) : null;
+}
+
+function renderSelectCell<T>(row: Row<T>, labels: Labels): React.ReactNode {
+  return <RowCheckbox row={row} label={labels.selectRow} />;
+}
+
+function renderSelectHeaderContext<T>(multiple: boolean, labels: Labels, context: HeaderContext<T, unknown>): React.ReactNode {
+  return renderSelectHeader(context.table, multiple, labels);
+}
+
+function renderSelectCellContext<T>(labels: Labels, context: CellContext<T, unknown>): React.ReactNode {
+  return renderSelectCell(context.row, labels);
 }
 
 /** The leading checkbox column of the table. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function selectColumn<T>(multiple: boolean, labels: Labels): ColumnDef<T, any> {
+  const header = (renderSelectHeaderContext<T>).bind(null, multiple, labels);
+  const cell = (renderSelectCellContext<T>).bind(null, labels);
   return {
     id: 'select',
     size: 44,
@@ -325,17 +387,76 @@ function selectColumn<T>(multiple: boolean, labels: Labels): ColumnDef<T, any> {
     enableColumnFilter: false,
     enableGlobalFilter: false,
     meta: { className: 'w-11' },
-    header: ({ table }) =>
-      multiple ? (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          indeterminate={table.getIsSomePageRowsSelected()}
-          onChange={table.getToggleAllPageRowsSelectedHandler()}
-          label={labels.selectAll}
-        />
-      ) : null,
-    cell: ({ row }) => <RowCheckbox row={row} label={labels.selectRow} />,
+    header,
+    cell,
   };
+}
+
+function buildLabels(labels: Partial<Labels> | undefined): Labels {
+  return { ...TYPE_DATA_VIEW_LABELS, ...labels };
+}
+
+function syncGlobalFilter(setGlobalFilterInput: React.Dispatch<React.SetStateAction<string>>, globalFilter: string): void {
+  setGlobalFilterInput(globalFilter);
+}
+
+function buildColumns<T>(
+  selectable: boolean,
+  isRows: boolean,
+  enableMultiRowSelection: boolean,
+  labels: Labels,
+  columns: ColumnDef<T, any>[] // eslint-disable-line @typescript-eslint/no-explicit-any
+): ColumnDef<T, any>[] { // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (!selectable || !isRows) return columns;
+  const selectionColumn = selectColumn<T>(enableMultiRowSelection, labels);
+  return [selectionColumn, ...columns];
+}
+
+function extractOriginal<T>(row: Row<T>): T {
+  return row.original;
+}
+
+function reportSelectedRows<T>(onSelectedRowsChange: ((rows: T[]) => void) | undefined, selectedRows: Row<T>[]): void {
+  const originals = selectedRows.map(extractOriginal);
+  onSelectedRowsChange?.(originals);
+}
+
+function resolveSize(
+  estimateSize: number | ((index: number) => number) | undefined,
+  view: TypeDataViewLayout,
+  index: number
+): number {
+  return typeof estimateSize === 'function' ? estimateSize(index) : (estimateSize ?? DEFAULT_SIZE[view]);
+}
+
+function getScrollElement(ref: RefObject<HTMLDivElement | null>): HTMLDivElement | null {
+  return ref.current;
+}
+
+function resetScroll(ref: RefObject<HTMLDivElement | null>): void {
+  ref.current?.scrollTo({ top: 0, left: 0 });
+}
+
+function canSortColumn<T>(column: Column<T, unknown>): boolean {
+  return column.getCanSort();
+}
+
+function handleGlobalSearch<T>(table: Table<T>, event: FormEvent<HTMLFormElement>): void {
+  const searchText = readSearchText(event);
+  table.setGlobalFilter(searchText);
+}
+
+function handleGlobalFilterInput(
+  setGlobalFilterInput: React.Dispatch<React.SetStateAction<string>>,
+  event: React.ChangeEvent<HTMLInputElement>
+): void {
+  setGlobalFilterInput(event.currentTarget.value);
+}
+
+function selectedRowCount(rowSelection: RowSelectionState): number {
+  const values = Object.values(rowSelection);
+  const selected = values.filter(Boolean);
+  return selected.length;
 }
 
 /* ---------- TypeDataView ---------- */
@@ -399,7 +520,8 @@ export function TypeDataView<T>({
   className = '',
   tableClassName = '',
 }: TypeDataViewProps<T>) {
-  const labels = useMemo(() => ({ ...TYPE_DATA_VIEW_LABELS, ...labelsProp }), [labelsProp]);
+  const buildViewLabels = buildLabels.bind(null, labelsProp);
+  const labels = useMemo(buildViewLabels, [labelsProp]);
   const isMobile = useIsMobile();
   const view = resolveLayout(layout, isMobile);
   const isRows = view === 'rows';
@@ -423,9 +545,8 @@ export function TypeDataView<T>({
   const [globalFilter, setGlobalFilter] = useControlled(globalFilterProp, (initialState?.globalFilter as string) ?? '');
   const [globalFilterInput, setGlobalFilterInput] = useState(globalFilter);
   const globalSearchName = `data-view-search-${useId()}`;
-  useEffect(() => {
-    setGlobalFilterInput(globalFilter);
-  }, [globalFilter]);
+  const syncFilterInput = syncGlobalFilter.bind(null, setGlobalFilterInput, globalFilter);
+  useEffect(syncFilterInput, [globalFilter]);
   const [columnFilters, setColumnFilters] = useControlled(columnFiltersProp, initialState?.columnFilters ?? []);
   const [columnVisibility, setColumnVisibility] = useControlled(
     columnVisibilityProp,
@@ -433,10 +554,8 @@ export function TypeDataView<T>({
   );
   const [columnPinning, setColumnPinning] = useControlled(columnPinningProp, initialState?.columnPinning ?? {});
 
-  const allColumns = useMemo(
-    () => (selectable && isRows ? [selectColumn<T>(enableMultiRowSelection, labels), ...columns] : columns),
-    [columns, selectable, isRows, enableMultiRowSelection, labels]
-  );
+  const buildAllColumns = (buildColumns<T>).bind(null, selectable, isRows, enableMultiRowSelection, labels, columns);
+  const allColumns = useMemo(buildAllColumns, [columns, selectable, isRows, enableMultiRowSelection, labels]);
 
   const table = useReactTable({
     data,
@@ -486,10 +605,9 @@ export function TypeDataView<T>({
   const selectedRows = table.getSelectedRowModel().rows;
 
   // Report the selected row objects to the parent.
-  useEffect(() => {
-    onSelectedRowsChange?.(selectedRows.map((r) => r.original));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowSelection]);
+  const reportRows = (reportSelectedRows<T>).bind(null, onSelectedRowsChange, selectedRows);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(reportRows, [rowSelection]);
 
   // Virtualization. Lanes follow the size of the scroll area unless `lanes` is given.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -503,14 +621,14 @@ export function TypeDataView<T>({
       : view === 'grid-row' || view === 'masonry-row'
         ? Math.min(lanesProp ?? Infinity, fitLanes)
         : 1;
-  const lanes = isRows || view === 'list' || view === 'grid-column' ? 1 : Math.max(1, Math.floor(autoLanes));
-  const sizeOf = useCallback(
-    (i: number) => (typeof estimateSize === 'function' ? estimateSize(i) : (estimateSize ?? DEFAULT_SIZE[view])),
-    [estimateSize, view]
-  );
+  const flooredAutoLanes = Math.floor(autoLanes);
+  const lanes = isRows || view === 'list' || view === 'grid-column' ? 1 : Math.max(1, flooredAutoLanes);
+  const resolveItemSize = resolveSize.bind(null, estimateSize, view);
+  const sizeOf = useCallback(resolveItemSize, [estimateSize, view]);
+  const readScrollElement = getScrollElement.bind(null, scrollRef);
   const virtualizer = useVirtualizer({
     count: rows.length,
-    getScrollElement: () => scrollRef.current,
+    getScrollElement: readScrollElement,
     horizontal,
     lanes,
     estimateSize: sizeOf,
@@ -518,22 +636,20 @@ export function TypeDataView<T>({
   });
   const items = virtualizer.getVirtualItems();
   const lastIndex = items.length ? items[items.length - 1].index : -1;
-  useEndReached(
-    !!onEndReached && !loading && rows.length > 0 && lastIndex >= rows.length - endReachedThreshold,
-    rows.length,
-    onEndReached
-  );
+  const endReached = !!onEndReached && !loading && rows.length > 0 && lastIndex >= rows.length - endReachedThreshold;
+  const visibleRowCount = rows.length;
+  useEndReached(endReached, visibleRowCount, onEndReached);
 
   // Back to the top whenever the page, sort order or filters change.
   const resetKey = JSON.stringify([sorting, globalFilter, columnFilters]);
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0, left: 0 });
-  }, [pageState.pageIndex, resetKey, view]);
+  const resetViewScroll = resetScroll.bind(null, scrollRef);
+  useEffect(resetViewScroll, [pageState.pageIndex, resetKey, view]);
 
   const fill = height === 'fill';
   const autoHeight = height === 'auto';
   const totalSize = virtualizer.getTotalSize();
-  const cardSortable = !isRows && table.getAllLeafColumns().some((c) => c.getCanSort());
+  const leafColumns = table.getAllLeafColumns();
+  const cardSortable = !isRows && leafColumns.some(canSortColumn);
   // Everything the views need.
   const v: ViewProps<T> = {
     table,
@@ -548,7 +664,7 @@ export function TypeDataView<T>({
     loading,
     stickyHeader,
     tableClassName,
-    total: virtualizer.getTotalSize(),
+    total: totalSize,
     measure: virtualizer.measureElement,
     skeletonCount: skeletonCount ?? (isRows || view === 'list' ? SKELETON_ROWS : horizontal ? lanes * 4 : lanes * 2),
     resizable: enableColumnResizing,
@@ -558,9 +674,8 @@ export function TypeDataView<T>({
     renderCard,
     renderListItem,
   };
-  const handleGlobalSearch = (event: FormEvent<HTMLFormElement>): void => {
-    table.setGlobalFilter(readSearchText(event));
-  };
+  const submitGlobalSearch = (handleGlobalSearch<T>).bind(null, table);
+  const updateGlobalFilterInput = handleGlobalFilterInput.bind(null, setGlobalFilterInput);
 
   return (
     <div className={cx('flex flex-col gap-2', fill && 'min-h-0 flex-1', className)}>
@@ -572,8 +687,8 @@ export function TypeDataView<T>({
               label={labels.search}
               value={globalFilterInput}
               className="w-full max-w-md flex-1"
-              onChange={(event) => setGlobalFilterInput(event.currentTarget.value)}
-              onSearch={handleGlobalSearch}
+              onChange={updateGlobalFilterInput}
+              onSearch={submitGlobalSearch}
             />
           ) : (
             <span />
@@ -615,7 +730,7 @@ export function TypeDataView<T>({
           table={table}
           labels={labels}
           pageSize={paged ? { current: pageState.pageSize, options: pageSizeOptions } : undefined}
-          selectedCount={selectable ? Object.values(rowSelection).filter(Boolean).length : undefined}
+          selectedCount={selectable ? selectedRowCount(rowSelection) : undefined}
         />
       ) : null}
     </div>
@@ -654,20 +769,130 @@ type ViewProps<T> = {
 /** Classes for rows and cards that can be clicked. */
 const CLICKABLE = 'cursor-pointer focus-visible:outline-2 focus-visible:outline-primary';
 
-/** Click and keyboard (Enter, Space) handlers for a row or card, when `onRowClick` is set. */
-const onClickOf = <T,>(row: Row<T>, onRowClick?: (row: T) => void) =>
-  onRowClick
-    ? {
-        tabIndex: 0,
-        onClick: () => onRowClick(row.original),
-        onKeyDown: (e: React.KeyboardEvent) => {
-          // Keys pressed on a button or input inside the row belong to that control.
-          if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
-          e.preventDefault();
-          onRowClick(row.original);
-        },
-      }
-    : undefined;
+function triggerRowClick<T>(row: Row<T>, onRowClick: (row: T) => void): void {
+  onRowClick(row.original);
+}
+
+function handleRowKeyDown<T>(row: Row<T>, onRowClick: (row: T) => void, event: React.KeyboardEvent): void {
+  if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return;
+  event.preventDefault();
+  onRowClick(row.original);
+}
+
+function onClickOf<T>(row: Row<T>, onRowClick?: (row: T) => void) {
+  if (!onRowClick) return undefined;
+  return {
+    tabIndex: 0,
+    onClick: (triggerRowClick<T>).bind(null, row, onRowClick),
+    onKeyDown: (handleRowKeyDown<T>).bind(null, row, onRowClick),
+  };
+}
+
+function renderTableSpacer<T>(height: number, visible: Column<T, unknown>[]): React.ReactNode {
+  return (
+    <tr aria-hidden style={{ height }}>
+      <td colSpan={visible.length} className="p-0" />
+    </tr>
+  );
+}
+
+function stopPropagation(event: React.MouseEvent): void {
+  event.stopPropagation();
+}
+
+function resetColumnSize<T>(column: Column<T, unknown>): void {
+  column.resetSize();
+}
+
+function setColumnFilter<T>(column: Column<T, unknown>, event: React.ChangeEvent<HTMLInputElement>): void {
+  column.setFilterValue(event.target.value || undefined);
+}
+
+function renderFilterCell<T>(labels: Labels, column: Column<T, unknown>): React.ReactNode {
+  const pinned = column.getIsPinned();
+  const style = pinned ? { width: column.getSize() } : {};
+  const filterChange = (setColumnFilter<T>).bind(null, column);
+  return (
+    <th key={column.id} className={cx('py-1 font-normal', pinned && 'bg-base-100')} style={{ ...style, ...pinStyle(column) }}>
+      {column.getCanFilter() ? (
+        <input
+          className="input input-xs w-full"
+          placeholder={labels.filter}
+          aria-label={`${labels.filter} ${column.id}`}
+          value={(column.getFilterValue() as string) ?? ''}
+          onChange={filterChange}
+        />
+      ) : null}
+    </th>
+  );
+}
+
+function renderSkeletonCell<T>(column: Column<T, unknown>): React.ReactNode {
+  return <td key={column.id}><div className="skeleton h-4 w-full max-w-40" /></td>;
+}
+
+function renderSkeletonRow<T>(visible: Column<T, unknown>[], index: number): React.ReactNode {
+  const cells = visible.map(renderSkeletonCell);
+  return <tr key={`sk-${index}`} aria-hidden>{cells}</tr>;
+}
+
+function renderSkeletonRows<T>(visible: Column<T, unknown>[], _: unknown, index: number): React.ReactNode {
+  return renderSkeletonRow(visible, index);
+}
+
+function renderTableCell<T>(cell: Cell<T, unknown>): React.ReactNode {
+  const pinned = cell.column.getIsPinned();
+  const columnSize = cell.column.getSize();
+  const style = pinned ? { width: columnSize, ...pinStyle(cell.column) } : undefined;
+  const value = cell.getValue();
+  const title = String(value ?? '');
+  const context = cell.getContext();
+  const content = flexRender(cell.column.columnDef.cell, context);
+  return <td key={cell.id} className={cx('max-w-64 truncate whitespace-nowrap', pinned && 'bg-base-100', cell.column.columnDef.meta?.className)} title={title} style={style}>{content}</td>;
+}
+
+function renderTableRow<T>(
+  rows: Row<T>[],
+  measure: (node: Element | null) => void,
+  onRowClick: ((row: T) => void) | undefined,
+  getRowClassName: ((row: T) => string) | undefined,
+  item: VirtualItem
+): React.ReactNode {
+  const row = rows[item.index];
+  const cells = row.getVisibleCells();
+  const renderedCells = cells.map(renderTableCell);
+  const clickHandler = onRowClick ? (triggerRowClick<T>).bind(null, row, onRowClick) : undefined;
+  const keyHandler = onRowClick ? (handleRowKeyDown<T>).bind(null, row, onRowClick) : undefined;
+  const selected = row.getIsSelected();
+  const rowClassName = getRowClassName?.(row.original);
+  const className = cx('hover:bg-base-200', selected && 'bg-primary/10', onRowClick && CLICKABLE, rowClassName);
+  return <tr key={row.id} data-index={item.index} ref={measure} className={className} tabIndex={onRowClick ? 0 : undefined} onClick={clickHandler} onKeyDown={keyHandler}>{renderedCells}</tr>;
+}
+
+function renderHeaderCell<T>(resizable: boolean, header: Header<T, unknown>): React.ReactNode {
+  const column = header.column;
+  const canSort = column.getCanSort();
+  const sorted = column.getIsSorted();
+  const pinned = column.getIsPinned();
+  const fixedWidth = resizable || pinned || column.columnDef.size !== undefined;
+  const width = fixedWidth ? { width: header.getSize() } : {};
+  const resetSize = (resetColumnSize<T>).bind(null, column);
+  const stickyStyle = pinStyle(column);
+  const style = { ...width, ...stickyStyle };
+  const className = cx('relative', pinned && 'bg-base-100', column.columnDef.meta?.className, canSort && 'cursor-pointer select-none');
+  const headerContext = header.getContext();
+  const headerContent = flexRender(column.columnDef.header, headerContext);
+  const resizeClassName = cx('absolute right-0 top-0 h-full w-1.5 cursor-col-resize touch-none select-none hover:bg-primary/60', column.getIsResizing() && 'bg-primary');
+  const resizeHandle = resizable && column.getCanResize() ? <div role="separator" aria-orientation="vertical" onClick={stopPropagation} onDoubleClick={resetSize} onMouseDown={header.getResizeHandler()} onTouchStart={header.getResizeHandler()} className={resizeClassName} /> : null;
+  const content = header.isPlaceholder ? null : <span className="inline-flex items-center gap-1">{headerContent}{canSort ? <SortIcon sorted={sorted} /> : null}</span>;
+  return <th key={header.id} colSpan={header.colSpan} style={style} className={className} aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined} onClick={column.getToggleSortingHandler()}>{content}{resizeHandle}</th>;
+}
+
+function renderHeaderGroup<T>(resizable: boolean, group: HeaderGroup<T>): React.ReactNode {
+  const renderHeader = (renderHeaderCell<T>).bind(null, resizable);
+  const cells = group.headers.map(renderHeader);
+  return <tr key={group.id}>{cells}</tr>;
+}
 
 function TableView<T>({
   table,
@@ -688,403 +913,182 @@ function TableView<T>({
   const visible = table.getVisibleLeafColumns();
   const paddingTop = items.length ? items[0].start : 0;
   const paddingBottom = items.length ? total - items[items.length - 1].end : 0;
-  const spacer = (height: number) => (
-    <tr aria-hidden style={{ height }}>
-      <td colSpan={visible.length} className="p-0" />
-    </tr>
-  );
+  const headerGroups = table.getHeaderGroups();
+  const renderHeader = (renderHeaderGroup<T>).bind(null, resizable);
+  const renderedHeaders = headerGroups.map(renderHeader);
+  const renderFilter = (renderFilterCell<T>).bind(null, labels);
+  const renderedFilters = visible.map(renderFilter);
+  const renderSkeleton = (renderSkeletonRows<T>).bind(null, visible);
+  const skeletonRows = Array.from({ length: skeletonCount }, renderSkeleton);
+  const renderRow = (renderTableRow<T>).bind(null, rows, measure, onRowClick, getRowClassName);
+  const renderedRows = items.map(renderRow);
+  const paddingTopRow = paddingTop > 0 ? renderTableSpacer(paddingTop, visible) : null;
+  const paddingBottomRow = paddingBottom > 0 ? renderTableSpacer(paddingBottom, visible) : null;
+  const tableSize = resizable ? table.getTotalSize() : undefined;
 
   return (
-    <table
-      className={cx('table', stickyHeader && 'table-pin-rows', tableClassName)}
-      style={resizable ? { width: table.getTotalSize(), minWidth: '100%', tableLayout: 'fixed' } : undefined}
-    >
+    <table className={cx('table', stickyHeader && 'table-pin-rows', tableClassName)} style={resizable ? { width: tableSize, minWidth: '100%', tableLayout: 'fixed' } : undefined}>
       <thead>
-        {table.getHeaderGroups().map((group) => (
-          <tr key={group.id}>
-            {group.headers.map((header) => {
-              const column = header.column;
-              const canSort = column.getCanSort();
-              const sorted = column.getIsSorted();
-              const pinned = column.getIsPinned();
-              const fixedWidth = resizable || pinned || column.columnDef.size !== undefined;
-              return (
-                <th
-                  key={header.id}
-                  colSpan={header.colSpan}
-                  style={{ ...(fixedWidth ? { width: header.getSize() } : {}), ...pinStyle(column) }}
-                  className={cx(
-                    'relative',
-                    pinned && 'bg-base-100',
-                    column.columnDef.meta?.className,
-                    canSort && 'cursor-pointer select-none'
-                  )}
-                  aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined}
-                  onClick={column.getToggleSortingHandler()}
-                >
-                  {header.isPlaceholder ? null : (
-                    <span className="inline-flex items-center gap-1">
-                      {flexRender(column.columnDef.header, header.getContext())}
-                      {canSort ? <SortIcon sorted={sorted} /> : null}
-                    </span>
-                  )}
-                  {resizable && column.getCanResize() ? (
-                    <div
-                      role="separator"
-                      aria-orientation="vertical"
-                      onClick={(e) => e.stopPropagation()}
-                      onDoubleClick={() => column.resetSize()}
-                      onMouseDown={header.getResizeHandler()}
-                      onTouchStart={header.getResizeHandler()}
-                      className={cx(
-                        'absolute right-0 top-0 h-full w-1.5 cursor-col-resize touch-none select-none hover:bg-primary/60',
-                        column.getIsResizing() && 'bg-primary'
-                      )}
-                    />
-                  ) : null}
-                </th>
-              );
-            })}
-          </tr>
-        ))}
-        {filterable ? (
-          <tr>
-            {visible.map((column) => (
-              <th
-                key={column.id}
-                className={cx('py-1 font-normal', column.getIsPinned() && 'bg-base-100')}
-                style={{ ...(column.getIsPinned() ? { width: column.getSize() } : {}), ...pinStyle(column) }}
-              >
-                {column.getCanFilter() ? (
-                  <input
-                    className="input input-xs w-full"
-                    placeholder={labels.filter}
-                    aria-label={`${labels.filter} ${column.id}`}
-                    value={(column.getFilterValue() as string) ?? ''}
-                    onChange={(e) => column.setFilterValue(e.target.value || undefined)}
-                  />
-                ) : null}
-              </th>
-            ))}
-          </tr>
-        ) : null}
+        {renderedHeaders}
+        {filterable ? <tr>{renderedFilters}</tr> : null}
       </thead>
-      <tbody>
-        {loading ? (
-          Array.from({ length: skeletonCount }, (_, r) => (
-            <tr key={`sk-${r}`} aria-hidden>
-              {visible.map((column) => (
-                <td key={column.id}>
-                  <div className="skeleton h-4 w-full max-w-40" />
-                </td>
-              ))}
-            </tr>
-          ))
-        ) : (
-          <>
-            {paddingTop > 0 ? spacer(paddingTop) : null}
-            {items.map((item) => {
-              const row = rows[item.index];
-              return (
-                <tr
-                  key={row.id}
-                  data-index={item.index}
-                  ref={measure}
-                  className={cx(
-                    'hover:bg-base-200',
-                    row.getIsSelected() && 'bg-primary/10',
-                    onRowClick && CLICKABLE,
-                    getRowClassName?.(row.original)
-                  )}
-                  {...onClickOf(row, onRowClick)}
-                >
-                  {row.getVisibleCells().map((cell) => {
-                    const pinned = cell.column.getIsPinned();
-                    return (
-                      <td
-                        key={cell.id}
-                        className={cx('max-w-64 truncate whitespace-nowrap', pinned && 'bg-base-100', cell.column.columnDef.meta?.className)}
-                        title={String(cell.getValue() ?? '')}
-                        style={pinned ? { width: cell.column.getSize(), ...pinStyle(cell.column) } : undefined}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-            {paddingBottom > 0 ? spacer(paddingBottom) : null}
-          </>
-        )}
-      </tbody>
+      <tbody>{loading ? skeletonRows : <>{paddingTopRow}{renderedRows}{paddingBottomRow}</>}</tbody>
     </table>
   );
 }
 
-function ListView<T>({
-  labels,
-  rows,
-  items,
-  total,
-  measure,
-  selectable,
-  onRowClick,
-  getRowClassName,
-  renderListItem,
-}: ViewProps<T>) {
-  return (
-    <ul className="list relative" style={{ height: total }}>
-      {items.map((item) => {
-        const row = rows[item.index];
-        return (
-          <li
-            key={row.id}
-            data-index={item.index}
-            ref={measure}
-            className={cx(
-              'list-row absolute left-0 top-0 w-full',
-              row.getIsSelected() ? 'bg-primary/10' : 'hover:bg-base-200',
-              onRowClick && CLICKABLE,
-              getRowClassName?.(row.original)
-            )}
-            style={{ transform: `translateY(${item.start}px)` }}
-            {...onClickOf(row, onRowClick)}
-          >
-            {renderListItem ? (
-              renderListItem(row.original, row)
-            ) : (
-              <>
-                {selectable ? <RowCheckbox row={row} label={labels.selectRow} /> : null}
-                {row.getVisibleCells().map((cell, i) => (
-                  <div key={cell.id} className={cx('min-w-0 text-sm', i === 0 && 'list-col-grow')}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </div>
-                ))}
-              </>
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
+function renderListCell<T>(cell: Cell<T, unknown>, index: number): React.ReactNode {
+  const context = cell.getContext();
+  const content = flexRender(cell.column.columnDef.cell, context);
+  return <div key={cell.id} className={cx('min-w-0 text-sm', index === 0 && 'list-col-grow')}>{content}</div>;
 }
 
-function CardsView<T>({
-  labels,
-  rows,
-  items,
-  total,
-  measure,
-  horizontal,
-  measured,
-  lanes,
-  sizeOf,
-  selectable,
-  onRowClick,
-  getRowClassName,
-  renderCard,
-}: ViewProps<T>) {
-  return (
-    <div className="relative" style={horizontal ? { width: total, height: '100%' } : { height: total, width: '100%' }}>
-      {items.map((item) => {
-        const row = rows[item.index];
-        const lane = `${(item.lane * 100) / lanes}%`;
-        const laneSize = `${100 / lanes}%`;
-        const size = sizeOf(item.index);
-        return (
-          <div
-            key={row.id}
-            data-index={item.index}
-            ref={measured ? measure : undefined}
-            className="absolute left-0 top-0 p-1 sm:p-2"
-            style={
-              horizontal
-                ? { top: lane, height: laneSize, width: size, transform: `translateX(${item.start}px)` }
-                : {
-                    left: lane,
-                    width: laneSize,
-                    height: measured ? undefined : size,
-                    transform: `translateY(${item.start}px)`,
-                  }
-            }
-          >
-            <div
-              className={cx(!measured && 'h-full', onRowClick && CLICKABLE, getRowClassName?.(row.original))}
-              {...onClickOf(row, onRowClick)}
-            >
-              {renderCard ? (
-                renderCard(row.original, row)
-              ) : (
-                <div
-                  className={cx(
-                    // @container: the body below follows the card's width, not the window's.
-                    'card card-border @container relative bg-base-100 w-full h-full',
-                    !measured && 'overflow-auto',
-                    row.getIsSelected() ? 'border-primary bg-primary/10' : 'border-base-300'
-                  )}
-                >
-                  <div className="card-body grid grid-cols-1 gap-x-3 gap-y-2 p-3 @xs:gap-x-4 @xs:gap-y-3 @xs:p-4 @md:grid-cols-2">
-                    {selectable ? (
-                      <div className="absolute right-3 top-3">
-                        <RowCheckbox row={row} label={labels.selectRow} />
-                      </div>
-                    ) : null}
-                    {row.getVisibleCells().map((cell) => {
-                      const header = cell.column.columnDef.header;
-                      return (
-                        <div
-                          key={cell.id}
-                          className="min-w-0 truncate text-xs @xs:text-sm"
-                          title={String(cell.getValue() ?? '')}
-                        >
-                          {typeof header === 'string' && header ? (
-                            <div className="text-[10px] @xs:text-xs uppercase text-base-content/60">{header}</div>
-                          ) : null}
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+function renderListRow<T>(props: ViewProps<T>, item: VirtualItem): React.ReactNode {
+  const { labels, rows, measure, selectable, onRowClick, getRowClassName, renderListItem } = props;
+  const row = rows[item.index];
+  const visibleCells = row.getVisibleCells();
+  const cells = visibleCells.map(renderListCell);
+  const clickProps = onClickOf(row, onRowClick);
+  const selectionCheckbox = selectable ? <RowCheckbox row={row} label={labels.selectRow} /> : null;
+  const content = renderListItem ? renderListItem(row.original, row) : <>{selectionCheckbox}{cells}</>;
+  const isSelected = row.getIsSelected();
+  const rowStateClass = isSelected ? 'bg-primary/10' : 'hover:bg-base-200';
+  const rowClassName = getRowClassName?.(row.original);
+  const className = cx('list-row absolute left-0 top-0 w-full', rowStateClass, onRowClick && CLICKABLE, rowClassName);
+  return <li key={row.id} data-index={item.index} ref={measure} className={className} style={{ transform: `translateY(${item.start}px)` }} {...clickProps}>{content}</li>;
+}
+
+function ListView<T>(props: ViewProps<T>) {
+  const renderRow = (renderListRow<T>).bind(null, props);
+  const rows = props.items.map(renderRow);
+  return <ul className="list relative" style={{ height: props.total }}>{rows}</ul>;
+}
+
+function renderCardCell<T>(cell: Cell<T, unknown>): React.ReactNode {
+  const header = cell.column.columnDef.header;
+  const value = cell.getValue();
+  const title = String(value ?? '');
+  const context = cell.getContext();
+  const content = flexRender(cell.column.columnDef.cell, context);
+  return <div key={cell.id} className="min-w-0 truncate text-xs @xs:text-sm" title={title}>{typeof header === 'string' && header ? <div className="text-[10px] @xs:text-xs uppercase text-base-content/60">{header}</div> : null}{content}</div>;
+}
+
+function renderCardRow<T>(props: ViewProps<T>, item: VirtualItem): React.ReactNode {
+  const { labels, rows, measure, horizontal, measured, lanes, sizeOf, selectable, onRowClick, getRowClassName, renderCard } = props;
+  const row = rows[item.index];
+  const lane = `${(item.lane * 100) / lanes}%`;
+  const laneSize = `${100 / lanes}%`;
+  const size = sizeOf(item.index);
+  const style = horizontal ? { top: lane, height: laneSize, width: size, transform: `translateX(${item.start}px)` } : { left: lane, width: laneSize, height: measured ? undefined : size, transform: `translateY(${item.start}px)` };
+  const visibleCells = row.getVisibleCells();
+  const cells = visibleCells.map(renderCardCell);
+  const clickProps = onClickOf(row, onRowClick);
+  const selected = row.getIsSelected();
+  const cardClassName = cx('card card-border @container relative bg-base-100 w-full h-full', !measured && 'overflow-auto', selected ? 'border-primary bg-primary/10' : 'border-base-300');
+  const rowClassName = getRowClassName?.(row.original);
+  const contentClassName = cx(!measured && 'h-full', onRowClick && CLICKABLE, rowClassName);
+  const checkbox = selectable ? <div className="absolute right-3 top-3"><RowCheckbox row={row} label={labels.selectRow} /></div> : null;
+  const defaultCard = <div className={cardClassName}><div className="card-body grid grid-cols-1 gap-x-3 gap-y-2 p-3 @xs:gap-x-4 @xs:gap-y-3 @xs:p-4 @md:grid-cols-2">{checkbox}{cells}</div></div>;
+  const content = renderCard ? renderCard(row.original, row) : defaultCard;
+  return <div key={row.id} data-index={item.index} ref={measured ? measure : undefined} className="absolute left-0 top-0 p-1 sm:p-2" style={style}><div className={contentClassName} {...clickProps}>{content}</div></div>;
+}
+
+function CardsView<T>(props: ViewProps<T>) {
+  const renderRow = (renderCardRow<T>).bind(null, props);
+  const rows = props.items.map(renderRow);
+  const style = props.horizontal ? { width: props.total, height: '100%' } : { height: props.total, width: '100%' };
+  return <div className="relative" style={style}>{rows}</div>;
 }
 
 /** Placeholders shown instead of the list or cards while loading. */
+function renderSkeletonCard(_: unknown, index: number): React.ReactNode {
+  return <div key={index} className="skeleton h-full w-full rounded-box" />;
+}
+
 function SkeletonCards<T>({ horizontal, lanes, sizeOf, skeletonCount }: ViewProps<T>) {
   const size = sizeOf(0);
-  return (
-    <div
-      aria-hidden
-      className="grid gap-4 p-2"
-      style={
-        horizontal
-          ? { height: '100%', gridAutoFlow: 'column', gridTemplateRows: `repeat(${lanes}, 1fr)`, gridAutoColumns: size }
-          : { gridTemplateColumns: `repeat(${lanes}, 1fr)`, gridAutoRows: size }
-      }
-    >
-      {Array.from({ length: skeletonCount }, (_, i) => (
-        <div key={i} className="skeleton h-full w-full rounded-box" />
-      ))}
-    </div>
-  );
+  const cards = Array.from({ length: skeletonCount }, renderSkeletonCard);
+  const style = horizontal ? { height: '100%', gridAutoFlow: 'column' as const, gridTemplateRows: `repeat(${lanes}, 1fr)`, gridAutoColumns: size } : { gridTemplateColumns: `repeat(${lanes}, 1fr)`, gridAutoRows: size };
+  return <div aria-hidden className="grid gap-4 p-2" style={style}>{cards}</div>;
 }
 
 /* ---------- Toolbar and footer ---------- */
 
+function renderSortOption<T>(column: Column<T, unknown>): React.ReactNode {
+  return <option key={column.id} value={column.id}>{columnTitle(column)}</option>;
+}
+
+function setCardSorting<T>(table: Table<T>, current: SortingState[number] | undefined, event: React.ChangeEvent<HTMLSelectElement>): void {
+  table.setSorting(event.target.value ? [{ id: event.target.value, desc: !!current?.desc }] : []);
+}
+
+function toggleCardSorting<T>(table: Table<T>, current: SortingState[number]): void {
+  table.setSorting([{ id: current.id, desc: !current.desc }]);
+}
+
 /** Cards have no header row, so sorting is picked from a menu. */
 function CardSortBar<T>({ table, labels }: { table: Table<T>; labels: Labels }) {
   const current = table.getState().sorting[0];
-  return (
-    <div className="join">
-      <select
-        aria-label={labels.sortBy}
-        className="select select-sm join-item w-auto"
-        value={current?.id ?? ''}
-        onChange={(e) => table.setSorting(e.target.value ? [{ id: e.target.value, desc: !!current?.desc }] : [])}
-      >
-        <option value="">{labels.sortBy}</option>
-        {table
-          .getAllLeafColumns()
-          .filter((c) => c.getCanSort())
-          .map((c) => (
-            <option key={c.id} value={c.id}>
-              {columnTitle(c)}
-            </option>
-          ))}
-      </select>
-      <button
-        type="button"
-        className="btn btn-sm join-item"
-        aria-label={labels.sortDirection}
-        disabled={!current}
-        onClick={() => table.setSorting([{ id: current.id, desc: !current.desc }])}
-      >
-        {current?.desc ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
-      </button>
-    </div>
-  );
+  const allColumns = table.getAllLeafColumns();
+  const sortableColumns = allColumns.filter(canSortColumn);
+  const options = sortableColumns.map(renderSortOption);
+  const changeSorting = (setCardSorting<T>).bind(null, table, current);
+  const toggleSorting = current ? (toggleCardSorting<T>).bind(null, table, current) : undefined;
+  return <div className="join"><select aria-label={labels.sortBy} className="select select-sm join-item w-auto" value={current?.id ?? ''} onChange={changeSorting}><option value="">{labels.sortBy}</option>{options}</select><button type="button" className="btn btn-sm join-item" aria-label={labels.sortDirection} disabled={!current} onClick={toggleSorting}>{current?.desc ? <ArrowDown size={14} /> : <ArrowUp size={14} />}</button></div>;
+}
+
+/** "Columns" dropdown: show or hide columns, and pin them when pinning is on. */
+function pinColumn<T>(column: Column<T, unknown>, side: 'left' | 'right' | false): void {
+  column.pin(side);
+}
+
+function renderPinButton<T>(column: Column<T, unknown>, side: 'left' | 'right' | false, label: string, text: React.ReactNode): React.ReactNode {
+  const pin = (pinColumn<T>).bind(null, column, side);
+  return <button key={String(side)} type="button" className={cx('btn btn-ghost btn-xs', !side && 'btn-square')} aria-label={`${label} ${columnTitle(column)}`} onClick={pin}>{text}</button>;
+}
+
+function renderColumnMenuItem<T>(labels: Labels, pinnable: boolean, column: Column<T, unknown>): React.ReactNode {
+  const title = columnTitle(column);
+  const pinControls = column.getIsPinned() ? renderPinButton(column, false, labels.unpin, <PinOff size={14} />) : [renderPinButton(column, 'left', labels.pinLeft, 'L'), renderPinButton(column, 'right', labels.pinRight, 'R')];
+  return <div key={column.id} className="flex items-center justify-between gap-2 rounded px-1 py-0.5 hover:bg-base-200"><label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-sm"><input type="checkbox" className="checkbox checkbox-xs" checked={column.getIsVisible()} disabled={!column.getCanHide()} onChange={column.getToggleVisibilityHandler()} /><span className="truncate">{title}</span></label>{pinnable && column.getCanPin() ? <div className="flex shrink-0 items-center">{pinControls}</div> : null}</div>;
+}
+
+function resetColumns<T>(table: Table<T>): void {
+  table.resetColumnVisibility();
+  table.resetColumnPinning();
+}
+
+function isDataColumn<T>(column: Column<T, unknown>): boolean {
+  return column.id !== 'select';
 }
 
 /** "Columns" dropdown: show or hide columns, and pin them when pinning is on. */
 function ColumnMenu<T>({ table, labels, pinnable }: { table: Table<T>; labels: Labels; pinnable: boolean }) {
-  const pinButton = (
-    column: Column<T, unknown>,
-    side: 'left' | 'right' | false,
-    label: string,
-    text: React.ReactNode
-  ) => (
-    <button
-      key={String(side)}
-      type="button"
-      className={cx('btn btn-ghost btn-xs', !side && 'btn-square')}
-      aria-label={`${label} ${columnTitle(column)}`}
-      onClick={() => column.pin(side)}
-    >
-      {text}
-    </button>
-  );
-  return (
-    <div className="dropdown dropdown-end">
-      <div tabIndex={0} role="button" className="btn btn-sm btn-square" aria-label={labels.columns} title={labels.columns}>
-        <Columns3 size={16} />
-      </div>
-      <div
-        tabIndex={0}
-        className="dropdown-content z-20 mt-1 max-h-80 w-72 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-      >
-        {table
-          .getAllLeafColumns()
-          .filter((c) => c.id !== 'select')
-          .map((column) => (
-            <div
-              key={column.id}
-              className="flex items-center justify-between gap-2 rounded px-1 py-0.5 hover:bg-base-200"
-            >
-              <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-xs"
-                  checked={column.getIsVisible()}
-                  disabled={!column.getCanHide()}
-                  onChange={column.getToggleVisibilityHandler()}
-                />
-                <span className="truncate">{columnTitle(column)}</span>
-              </label>
-              {pinnable && column.getCanPin() ? (
-                <div className="flex shrink-0 items-center">
-                  {column.getIsPinned()
-                    ? pinButton(column, false, labels.unpin, <PinOff size={14} />)
-                    : [
-                        pinButton(column, 'left', labels.pinLeft, 'L'),
-                        pinButton(column, 'right', labels.pinRight, 'R'),
-                      ]}
-                </div>
-              ) : null}
-            </div>
-          ))}
-        <button
-          type="button"
-          className="btn btn-ghost btn-xs mt-1 w-full"
-          onClick={() => {
-            table.resetColumnVisibility();
-            table.resetColumnPinning();
-          }}
-        >
-          {labels.reset}
-        </button>
-      </div>
-    </div>
-  );
+  const allColumns = table.getAllLeafColumns();
+  const dataColumns = allColumns.filter(isDataColumn);
+  const renderItem = (renderColumnMenuItem<T>).bind(null, labels, pinnable);
+  const items = dataColumns.map(renderItem);
+  const reset = (resetColumns<T>).bind(null, table);
+  const columnsIcon = <Columns3 size={16} />;
+  return <div className="dropdown dropdown-end"><div tabIndex={0} role="button" className="btn btn-sm btn-square" aria-label={labels.columns} title={labels.columns}>{columnsIcon}</div><div tabIndex={0} className="dropdown-content z-20 mt-1 max-h-80 w-72 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">{items}<button type="button" className="btn btn-ghost btn-xs mt-1 w-full" onClick={reset}>{labels.reset}</button></div></div>;
 }
 
 /** Page label, selected count and, when paging is on, the page size and page buttons. */
+function setPageSize<T>(table: Table<T>, event: React.ChangeEvent<HTMLSelectElement>): void {
+  const pageSize = Number(event.target.value);
+  table.setPageSize(pageSize);
+}
+
+function renderPageSizeOption(labels: Labels, size: number): React.ReactNode {
+  const label = labels.perPage(size);
+  return <option key={size} value={size}>{label}</option>;
+}
+
+function renderPageButton(entry: readonly [string, React.ComponentType<{ size?: number }>, boolean, () => void]): React.ReactNode {
+  const [label, Icon, disabled, go] = entry;
+  return <button key={label} className="btn btn-sm join-item" aria-label={label} disabled={disabled} onClick={go}><Icon size={16} /></button>;
+}
+
 function Footer<T>({
   table,
   labels,
@@ -1100,49 +1104,27 @@ function Footer<T>({
 }) {
   const first = !table.getCanPreviousPage();
   const last = !table.getCanNextPage();
+  const firstPage = table.firstPage.bind(table);
+  const previousPage = table.previousPage.bind(table);
+  const nextPage = table.nextPage.bind(table);
+  const lastPage = table.lastPage.bind(table);
   const buttons = [
-    [labels.firstPage, ChevronsLeft, first, () => table.firstPage()],
-    [labels.previousPage, ChevronLeft, first, () => table.previousPage()],
-    [labels.nextPage, ChevronRight, last, () => table.nextPage()],
-    [labels.lastPage, ChevronsRight, last, () => table.lastPage()],
+    [labels.firstPage, ChevronsLeft, first, firstPage],
+    [labels.previousPage, ChevronLeft, first, previousPage],
+    [labels.nextPage, ChevronRight, last, nextPage],
+    [labels.lastPage, ChevronsRight, last, lastPage],
   ] as const;
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-      <div className="flex items-center gap-3">
-        {pageSize ? (
-          <span className="whitespace-nowrap">
-            {labels.page(table.getState().pagination.pageIndex + 1, Math.max(table.getPageCount(), 1))}
-          </span>
-        ) : null}
-        {selectedCount !== undefined ? (
-          <span className="text-base-content/70">{labels.selected(selectedCount)}</span>
-        ) : null}
-      </div>
-      {pageSize ? (
-        <div className="flex items-center gap-3">
-          <select
-            aria-label={labels.rowsPerPage}
-            className="select select-sm w-auto"
-            value={pageSize.current}
-            onChange={(e) => table.setPageSize(Number(e.target.value))}
-          >
-            {pageSize.options.map((n) => (
-              <option key={n} value={n}>
-                {labels.perPage(n)}
-              </option>
-            ))}
-          </select>
-          <div className="join">
-            {buttons.map(([label, Icon, disabled, go]) => (
-              <button key={label} className="btn btn-sm join-item" aria-label={label} disabled={disabled} onClick={go}>
-                <Icon size={16} />
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
+  const state = table.getState();
+  const pagination = state.pagination;
+  const pageIndex = pagination.pageIndex;
+  const pageCount = table.getPageCount();
+  const totalPages = Math.max(pageCount, 1);
+  const pageLabel = labels.page(pageIndex + 1, totalPages);
+  const updatePageSize = (setPageSize<T>).bind(null, table);
+  const renderSizeOption = renderPageSizeOption.bind(null, labels);
+  const pageOptions = pageSize ? pageSize.options.map(renderSizeOption) : [];
+  const pageButtons = buttons.map(renderPageButton);
+  return <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><div className="flex items-center gap-3">{pageSize ? <span className="whitespace-nowrap">{pageLabel}</span> : null}{selectedCount !== undefined ? <span className="text-base-content/70">{labels.selected(selectedCount)}</span> : null}</div>{pageSize ? <div className="flex items-center gap-3"><select aria-label={labels.rowsPerPage} className="select select-sm w-auto" value={pageSize.current} onChange={updatePageSize}>{pageOptions}</select><div className="join">{pageButtons}</div></div> : null}</div>;
 }
 
 /* ---------- Small pieces ---------- */
@@ -1161,28 +1143,19 @@ type CheckboxProps = {
   label: string;
 };
 
-function Checkbox({ checked, indeterminate = false, disabled, onChange, label }: CheckboxProps) {
-  return (
-    <input
-      type="checkbox"
-      aria-label={label}
-      className="checkbox checkbox-sm"
-      checked={checked}
-      disabled={disabled}
-      ref={(el) => {
-        if (el) el.indeterminate = indeterminate && !checked;
-      }}
-      onClick={(e) => e.stopPropagation()}
-      onChange={onChange}
-    />
-  );
+function setCheckboxIndeterminate(indeterminate: boolean, checked: boolean, element: HTMLInputElement | null): void {
+  if (element) element.indeterminate = indeterminate && !checked;
 }
 
-const RowCheckbox = <T,>({ row, label }: { row: Row<T>; label: string }) => (
-  <Checkbox
-    checked={row.getIsSelected()}
-    disabled={!row.getCanSelect()}
-    onChange={row.getToggleSelectedHandler()}
-    label={label}
-  />
-);
+function stopCheckboxPropagation(event: React.MouseEvent): void {
+  event.stopPropagation();
+}
+
+function Checkbox({ checked, indeterminate = false, disabled, onChange, label }: CheckboxProps) {
+  const setIndeterminate = setCheckboxIndeterminate.bind(null, indeterminate, checked);
+  return <input type="checkbox" aria-label={label} className="checkbox checkbox-sm" checked={checked} disabled={disabled} ref={setIndeterminate} onClick={stopCheckboxPropagation} onChange={onChange} />;
+}
+
+function RowCheckbox<T>({ row, label }: { row: Row<T>; label: string }) {
+  return <Checkbox checked={row.getIsSelected()} disabled={!row.getCanSelect()} onChange={row.getToggleSelectedHandler()} label={label} />;
+}
