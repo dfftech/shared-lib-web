@@ -94,8 +94,7 @@ export function DataViewPage() {
       <ContentLayout>
         <h3 className="mb-3 font-semibold">Grid cards</h3>
         <TypeDataView
-          layout="card"
-          view="grid-vertical"
+          layout="grid-row"
           lanes={3}
           estimateSize={220}
           height={480}
@@ -108,8 +107,7 @@ export function DataViewPage() {
       <ContentLayout>
         <h3 className="mb-3 font-semibold">Horizontal columns</h3>
         <TypeDataView
-          layout="card"
-          view="columns"
+          layout="grid-column"
           estimateSize={280}
           height={260}
           data={dataViewUsers}
@@ -121,8 +119,7 @@ export function DataViewPage() {
       <ContentLayout>
         <h3 className="mb-3 font-semibold">Vertical masonry cards</h3>
         <TypeDataView
-          layout="card"
-          view="masonry-vertical"
+          layout="masonry-row"
           lanes={3}
           estimateSize={220}
           height={480}
@@ -135,8 +132,7 @@ export function DataViewPage() {
       <ContentLayout>
         <h3 className="mb-3 font-semibold">Horizontal masonry cards</h3>
         <TypeDataView
-          layout="card"
-          view="masonry-horizontal"
+          layout="masonry-column"
           lanes={2}
           estimateSize={280}
           height={260}

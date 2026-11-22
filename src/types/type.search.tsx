@@ -69,7 +69,7 @@ export function TypeSearch(props: TypeSearchProps) {
 
   searchHandlers.set(name, onSearch);
   return (
-    <form role="search" className="join" data-search-id={name} onSubmit={handleSearchFormSubmit}>
+    <form role="search" className={joinClassNames(["join flex rounded-field border border-gray-400 focus-within:border-gray-500 focus-within:outline-2 focus-within:outline-gray-500", className])} data-search-id={name} onSubmit={handleSearchFormSubmit}>
       <input
         type="search"
         name="search"
@@ -77,9 +77,9 @@ export function TypeSearch(props: TypeSearchProps) {
         onChange={onChange}
         placeholder={label}
         aria-label={label}
-        className="input input-sm join-item"
+        className="input input-sm join-item min-w-0 flex-1 border-0 outline-none focus:outline-none"
       />
-      <button type="submit" className="btn btn-sm join-item" aria-label={searchText} title={searchText}>
+      <button type="submit" className="btn btn-sm join-item shrink-0 border-0 border-l border-base-300 outline-none focus:outline-none" aria-label={searchText} title={searchText}>
         <TypeIcon name="Search" size={16} />
       </button>
     </form>

@@ -460,7 +460,7 @@ export {
   TYPE_DATA_VIEW_LABELS,
   type TypeDataViewLabels,
   type TypeDataViewProps,
-  type TypeDataViewView,
+  type TypeDataViewLayout,
 } from "./types/type.data-view.tsx";
 export type { TypeFieldProps } from "./types/field-props.ts";
 export type { ButtonAction, ControlSize } from "./types/class-names.ts";

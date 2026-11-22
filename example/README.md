@@ -3,7 +3,7 @@
 The full example includes a runnable `DataView` showcase at `?page=components/data-view`.
 It demonstrates:
 
-- `rows`, `list`, `columns`, `grid-vertical`, `masonry-vertical` and `masonry-horizontal`
+- `rows`, `list`, `grid-column`, `grid-row`, `masonry-row` and `masonry-column`
 - client-side and server-side rendering
 - sorting, filtering, paging and column controls
 - row selection and custom cards/list items

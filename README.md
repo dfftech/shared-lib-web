@@ -95,17 +95,16 @@ const columns = useMemo<ColumnDef<User>[]>(
 
 ### Layouts
 
-Leave `layout` out for an automatic table on desktop and cards below 768px. Use `layout="card"`,
-`layout="table"` or `layout="list"` to force a layout.
+Leave `layout` out for an automatic table on desktop and masonry-row cards below 768px.
 
-All supported `view` values:
+All supported `layout` values:
 
 - `rows` - table rows; headers, sorting and selection
 - `list` - full-width DaisyUI list rows
-- `columns` - cards in a horizontal strip
-- `grid-vertical` - equal-height cards in a vertical grid
-- `masonry-vertical` - measured-height cards in vertical lanes
-- `masonry-horizontal` - measured-width cards in horizontal lanes
+- `grid-column` - cards in a horizontal strip
+- `grid-row` - equal-height cards in a vertical grid
+- `masonry-row` - measured-height cards in vertical lanes
+- `masonry-column` - measured-width cards in horizontal lanes
 
 ```tsx
 <TypeDataView
@@ -115,8 +114,7 @@ All supported `view` values:
 />
 
 <TypeDataView
-  layout="card"
-  view="grid-vertical"
+  layout="grid-row"
   estimateSize={380}
   lanes={3}
   data={rows}
@@ -124,7 +122,7 @@ All supported `view` values:
   renderCard={(row) => <ProductCard product={row} />}
 />
 
-<TypeDataView layout="table" data={rows} columns={columns} />
+<TypeDataView layout="rows" data={rows} columns={columns} />
 
 <TypeDataView
   layout="list"

@@ -1,7 +1,7 @@
 // Popup / edit-mode / screen-action state of the user module. No HTTP here.
 import { signal } from "@preact/signals-react";
-import { ShowToast, readQueryParams, setQueryParams, translate } from "shared-lib-web";
-import { ConstValue } from "dff-util";
+import { ConstValue } from 'dff-util';
+import { ShowToast, readQueryParams, setQueryParams, translate } from 'shared-lib-web';
 import { getDefaultUser } from "./data.ts";
 import { userByIdCall, userDeleteCall, userListCall } from "./service-http.ts";
 import type { UserEditMode, UserType } from "./types.ts";

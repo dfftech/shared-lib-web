@@ -45,19 +45,19 @@ export function DataViewPage() {
       </ContentLayout>
       <ContentLayout>
         <h3 className="mb-3 font-semibold">Grid vertical</h3>
-        <TypeDataView layout="card" view="grid-vertical" lanes={2} estimateSize={220} height={440} data={dataViewRows} columns={dataViewColumns} />
+        <TypeDataView layout="grid-row" lanes={2} estimateSize={220} height={440} data={dataViewRows} columns={dataViewColumns} />
       </ContentLayout>
       <ContentLayout>
         <h3 className="mb-3 font-semibold">Columns</h3>
-        <TypeDataView layout="card" view="columns" estimateSize={280} height={260} data={dataViewRows} columns={dataViewColumns} />
+        <TypeDataView layout="grid-column" estimateSize={280} height={260} data={dataViewRows} columns={dataViewColumns} />
       </ContentLayout>
       <ContentLayout>
         <h3 className="mb-3 font-semibold">Vertical masonry</h3>
-        <TypeDataView layout="card" view="masonry-vertical" lanes={2} estimateSize={220} height={440} data={dataViewRows} columns={dataViewColumns} />
+        <TypeDataView layout="masonry-row" lanes={2} estimateSize={220} height={440} data={dataViewRows} columns={dataViewColumns} />
       </ContentLayout>
       <ContentLayout>
         <h3 className="mb-3 font-semibold">Horizontal masonry</h3>
-        <TypeDataView layout="card" view="masonry-horizontal" lanes={2} estimateSize={280} height={260} data={dataViewRows} columns={dataViewColumns} />
+        <TypeDataView layout="masonry-column" lanes={2} estimateSize={280} height={260} data={dataViewRows} columns={dataViewColumns} />
       </ContentLayout>
     </div>
   );

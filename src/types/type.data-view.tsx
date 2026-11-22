@@ -34,9 +34,9 @@ import {
   ChevronsRight,
   Columns3,
   PinOff,
-  Search,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type RefObject } from 'react';
+import { readSearchText, TypeSearch } from './type.search.tsx';
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -52,18 +52,18 @@ declare module '@tanstack/react-table' {
  * How the records are laid out. Each one maps to a TanStack Virtual setup.
  * - `rows`: a table, one record per row, scrolls vertically.
  * - `list`: a DaisyUI list, one full-width item per record, scrolls vertically.
- * - `columns`: cards side by side in one strip, scrolls horizontally.
- * - `grid-vertical`: cards of equal size in a grid, scrolls vertically.
- * - `masonry-vertical`: cards in lanes, each as tall as its content, scrolls vertically.
- * - `masonry-horizontal`: cards in lanes, widths from `estimateSize`, scrolls horizontally.
+ * - `grid-column`: cards side by side in one strip, scrolls horizontally.
+ * - `grid-row`: cards of equal size in a grid, scrolls vertically.
+ * - `masonry-row`: cards in lanes, each as tall as its content, scrolls vertically.
+ * - `masonry-column`: cards in lanes, widths from `estimateSize`, scrolls horizontally.
  */
-export type TypeDataViewView =
+export type TypeDataViewLayout =
   | 'rows'
   | 'list'
-  | 'columns'
-  | 'grid-vertical'
-  | 'masonry-vertical'
-  | 'masonry-horizontal';
+  | 'grid-column'
+  | 'grid-row'
+  | 'masonry-row'
+  | 'masonry-column';
 
 /** Every text the component shows. Pass `labels` with the ones you want to translate or change. */
 export const TYPE_DATA_VIEW_LABELS = {
@@ -112,17 +112,12 @@ export type TypeDataViewProps<T> = {
 
   /* ---------- Layout ---------- */
   /**
-   * "table": always the table. "card": always cards. "list": always the list.
-   * Leave it out for automatic: table on desktop, cards below 768px.
-   */
-  layout?: 'table' | 'card' | 'list';
-  /**
-   * How records are arranged. Default "rows" (the table). Used as the card arrangement
-   * when it is not "rows"; the cards then default to "masonry-vertical".
+   * Records are displayed as a table ("rows"), list ("list"), or one of the card layouts.
+   * Leave it out for automatic: rows on desktop and masonry-row cards below 768px.
    * Only "rows" has column headers, sorting arrows and checkboxes.
    */
-  view?: TypeDataViewView;
-  /** Number of lanes (grid/masonry columns, or rows for "masonry-horizontal"). Default: fits the container. */
+  layout?: TypeDataViewLayout;
+  /** Number of lanes (grid/masonry columns, or rows for "masonry-column"). Default: fits the container. */
   lanes?: number;
   /** Custom card. What you return is the whole card. Without it, a default card lists the columns. */
   renderCard?: (row: T, tableRow: Row<T>) => React.ReactNode;
@@ -136,7 +131,7 @@ export type TypeDataViewProps<T> = {
   height?: number | string;
   /**
    * Size along the scroll axis in px: row height (measured, so this is only the first guess),
-   * card height for "grid-vertical" and "masonry-vertical", card width for "columns" and "masonry-horizontal".
+   * card height for "grid-row" and "masonry-row", card width for "grid-column" and "masonry-column".
    * Pass a function to give each item its own size. Default 48 / 72 / 300 / 280.
    */
   estimateSize?: number | ((index: number) => number);
@@ -222,13 +217,13 @@ const SKELETON_ROWS = 10;
 const CARD_MIN_WIDTH = 280;
 const CARD_MIN_HEIGHT = 200;
 const MOBILE_QUERY = '(max-width: 767px)';
-const DEFAULT_SIZE: Record<TypeDataViewView, number> = {
+const DEFAULT_SIZE: Record<TypeDataViewLayout, number> = {
   rows: 48,
   list: 72,
-  columns: 280,
-  'grid-vertical': 300,
-  'masonry-vertical': 300,
-  'masonry-horizontal': 280,
+  'grid-column': 280,
+  'grid-row': 300,
+  'masonry-row': 300,
+  'masonry-column': 280,
 };
 
 type Labels = TypeDataViewLabels;
@@ -251,11 +246,9 @@ function pinStyle<T>(column: Column<T, unknown>): React.CSSProperties {
   };
 }
 
-/** The layout to draw, from `layout` (forced), `view` (the arrangement) and the screen size (automatic). */
-function resolveView(layout: TypeDataViewProps<unknown>['layout'], view: TypeDataViewView, isMobile: boolean) {
-  if (layout === 'table') return 'rows';
-  if (layout === 'list') return 'list';
-  return layout === 'card' || (!layout && isMobile) ? (view === 'rows' ? 'masonry-vertical' : view) : view;
+/** Resolves the automatic layout from the screen size. */
+function resolveLayout(layout: TypeDataViewProps<unknown>['layout'], isMobile: boolean): TypeDataViewLayout {
+  return layout ?? (isMobile ? 'masonry-row' : 'rows');
 }
 
 function useIsMobile(): boolean {
@@ -337,7 +330,6 @@ export function TypeDataView<T>({
   rowCount,
   initialState,
   // layout
-  view: viewProp = 'rows',
   layout,
   lanes: lanesProp,
   renderCard,
@@ -389,11 +381,11 @@ export function TypeDataView<T>({
 }: TypeDataViewProps<T>) {
   const labels = useMemo(() => ({ ...TYPE_DATA_VIEW_LABELS, ...labelsProp }), [labelsProp]);
   const isMobile = useIsMobile();
-  const view = resolveView(layout, viewProp, isMobile);
+  const view = resolveLayout(layout, isMobile);
   const isRows = view === 'rows';
-  const horizontal = view === 'columns' || view === 'masonry-horizontal';
-  // Rows, list items and masonry-vertical cards are measured; the other views use the sizes given.
-  const measured = isRows || view === 'list' || view === 'masonry-vertical';
+  const horizontal = view === 'grid-column' || view === 'masonry-column';
+  // Rows, list items and masonry-row cards are measured; the other views use the sizes given.
+  const measured = isRows || view === 'list' || view === 'masonry-row';
   const server = rendering === 'server';
   const selectable = !!enableRowSelection;
   // Paging (and its footer) is on only when `pagination` is passed.
@@ -409,6 +401,11 @@ export function TypeDataView<T>({
     ...initialState?.pagination,
   });
   const [globalFilter, setGlobalFilter] = useControlled(globalFilterProp, (initialState?.globalFilter as string) ?? '');
+  const [globalFilterInput, setGlobalFilterInput] = useState(globalFilter);
+  const globalSearchName = `data-view-search-${useId()}`;
+  useEffect(() => {
+    setGlobalFilterInput(globalFilter);
+  }, [globalFilter]);
   const [columnFilters, setColumnFilters] = useControlled(columnFiltersProp, initialState?.columnFilters ?? []);
   const [columnVisibility, setColumnVisibility] = useControlled(
     columnVisibilityProp,
@@ -478,12 +475,12 @@ export function TypeDataView<T>({
   const scrollRef = useRef<HTMLDivElement>(null);
   const box = useSize(scrollRef);
   const autoLanes =
-    view === 'masonry-horizontal'
+    view === 'masonry-column'
       ? box.height / CARD_MIN_HEIGHT
-      : view === 'grid-vertical' || view === 'masonry-vertical'
+      : view === 'grid-row' || view === 'masonry-row'
         ? (isMobile ? 1 : box.width / CARD_MIN_WIDTH)
         : 1;
-  const lanes = isRows || view === 'list' || view === 'columns' ? 1 : Math.max(1, Math.floor(lanesProp ?? autoLanes));
+  const lanes = isRows || view === 'list' || view === 'grid-column' ? 1 : Math.max(1, Math.floor(lanesProp ?? autoLanes));
   const sizeOf = useCallback(
     (i: number) => (typeof estimateSize === 'function' ? estimateSize(i) : (estimateSize ?? DEFAULT_SIZE[view])),
     [estimateSize, view]
@@ -538,22 +535,23 @@ export function TypeDataView<T>({
     renderCard,
     renderListItem,
   };
+  const handleGlobalSearch = (event: FormEvent<HTMLFormElement>): void => {
+    table.setGlobalFilter(readSearchText(event));
+  };
 
   return (
     <div className={cx('flex flex-col gap-2', fill && 'min-h-0 flex-1', className)}>
       {enableGlobalFilter || showColumnsMenu || cardSortable || renderToolbar ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 py-2">
+        <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 bg-transparent py-2 backdrop-blur-sm">
           {enableGlobalFilter ? (
-            <label className="input input-sm flex w-full flex-1 items-center gap-2">
-              <Search size={14} className="opacity-60" />
-              <input
-                type="search"
-                className="grow"
-                placeholder={labels.search}
-                value={globalFilter ?? ''}
-                onChange={(e) => table.setGlobalFilter(e.target.value)}
-              />
-            </label>
+            <TypeSearch
+              name={globalSearchName}
+              label={labels.search}
+              value={globalFilterInput}
+              className="w-full max-w-md flex-1"
+              onChange={(event) => setGlobalFilterInput(event.currentTarget.value)}
+              onSearch={handleGlobalSearch}
+            />
           ) : (
             <span />
           )}

@@ -204,10 +204,10 @@ const columns: ColumnDef<User>[] = [
 Views:
 
 ```tsx
-<TypeDataView layout="table" data={rows} columns={columns} />                         // rows
+<TypeDataView layout="rows" data={rows} columns={columns} />                         // rows
 <TypeDataView layout="list" data={rows} columns={columns} />                         // list
-<TypeDataView layout="card" view="columns" data={rows} columns={columns} />           // columns
-<TypeDataView layout="card" view="grid-vertical" lanes={3} data={rows} columns={columns} />
-<TypeDataView layout="card" view="masonry-vertical" lanes={3} data={rows} columns={columns} />
-<TypeDataView layout="card" view="masonry-horizontal" lanes={2} data={rows} columns={columns} />
+<TypeDataView layout="grid-column" data={rows} columns={columns} />                  // grid-column
+<TypeDataView layout="grid-row" lanes={3} data={rows} columns={columns} />
+<TypeDataView layout="masonry-row" lanes={3} data={rows} columns={columns} />
+<TypeDataView layout="masonry-column" lanes={2} data={rows} columns={columns} />
 ```

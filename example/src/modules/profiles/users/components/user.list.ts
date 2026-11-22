@@ -1,5 +1,5 @@
 // user.list.ts — TypeScript only: list data, filters and props.
-import type { CellContext, ColumnDef } from '@tanstack/react-table';
+import type { CellContext, ColumnDef, Updater } from '@tanstack/react-table';
 import { TimeAgo } from 'dff-util';
 import { useEffect, type ChangeEvent } from 'react';
 import {
@@ -85,6 +85,12 @@ export function handleUserSearchChange(event: ChangeEvent<HTMLInputElement>): vo
   userSearchText.value = input.value;
 }
 
+/** The data-view search: TanStack passes a value or an updater function. */
+export function handleGlobalFilterChange(updater: Updater<string>): void {
+  const nextValue = typeof updater === 'function' ? updater(userSearchText.value) : updater;
+  userSearchText.value = nextValue;
+}
+
 export function handleRoleFilterChange(event: ChangeEvent<HTMLSelectElement>): void {
   const select = event.currentTarget;
   userRoleFilter.value = select.value;
@@ -165,6 +171,8 @@ export function useUserList(): UserListModel {
       height: 'fill',
       loading: userListIsLoading.value,
       onRowClick: handleUserRowClick,
+      globalFilter: searchText,
+      onGlobalFilterChange: handleGlobalFilterChange,
       enableGlobalFilter: true,
       showColumnsMenu: true,
       initialState: { sorting: [] },

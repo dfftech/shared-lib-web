@@ -12,8 +12,8 @@ Four separate Vite projects, each with its own `package.json`:
 ### DataView examples
 
 The profile MFE includes a `TypeDataView` backed by TanStack Table as an integration example. The full example app
-contains runnable examples for `rows`, `list`, `columns`, `grid-vertical`, `masonry-vertical` and
-`masonry-horizontal`, plus paging, server sorting/filtering, selection and custom cards/list items.
+contains runnable examples for `rows`, `list`, `grid-column`, `grid-row`, `masonry-row` and
+`masonry-column`, plus paging, server sorting/filtering, selection and custom cards/list items.
 
 ```bash
 node run-all.mjs install   # npm install in every folder   (or: npm run example-mfe:install from the repo root)
