@@ -214,7 +214,6 @@ export type TypeDataViewProps<T> = {
 /* ---------- Helpers and hooks ---------- */
 
 const SKELETON_ROWS = 10;
-const CARD_MIN_WIDTH = 280;
 const CARD_MIN_HEIGHT = 200;
 const MOBILE_QUERY = '(max-width: 767px)';
 const DEFAULT_SIZE: Record<TypeDataViewLayout, number> = {
@@ -474,11 +473,17 @@ export function TypeDataView<T>({
   // Virtualization. Lanes follow the size of the scroll area unless `lanes` is given.
   const scrollRef = useRef<HTMLDivElement>(null);
   const box = useSize(scrollRef);
+  // Responsive lanes: 1 on mobile (xs), 2 on tablet (sm), 3 on desktop (md+)
+  const getResponsiveLanes = () => {
+    if (box.width < 640) return 1; // xs: < 640px
+    if (box.width < 1024) return 2; // sm: 640px - 1023px
+    return 3; // md+: >= 1024px
+  };
   const autoLanes =
     view === 'masonry-column'
       ? box.height / CARD_MIN_HEIGHT
       : view === 'grid-row' || view === 'masonry-row'
-        ? (isMobile ? 1 : box.width / CARD_MIN_WIDTH)
+        ? getResponsiveLanes()
         : 1;
   const lanes = isRows || view === 'list' || view === 'grid-column' ? 1 : Math.max(1, Math.floor(lanesProp ?? autoLanes));
   const sizeOf = useCallback(
