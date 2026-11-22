@@ -473,11 +473,17 @@ export function TypeDataView<T>({
   // Virtualization. Lanes follow the size of the scroll area unless `lanes` is given.
   const scrollRef = useRef<HTMLDivElement>(null);
   const box = useSize(scrollRef);
-  // Responsive lanes: 1 on mobile (xs), 2 on tablet (sm), 3 on desktop (md+)
+  // Responsive lanes based on Tailwind breakpoints
   const getResponsiveLanes = () => {
     if (box.width < 640) return 1; // xs: < 640px
     if (box.width < 1024) return 2; // sm: 640px - 1023px
-    return 3; // md+: >= 1024px
+    if (box.width < 1280) return 3; // md: 1024px - 1279px
+    if (box.width < 1536) return 4; // lg: 1280px - 1535px
+    if (box.width < 1792) return 5; // xl: 1536px - 1791px
+    if (box.width < 2048) return 6; // 2xl: 1792px - 2047px
+    if (box.width < 2560) return 7; // 3xl: 2048px - 2559px
+    if (box.width < 3072) return 8; // 4xl: 2560px - 3071px
+    return 9; // 5xl: >= 3072px
   };
   const autoLanes =
     view === 'masonry-column'
