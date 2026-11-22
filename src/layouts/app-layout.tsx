@@ -18,6 +18,7 @@ import { Suspense, type ReactNode } from 'react';
 import { ScrollToTop } from "../components/scroll-to-top.tsx";
 import { translate } from '../i18n/translator.ts';
 import { SkeletonPage } from "../skeleton/skeleton-page.tsx";
+import { SCROLL_ROOT_ATTRIBUTE } from "../state/scroll-service.ts";
 import { handleDrawerToggleChange } from "../state/sidebar-service.ts";
 import { isMenuVisibleSignal, isSidebarCollapsedSignal, isSidebarOpenSignal, navigationModeSignal, uiConfigSignal } from "../state/signals.ts";
 import { joinClassNames } from "../types/class-names.ts";
@@ -26,6 +27,8 @@ import { DRAWER_ID } from "./layout-constants.ts";
 import { RailFlyout } from "./rail-flyout.tsx";
 import { RailTooltip } from "./rail-tooltip.tsx";
 import { Sidebar } from "./sidebar.tsx";
+
+const SCROLL_ROOT_PROPS = { [SCROLL_ROOT_ATTRIBUTE]: "" };
 
 export interface AppLayoutProps {
   /** The page content (the app picks it from the ?page query parameter). */
@@ -82,7 +85,8 @@ export function AppLayout(props: AppLayoutProps) {
       />
       <div className="drawer-content flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-base-200">
         {showHeader ? headerElement : null}
-        <main className="min-h-0 flex-1">
+        {/* The header stays put; <main> is the scroll root (see scroll-service.ts). */}
+        <main className="min-h-0 flex-1 overflow-y-auto" {...SCROLL_ROOT_PROPS}>
           <div className="space-y-4 p-4 lg:p-6">
             <Suspense fallback={pageFallback}>{children}</Suspense>
           </div>

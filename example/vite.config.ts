@@ -33,7 +33,7 @@ const defineOptions = {
 };
 
 // The library source lives outside this folder; make it use this app's single copy of these packages.
-const dedupePackages = ["react", "react-dom", "@preact/signals-react", "react-hook-form", "lucide-react", "dff-util", "@uiw/react-md-editor"];
+const dedupePackages = ["react", "react-dom", "@preact/signals-react", "react-hook-form", "lucide-react", "dff-util", "@tanstack/react-table", "@tanstack/react-virtual", "@uiw/react-md-editor"];
 
 export default defineConfig({
   root: exampleRoot,

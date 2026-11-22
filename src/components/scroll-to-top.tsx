@@ -1,37 +1,18 @@
 // scroll-to-top.tsx
-// Round button that appears after scrolling down and scrolls back to the top. Rendered by AppLayout.
+// Round button that appears after scrolling down and scrolls back to the top. Rendered by AppLayout and AsideLayout.
 
 import { useSignals } from "@preact/signals-react/runtime";
 import { translate } from "../i18n/translator.ts";
+import { scrollPageTo, startScrollListener } from "../state/scroll-service.ts";
 import { isScrolledSignal } from "../state/signals.ts";
 import { TypeIcon } from "../types/type.icon.ts";
 
-const SCROLL_THRESHOLD_PX = 400;
-
-let isScrollListenerStarted = false;
-
-/** Updates isScrolledSignal from the window scroll position. */
-export function handleWindowScroll(): void {
-  const isScrolled = window.scrollY > SCROLL_THRESHOLD_PX;
-  if (isScrolledSignal.value !== isScrolled) {
-    isScrolledSignal.value = isScrolled;
-  }
-}
-
-/** Starts listening to scrolling. Safe to call many times. */
-export function startScrollListener(): void {
-  if (isScrollListenerStarted) {
-    return;
-  }
-  isScrollListenerStarted = true;
-  const listenerOptions = { passive: true };
-  window.addEventListener("scroll", handleWindowScroll, listenerOptions);
-}
+export { startScrollListener };
 
 /** Smoothly scrolls to the top. */
 export function scrollToTop(): void {
   const scrollOptions: ScrollToOptions = { top: 0, behavior: "smooth" };
-  window.scrollTo(scrollOptions);
+  scrollPageTo(scrollOptions);
 }
 
 export interface ScrollToTopProps {

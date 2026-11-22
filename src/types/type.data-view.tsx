@@ -35,7 +35,18 @@ import {
   Columns3,
   PinOff,
 } from 'lucide-react';
-import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+  type RefObject,
+} from 'react';
 import { readSearchText, TypeSearch } from './type.search.tsx';
 
 declare module '@tanstack/react-table' {
@@ -117,8 +128,14 @@ export type TypeDataViewProps<T> = {
    * Only "rows" has column headers, sorting arrows and checkboxes.
    */
   layout?: TypeDataViewLayout;
-  /** Number of lanes (grid/masonry columns, or rows for "masonry-column"). Default: fits the container. */
+  /**
+   * Number of lanes (grid/masonry columns, or rows for "masonry-column").
+   * For "grid-row" and "masonry-row" it is the most lanes: fewer are used when the scroll area is too narrow
+   * for `minCardWidth`. Default: as many as fit.
+   */
   lanes?: number;
+  /** Narrowest card in px for "grid-row" and "masonry-row"; sets how many lanes fit the width. Default 260. */
+  minCardWidth?: number;
   /** Custom card. What you return is the whole card. Without it, a default card lists the columns. */
   renderCard?: (row: T, tableRow: Row<T>) => React.ReactNode;
   /**
@@ -215,6 +232,7 @@ export type TypeDataViewProps<T> = {
 
 const SKELETON_ROWS = 10;
 const CARD_MIN_HEIGHT = 360;
+const CARD_MIN_WIDTH = 260;
 const MOBILE_QUERY = '(max-width: 767px)';
 const DEFAULT_SIZE: Record<TypeDataViewLayout, number> = {
   rows: 48,
@@ -262,17 +280,6 @@ function useIsMobile(): boolean {
   );
 }
 
-/** Get the current window width for responsive breakpoints. */
-function useWindowWidth(): number {
-  const [width, setWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 0));
-  useEffect(() => {
-    const handleResize = () => setWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  return width;
-}
-
 /** State that follows `value` when the parent passes it, and is kept here otherwise. */
 function useControlled<V>(value: V | undefined, initial: V) {
   const [inner, setInner] = useState(initial);
@@ -282,9 +289,11 @@ function useControlled<V>(value: V | undefined, initial: V) {
 /** Width and height of an element, kept up to date while it resizes. */
 function useSize(ref: RefObject<HTMLElement | null>) {
   const [size, setSize] = useState({ width: 0, height: 0 });
-  useEffect(() => {
+  // Layout effect: the first size is read before paint, so card lanes do not jump on the first frame.
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    setSize({ width: el.clientWidth, height: el.clientHeight });
     const observer = new ResizeObserver(([{ contentRect: r }]) =>
       setSize((s) => (s.width === r.width && s.height === r.height ? s : { width: r.width, height: r.height }))
     );
@@ -342,6 +351,7 @@ export function TypeDataView<T>({
   // layout
   layout,
   lanes: lanesProp,
+  minCardWidth = CARD_MIN_WIDTH,
   renderCard,
   renderListItem,
   height = 'fill',
@@ -484,26 +494,16 @@ export function TypeDataView<T>({
   // Virtualization. Lanes follow the size of the scroll area unless `lanes` is given.
   const scrollRef = useRef<HTMLDivElement>(null);
   const box = useSize(scrollRef);
-  const windowWidth = useWindowWidth();
-  // Responsive lanes based on Tailwind breakpoints using window width
-  const getResponsiveLanes = () => {
-    if (windowWidth < 640) return 1; // xs: < 640px
-    if (windowWidth < 1024) return 2; // sm: 640px - 1023px
-    if (windowWidth < 1280) return 3; // md: 1024px - 1279px
-    if (windowWidth < 1536) return 4; // lg: 1280px - 1535px
-    if (windowWidth < 1792) return 5; // xl: 1536px - 1791px
-    if (windowWidth < 2048) return 6; // 2xl: 1792px - 2047px
-    if (windowWidth < 2560) return 7; // 3xl: 2048px - 2559px
-    if (windowWidth < 3072) return 8; // 4xl: 2560px - 3071px
-    return 9; // 5xl: >= 3072px
-  };
+  // Vertical card lanes fit the width of the scroll area (not the window, so a sidebar or a narrow parent counts):
+  // each lane is at least `minCardWidth` wide, and `lanes` is the most. Before the first measure, `lanes` is used.
+  const fitLanes = box.width > 0 ? box.width / minCardWidth : (lanesProp ?? 1);
   const autoLanes =
     view === 'masonry-column'
-      ? box.height / CARD_MIN_HEIGHT
+      ? (lanesProp ?? box.height / CARD_MIN_HEIGHT)
       : view === 'grid-row' || view === 'masonry-row'
-        ? getResponsiveLanes()
+        ? Math.min(lanesProp ?? Infinity, fitLanes)
         : 1;
-  const lanes = isRows || view === 'list' || view === 'grid-column' ? 1 : Math.max(1, Math.floor(lanesProp ?? autoLanes));
+  const lanes = isRows || view === 'list' || view === 'grid-column' ? 1 : Math.max(1, Math.floor(autoLanes));
   const sizeOf = useCallback(
     (i: number) => (typeof estimateSize === 'function' ? estimateSize(i) : (estimateSize ?? DEFAULT_SIZE[view])),
     [estimateSize, view]
@@ -918,12 +918,13 @@ function CardsView<T>({
               ) : (
                 <div
                   className={cx(
-                    'card card-border relative bg-base-100 w-full h-full',
+                    // @container: the body below follows the card's width, not the window's.
+                    'card card-border @container relative bg-base-100 w-full h-full',
                     !measured && 'overflow-auto',
                     row.getIsSelected() ? 'border-primary bg-primary/10' : 'border-base-300'
                   )}
                 >
-                  <div className="card-body grid grid-cols-1 gap-x-3 gap-y-2 p-3 sm:gap-x-4 sm:gap-y-3 sm:p-4 min-[480px]:grid-cols-2">
+                  <div className="card-body grid grid-cols-1 gap-x-3 gap-y-2 p-3 @xs:gap-x-4 @xs:gap-y-3 @xs:p-4 @md:grid-cols-2">
                     {selectable ? (
                       <div className="absolute right-3 top-3">
                         <RowCheckbox row={row} label={labels.selectRow} />
@@ -934,11 +935,11 @@ function CardsView<T>({
                       return (
                         <div
                           key={cell.id}
-                          className="min-w-0 truncate text-xs sm:text-sm"
+                          className="min-w-0 truncate text-xs @xs:text-sm"
                           title={String(cell.getValue() ?? '')}
                         >
                           {typeof header === 'string' && header ? (
-                            <div className="text-[10px] sm:text-xs uppercase text-base-content/60">{header}</div>
+                            <div className="text-[10px] @xs:text-xs uppercase text-base-content/60">{header}</div>
                           ) : null}
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </div>
@@ -1031,8 +1032,8 @@ function ColumnMenu<T>({ table, labels, pinnable }: { table: Table<T>; labels: L
   );
   return (
     <div className="dropdown dropdown-end">
-      <div tabIndex={0} role="button" className="btn btn-sm">
-        <Columns3 size={16} /> {labels.columns}
+      <div tabIndex={0} role="button" className="btn btn-sm btn-square" aria-label={labels.columns} title={labels.columns}>
+        <Columns3 size={16} />
       </div>
       <div
         tabIndex={0}

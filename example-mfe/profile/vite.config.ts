@@ -28,7 +28,7 @@ const aliasOptions = [
 ];
 
 // The library source lives outside this folder: resolve these packages from THIS project.
-const dedupePackages = ["react", "react-dom", "@preact/signals-react", "react-hook-form", "lucide-react", "dff-util", "single-spa", "single-spa-react"];
+const dedupePackages = ["react", "react-dom", "@preact/signals-react", "react-hook-form", "lucide-react", "dff-util", "@tanstack/react-table", "@tanstack/react-virtual", "single-spa", "single-spa-react"];
 
 // Library build: one ES module (profile.js) + its CSS (profile.css). React and shared-lib-web are bundled in,
 // so the MFE runs on its own; the root only needs its URL.

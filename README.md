@@ -113,10 +113,12 @@ All supported `layout` values:
   renderCard={(row) => <ProductCard product={row} />}
 />
 
+// lanes is the most columns: fewer show when the area is narrower than lanes x minCardWidth (default 260px).
 <TypeDataView
   layout="grid-row"
   estimateSize={380}
   lanes={3}
+  minCardWidth={280}
   data={rows}
   columns={columns}
   renderCard={(row) => <ProductCard product={row} />}

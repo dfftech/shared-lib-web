@@ -59,10 +59,12 @@ export function renderDataViewCard(row: DataViewUser): React.ReactNode {
     <div className="card card-border h-full border-base-300 bg-base-100">
       <div className="card-body">
         <h3 className="card-title text-base">{row.name}</h3>
-        <p className="text-sm opacity-70">{row.email}</p>
-        <div className="mt-2 flex items-center justify-between text-sm">
+        <p className="truncate text-sm opacity-70" title={row.email}>
+          {row.email}
+        </p>
+        <div className="mt-2 flex items-center justify-between gap-2 text-sm">
           <span className="badge badge-outline">{row.role}</span>
-          <span>{row.age} years</span>
+          <span className="whitespace-nowrap">{row.age} years</span>
         </div>
       </div>
     </div>

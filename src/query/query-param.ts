@@ -22,7 +22,10 @@ import {
   readIsPathPageMode,
   uiConfigSignal,
 } from "../state/signals.ts";
+import { scrollPageTo } from "../state/scroll-service.ts";
 import { toPagePath, toPageParamValue } from "./page-path.ts";
+
+const PAGE_TOP: ScrollToOptions = { top: 0 };
 
 /** Values to set. undefined, null or "" removes the parameter. */
 export type QueryParamValues = Record<string, string | number | boolean | null | undefined>;
@@ -247,7 +250,7 @@ export function openPage(page: string, extraValues: QueryParamValues = {}, optio
     setQueryParams(values, options);
   }
   closeOpenMenus();
-  window.scrollTo(0, 0);
+  scrollPageTo(PAGE_TOP);
 }
 
 /** Back / forward: read the parameters again and close open menus. */
