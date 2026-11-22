@@ -16,6 +16,7 @@
 # Run it again after changing an example, so the script stays the same as the examples.
 
 import base64
+import json
 import pathlib
 import re
 import sys
@@ -258,12 +259,47 @@ TEMPLATES = {
     "mfe": {"package.json": MFE_PACKAGE, "vite.config.ts": MFE_VITE, "README.md": MFE_README},
 }
 
-DEPENDENCIES = {
-    "spa": "shared-lib-web react react-dom @preact/signals-react react-hook-form lucide-react dff-util",
-    "shell": "shared-lib-web react react-dom @preact/signals-react react-hook-form lucide-react dff-util single-spa",
-    "mfe": "shared-lib-web react react-dom @preact/signals-react react-hook-form lucide-react dff-util single-spa single-spa-react",
-}
-DEV_DEPENDENCIES = "vite @vitejs/plugin-react tailwindcss @tailwindcss/vite daisyui typescript @types/react @types/react-dom @types/node"
+# Packages: each example's own package.json (dependencies / devDependencies) + the library's required peer
+# dependencies + shared-lib-web itself, so a new package in an example (for example @tanstack/react-table for
+# TypeDataView) reaches the generated projects by running this script again.
+
+
+def read_package(folder: pathlib.Path) -> dict:
+    return json.loads((folder / "package.json").read_text(encoding="utf-8"))
+
+
+def library_peer_specs() -> dict[str, str]:
+    """Required peers of the library -> the version range the library itself is developed with (devDependencies),
+    else the peer range."""
+    package = read_package(REPO)
+    peers = package.get("peerDependencies", {})
+    optional = package.get("peerDependenciesMeta", {})
+    developed = package.get("devDependencies", {})
+    specs: dict[str, str] = {}
+    for name, peer_range in peers.items():
+        if not optional.get(name, {}).get("optional"):
+            specs[name] = developed.get(name, peer_range)
+    return specs
+
+
+def to_specs(versions: dict[str, str]) -> str:
+    """{ name: range } -> "name@range ..." (the same versions as the example, not simply the latest)."""
+    return " ".join(f"{name}@{version}" for name, version in versions.items())
+
+
+def dependency_names(kind: str) -> str:
+    package = read_package(SOURCES[kind])
+    versions: dict[str, str] = {"shared-lib-web": "latest"}
+    versions.update(package.get("dependencies", {}))
+    for name, version in library_peer_specs().items():
+        versions.setdefault(name, version)
+    return to_specs(versions)
+
+
+def dev_dependency_names(kind: str) -> str:
+    package = read_package(SOURCES[kind])
+    return to_specs(package.get("devDependencies", {}))
+
 
 # ------------------------------------------------------------------ text fixes
 
@@ -508,21 +544,33 @@ echo "Files: $CREATED_COUNT created, $SKIPPED_COUNT already there (kept)."
 
 # ---------------------------------------------------------------- install (shared-lib-web from npm)
 # Adds only the packages package.json does not list yet (versions already there are kept), then installs.
+# Each package is "name@range" with the same range as the example (for example @tanstack/react-table@^8.21.3).
 missing_packages() {
-  node -e 'const p=require("./package.json");const all={...p.dependencies,...p.devDependencies};console.log(process.argv.slice(1).filter((n)=>!all[n]).join(" "));' "$@"
+  node -e '
+const p = require("./package.json");
+const all = { ...p.dependencies, ...p.devDependencies };
+const missing = [];
+for (const spec of process.argv.slice(1)) {
+  const at = spec.indexOf("@", 1);
+  const name = at > 0 ? spec.slice(0, at) : spec;
+  if (!all[name]) {
+    missing.push(spec);
+  }
+}
+console.log(missing.join(" "));' "$@"
 }
 
 case "$APP_TYPE" in
-  spa) DEPENDENCIES="__SPA_DEPENDENCIES__" ;;
-  shell) DEPENDENCIES="__SHELL_DEPENDENCIES__" ;;
-  mfe) DEPENDENCIES="__MFE_DEPENDENCIES__" ;;
+  spa) DEPENDENCIES="__SPA_DEPENDENCIES__"; DEV_DEPENDENCIES="__SPA_DEV_DEPENDENCIES__" ;;
+  shell) DEPENDENCIES="__SHELL_DEPENDENCIES__"; DEV_DEPENDENCIES="__SHELL_DEV_DEPENDENCIES__" ;;
+  mfe) DEPENDENCIES="__MFE_DEPENDENCIES__"; DEV_DEPENDENCIES="__MFE_DEV_DEPENDENCIES__" ;;
 esac
 
 echo "Installing packages ..."
 # shellcheck disable=SC2086
 MISSING_DEPS="$(missing_packages $DEPENDENCIES)"
 # shellcheck disable=SC2086
-MISSING_DEV_DEPS="$(missing_packages __DEV_DEPENDENCIES__)"
+MISSING_DEV_DEPS="$(missing_packages $DEV_DEPENDENCIES)"
 if [ -n "$MISSING_DEPS" ]; then
   # shellcheck disable=SC2086
   npm install --save $MISSING_DEPS
@@ -585,10 +633,10 @@ def build() -> None:
         lines.append("}")
         lines.append("")
     footer = FOOTER
-    footer = footer.replace("__SPA_DEPENDENCIES__", DEPENDENCIES["spa"])
-    footer = footer.replace("__SHELL_DEPENDENCIES__", DEPENDENCIES["shell"])
-    footer = footer.replace("__MFE_DEPENDENCIES__", DEPENDENCIES["mfe"])
-    footer = footer.replace("__DEV_DEPENDENCIES__", DEV_DEPENDENCIES)
+    for kind in ("spa", "shell", "mfe"):
+        upper = kind.upper()
+        footer = footer.replace(f"__{upper}_DEV_DEPENDENCIES__", dev_dependency_names(kind))
+        footer = footer.replace(f"__{upper}_DEPENDENCIES__", dependency_names(kind))
     lines.append(footer)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(lines), encoding="utf-8")
