@@ -874,7 +874,7 @@ function CardsView<T>({
             key={row.id}
             data-index={item.index}
             ref={measured ? measure : undefined}
-            className="absolute left-0 top-0 p-0.5 xs:p-1 sm:p-1.5 md:p-2"
+            className="absolute left-0 top-0 p-1 sm:p-2"
             style={
               horizontal
                 ? { top: lane, height: laneSize, width: size, transform: `translateX(${item.start}px)` }
@@ -895,14 +895,14 @@ function CardsView<T>({
               ) : (
                 <div
                   className={cx(
-                    'card card-border relative bg-base-100 w-full h-full flex flex-col',
+                    'card card-border relative bg-base-100 w-full h-full',
                     !measured && 'overflow-auto',
-                    row.getIsSelected() ? 'border-2 border-primary bg-primary/10' : 'border border-base-300 hover:border-base-content/20'
+                    row.getIsSelected() ? 'border-primary bg-primary/10' : 'border-base-300'
                   )}
                 >
-                  <div className="card-body grid grid-cols-1 gap-x-2 gap-y-1.5 p-2 xs:gap-x-2.5 xs:gap-y-2 xs:p-2.5 sm:gap-x-3 sm:gap-y-2.5 sm:p-3 md:gap-x-4 md:gap-y-3 md:p-4 min-[480px]:grid-cols-2">
+                  <div className="card-body grid grid-cols-1 gap-x-3 gap-y-2 p-3 sm:gap-x-4 sm:gap-y-3 sm:p-4 min-[480px]:grid-cols-2">
                     {selectable ? (
-                      <div className="absolute right-2 top-2 xs:right-2.5 xs:top-2.5 sm:right-3 sm:top-3">
+                      <div className="absolute right-3 top-3">
                         <RowCheckbox row={row} label={labels.selectRow} />
                       </div>
                     ) : null}
@@ -911,11 +911,11 @@ function CardsView<T>({
                       return (
                         <div
                           key={cell.id}
-                          className="min-w-0 truncate text-[11px] xs:text-xs sm:text-sm md:text-base leading-tight"
+                          className="min-w-0 truncate text-xs sm:text-sm"
                           title={String(cell.getValue() ?? '')}
                         >
                           {typeof header === 'string' && header ? (
-                            <div className="text-[8px] xs:text-[9px] sm:text-xs md:text-sm uppercase text-base-content/50 font-semibold mb-0.5 xs:mb-1">{header}</div>
+                            <div className="text-[10px] sm:text-xs uppercase text-base-content/60">{header}</div>
                           ) : null}
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </div>
