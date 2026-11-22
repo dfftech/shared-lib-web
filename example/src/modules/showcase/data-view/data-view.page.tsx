@@ -1,32 +1,49 @@
 // data-view.page.tsx - virtualized table, list and card layouts.
-import { useState } from "react";
-import type { ColumnDef, Row, RowSelectionState } from "@tanstack/react-table";
-import { ArticleLayout, ContentLayout, EmptyState, TypeDataView } from "shared-lib-web";
+import type { ColumnDef, Row, RowSelectionState } from '@tanstack/react-table';
+import { useState } from 'react';
+import { ArticleLayout, ContentLayout, EmptyState, TypeDataView } from 'shared-lib-web';
 
 interface DataViewUser {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "editor" | "viewer";
+  role: 'admin' | 'editor' | 'viewer';
   age: number;
   active: boolean;
   overdue: boolean;
 }
 
 const dataViewUsers: DataViewUser[] = [
-  { id: "u1", name: "Asha Rao", email: "asha@example.com", role: "admin", age: 34, active: true, overdue: false },
-  { id: "u2", name: "Lucas Martin", email: "lucas@example.com", role: "editor", age: 29, active: true, overdue: false },
-  { id: "u3", name: "Lena Becker", email: "lena@example.com", role: "viewer", age: 41, active: false, overdue: true },
-  { id: "u4", name: "Omar Haddad", email: "omar@example.com", role: "editor", age: 37, active: true, overdue: false },
-  { id: "u5", name: "Mia Wilson", email: "mia@example.com", role: "viewer", age: 26, active: true, overdue: true },
-  { id: "u6", name: "Noah Garcia", email: "noah@example.com", role: "admin", age: 45, active: false, overdue: false },
+  { id: 'u1', name: 'Asha Rao', email: 'asha@example.com', role: 'admin', age: 34, active: true, overdue: false },
+  { id: 'u2', name: 'Lucas Martin', email: 'lucas@example.com', role: 'editor', age: 29, active: true, overdue: false },
+  { id: 'u3', name: 'Lena Becker', email: 'lena@example.com', role: 'viewer', age: 41, active: false, overdue: true },
+  { id: 'u4', name: 'Omar Haddad', email: 'omar@example.com', role: 'editor', age: 37, active: true, overdue: false },
+  { id: 'u5', name: 'Mia Wilson', email: 'mia@example.com', role: 'viewer', age: 26, active: true, overdue: true },
+  { id: 'u6', name: 'Noah Garcia', email: 'noah@example.com', role: 'admin', age: 45, active: false, overdue: false },
+  { id: 'u1', name: 'Asha Rao', email: 'asha@example.com', role: 'admin', age: 34, active: true, overdue: false },
+  { id: 'u2', name: 'Lucas Martin', email: 'lucas@example.com', role: 'editor', age: 29, active: true, overdue: false },
+  { id: 'u3', name: 'Lena Becker', email: 'lena@example.com', role: 'viewer', age: 41, active: false, overdue: true },
+  { id: 'u4', name: 'Omar Haddad', email: 'omar@example.com', role: 'editor', age: 37, active: true, overdue: false },
+  { id: 'u5', name: 'Mia Wilson', email: 'mia@example.com', role: 'viewer', age: 26, active: true, overdue: true },
+  { id: 'u6', name: 'Noah Garcia', email: 'noah@example.com', role: 'admin', age: 45, active: false, overdue: false },
+  { id: 'u1', name: 'Asha Rao', email: 'asha@example.com', role: 'admin', age: 34, active: true, overdue: false },
+  { id: 'u2', name: 'Lucas Martin', email: 'lucas@example.com', role: 'editor', age: 29, active: true, overdue: false },
+  { id: 'u3', name: 'Lena Becker', email: 'lena@example.com', role: 'viewer', age: 41, active: false, overdue: true },
+  { id: 'u4', name: 'Omar Haddad', email: 'omar@example.com', role: 'editor', age: 37, active: true, overdue: false },
+  { id: 'u5', name: 'Mia Wilson', email: 'mia@example.com', role: 'viewer', age: 26, active: true, overdue: true },
+  { id: 'u6', name: 'Noah Garcia', email: 'noah@example.com', role: 'admin', age: 45, active: false, overdue: false },
+  { id: 'u1', name: 'Asha Rao', email: 'asha@example.com', role: 'admin', age: 34, active: true, overdue: false },
+  { id: 'u2', name: 'Lucas Martin', email: 'lucas@example.com', role: 'editor', age: 29, active: true, overdue: false },
+  { id: 'u3', name: 'Lena Becker', email: 'lena@example.com', role: 'viewer', age: 41, active: false, overdue: true },
+  { id: 'u4', name: 'Omar Haddad', email: 'omar@example.com', role: 'editor', age: 37, active: true, overdue: false },
+  { id: 'u5', name: 'Mia Wilson', email: 'mia@example.com', role: 'viewer', age: 26, active: true, overdue: true },
 ];
 
 const dataViewColumns: ColumnDef<DataViewUser>[] = [
-  { accessorKey: "name", header: "Name", size: 240 },
-  { accessorKey: "email", header: "Email" },
-  { accessorKey: "role", header: "Role", enableSorting: false },
-  { accessorKey: "age", header: "Age", meta: { className: "text-right" } },
+  { accessorKey: 'name', header: 'Name', size: 240 },
+  { accessorKey: 'email', header: 'Email' },
+  { accessorKey: 'role', header: 'Role', enableSorting: false },
+  { accessorKey: 'age', header: 'Age', meta: { className: 'text-right' } },
 ];
 
 export function readDataViewUserId(row: DataViewUser): string {
@@ -34,7 +51,7 @@ export function readDataViewUserId(row: DataViewUser): string {
 }
 
 export function readDataViewRowClass(row: DataViewUser): string {
-  return row.overdue ? "text-error" : "";
+  return row.overdue ? 'text-error' : '';
 }
 
 export function renderDataViewCard(row: DataViewUser): React.ReactNode {
@@ -101,6 +118,7 @@ export function DataViewPage() {
           data={dataViewUsers}
           columns={dataViewColumns}
           renderCard={renderDataViewCard}
+          enableGlobalFilter
         />
       </ContentLayout>
 
@@ -113,6 +131,7 @@ export function DataViewPage() {
           data={dataViewUsers}
           columns={dataViewColumns}
           renderCard={renderDataViewCard}
+          enableGlobalFilter
         />
       </ContentLayout>
 
